@@ -59,3 +59,7 @@ desktop.ini
 # Claude Code のローカル個人設定（共有しない）。
 # .claude/agents/ などレビュー資産は追跡する。
 .claude/settings.local.json
+
+# セッション引継ぎメモ。ローカル作業でのセッションリフレッシュ専用の一時ファイルで
+# 共有しない（/handoff で生成・更新。無ければ自動生成される）。
+docs/SESSION-HANDOFF.md
