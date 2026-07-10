@@ -1,7 +1,9 @@
 using System;
+using System.Linq;
 using System.Net.Http;
 using Line.Core.Authentication;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using Microsoft.Kiota.Abstractions.Authentication;
 using Microsoft.Kiota.Http.HttpClientLibrary;
@@ -57,17 +59,25 @@ public static class ServiceCollectionExtensions
         if (services is null) throw new ArgumentNullException(nameof(services));
         if (authProviderFactory is null) throw new ArgumentNullException(nameof(authProviderFactory));
 
-        // 名前付き HttpClient + Kiota 既定ハンドラ（RedirectHandler 等の CVE 修正版を含む）。
-        // 1.22.2 には IHttpClientBuilder.AttachKiotaHandlers が無いため、DI ネイティブに
-        // 既定ハンドラ型を都度生成して差し込む（IHttpClientFactory のプール/ローテーションと整合）。
-        var builder = services.AddHttpClient(HttpClientName);
-        foreach (var handlerType in KiotaClientFactory.GetDefaultHandlerActivatableTypes())
+        // 冪等化: 複数回呼ばれても名前付きクライアントに Kiota 既定ハンドラを重複追記しない。
+        // （重複するとリトライ/リダイレクトが多重化する。マーカーで初回のみ差し込む。）
+        if (!services.Any(d => d.ServiceType == typeof(LineMessagingMarker)))
         {
-            builder.AddHttpMessageHandler(sp =>
-                (DelegatingHandler)ActivatorUtilities.CreateInstance(sp, handlerType));
+            services.AddSingleton<LineMessagingMarker>();
+
+            // 名前付き HttpClient + Kiota 既定ハンドラ（RedirectHandler 等の CVE 修正版を含む）。
+            // 1.22.2 には IHttpClientBuilder.AttachKiotaHandlers が無いため、DI ネイティブに
+            // 既定ハンドラ型を都度生成して差し込む（IHttpClientFactory のプール/ローテーションと整合）。
+            var builder = services.AddHttpClient(HttpClientName);
+            foreach (var handlerType in KiotaClientFactory.GetDefaultHandlerActivatableTypes())
+            {
+                builder.AddHttpMessageHandler(sp =>
+                    (DelegatingHandler)ActivatorUtilities.CreateInstance(sp, handlerType));
+            }
         }
 
-        services.AddSingleton(sp =>
+        // 初回登録が有効（TryAdd）。複数回呼び出し時は最初の認証プロバイダ設定が採用される。
+        services.TryAddSingleton(sp =>
         {
             var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient(HttpClientName);
             var authProvider = authProviderFactory(sp);
@@ -76,4 +86,7 @@ public static class ServiceCollectionExtensions
 
         return services;
     }
+
+    // ハンドラ差し込みの一回性を判定するための内部マーカー。
+    private sealed class LineMessagingMarker { }
 }

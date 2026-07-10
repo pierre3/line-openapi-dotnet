@@ -24,7 +24,8 @@ public sealed class RefreshingChannelAccessTokenProvider : IAccessTokenProvider,
     private readonly SemaphoreSlim _gate = new(1, 1);
 
     private string? _cachedToken;
-    private DateTimeOffset _refreshAt;
+    // 高速パス（ロック外）でも torn read を避けるため ticks(long) で保持し Volatile で読み書きする。
+    private long _refreshAtTicks;
 
     /// <param name="source">トークン発行元（実運用は <see cref="JwtAssertionTokenSource"/>）。</param>
     /// <param name="refreshMargin">
@@ -65,14 +66,14 @@ public sealed class RefreshingChannelAccessTokenProvider : IAccessTokenProvider,
 
         // 高速パス: 未期限のキャッシュがあればロック無しで返す。
         var cached = Volatile.Read(ref _cachedToken);
-        if (cached is not null && _clock() < _refreshAt)
+        if (cached is not null && _clock().UtcTicks < Volatile.Read(ref _refreshAtTicks))
             return cached;
 
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             // double-check: 待機中に別スレッドが更新した可能性がある。
-            if (_cachedToken is not null && _clock() < _refreshAt)
+            if (_cachedToken is not null && _clock().UtcTicks < Volatile.Read(ref _refreshAtTicks))
                 return _cachedToken;
 
             var issuedAt = _clock();
@@ -80,9 +81,11 @@ public sealed class RefreshingChannelAccessTokenProvider : IAccessTokenProvider,
 
             // マージンが寿命以上でも最低限キャッシュが機能するよう、下限を発行時刻に張り付ける。
             var refreshAt = issuedAt + issued.Lifetime - _refreshMargin;
-            _refreshAt = refreshAt > issuedAt ? refreshAt : issuedAt;
-            _cachedToken = issued.AccessToken;
-            return _cachedToken;
+            var effective = refreshAt > issuedAt ? refreshAt : issuedAt;
+            // 期限を先に公開してからトークンを公開する（新トークンを見たら必ず新期限も見える順序）。
+            Volatile.Write(ref _refreshAtTicks, effective.UtcTicks);
+            Volatile.Write(ref _cachedToken, issued.AccessToken);
+            return issued.AccessToken;
         }
         finally
         {

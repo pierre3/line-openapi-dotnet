@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Net.Http;
 using Line.Core.Authentication;
 using Line.Messaging;
@@ -57,6 +58,21 @@ public class DiIntegrationTests
 
         var client = sp.GetRequiredService<MessagingClient>();
         Assert.NotNull(client);
+    }
+
+    [Fact]
+    public void AddLineMessaging_Is_Idempotent()
+    {
+        var services = new ServiceCollection();
+        services.AddLineMessaging(o => o.ChannelAccessToken = "T1");
+        services.AddLineMessaging(o => o.ChannelAccessToken = "T2"); // 2 回目はハンドラ/クライアント重複登録しない
+
+        Assert.Equal(1, services.Count(d => d.ServiceType == typeof(MessagingClient)));
+
+        using var sp = services.BuildServiceProvider();
+        var client = sp.GetRequiredService<MessagingClient>();
+        var push = client.Api.V2.Bot.Message.Push.ToPostRequestInformation(new PushMessageRequest());
+        Assert.Equal("api.line.me", push.URI.Host); // 多重ハンドラでも壊れず解決・ルーティングできる
     }
 
     [Fact]

@@ -23,7 +23,7 @@ public class FormUrlEncodedTests
     }
 
     [Fact]
-    public async Task Token_Request_Uses_FormUrlEncoded_ContentType()
+    public void Token_Request_Uses_FormUrlEncoded_ContentType()
     {
         var client = CreateClient();
         var body = new TokenPostRequestBody

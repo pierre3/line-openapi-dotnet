@@ -29,8 +29,10 @@ LINE 公開 OpenAPI 仕様（https://github.com/line/line-openapi）から、**K
 - **G0 設計:** PASS（`docs/reviews/2026-07-09-G0-design-review-rev2.md`）
 - **G1 仕様:** 実質 PASS（`docs/reviews/2026-07-09-G1-spec-review.md`）。残 PoC 確認 `/oauth2/v3/token` の oneOf → G2 で確認済（型付き合成ボディ、G3 で手書きヘルパ候補）。
 - **G2 PoC:** 生成→ビルド→テスト実行済（`docs/reviews/2026-07-10-G2-poc-result.md`）。コード＋テスト・アーキ両レビュー = CONCERNS → 高重大度の R1 BaseUrl 順序バグ等を修正・回帰テスト追加済（`docs/reviews/2026-07-10-G2-review.md`）。**人の go/no-go = GO（条件付き GO 推奨を受理, 2026-07-10）。**
-- **G3 手書き実装:** 完了（`docs/reviews/2026-07-10-G3-implementation.md`）。更新型トークンプロバイダ・DI 統合・テスト拡張・版整合 R3 を実装し G2 の中重大度指摘を解消。ビルド 0 警告 / テスト **18/18**（webhook 多態は既定実行化）/ NuGet 監査脆弱性なし。
-- G4 リリース前 が後続。
+- **G3 手書き実装:** 実装完了（`docs/reviews/2026-07-10-G3-implementation.md`）＋**ゲートレビュー実施済**（`docs/reviews/2026-07-10-G3-review.md`。コード=CONCERNS / セキュリティ=PASS）。中位「DI 二重登録の非冪等」と両者一致の低位「`_refreshAt` アトミック性」を修正・回帰テスト追加。**GO 推奨、人の go/no-go 待ち。** ビルド 0 警告 / テスト **19/19** / NuGet 監査脆弱性なし。
+  - ⚠️ 手続き逸脱: G3 は実装→コミット→マージを**ゲートレビュー前**に行った（本来は実装完了時に先に回す）。遡ってレビューを実施し指摘を解消。以降は順序厳守。
+  - ⚠️ **プロジェクト用レビュアーサブエージェント（`.claude/agents/*.md`）は現状の実行環境で subagent_type として登録されない**（利用可能なのは組み込みの claude/general-purpose 等）。ゲートは組み込みエージェントに各定義の内容を与えて代行実行した。恒久対策は要検討。
+- G4 リリース前 が後続。G3 受容項目（シングルトン HttpClient のハンドラローテーション、更新型プロバイダの IDisposable 破棄、refreshMargin≥寿命の下限クランプ）を G4 スコープへ持ち越し。
 
 ## 次にやること
 
