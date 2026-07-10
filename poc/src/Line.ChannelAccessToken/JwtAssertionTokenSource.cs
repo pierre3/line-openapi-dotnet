@@ -52,9 +52,18 @@ public sealed class JwtAssertionTokenSource : IChannelAccessTokenSource
             .PostAsync(body, cancellationToken: cancellationToken)
             .ConfigureAwait(false);
 
-        if (response?.AccessToken is null || response.ExpiresIn is null)
+        // access_token は空文字も不正応答として扱う（null のみだと空文字が IssuedToken
+        // コンストラクタの ArgumentException として漏れ、expires_in と非対称になる）。
+        if (string.IsNullOrEmpty(response?.AccessToken) || response.ExpiresIn is null)
             throw new InvalidOperationException(
                 "Token issuance response did not contain access_token / expires_in.");
+
+        // expires_in が 0 以下だと IssuedToken コンストラクタが ArgumentOutOfRangeException を
+        // 投げ、他の「応答が不正」ケース（InvalidOperationException）とエラー面が食い違う。
+        // 応答検証としてここで揃える（expires_in は秘匿値でないため値を含めてよい）。
+        if (response.ExpiresIn.Value <= 0)
+            throw new InvalidOperationException(
+                $"Token issuance response contained a non-positive expires_in ({response.ExpiresIn.Value}).");
 
         return new IssuedToken(response.AccessToken, TimeSpan.FromSeconds(response.ExpiresIn.Value));
     }
