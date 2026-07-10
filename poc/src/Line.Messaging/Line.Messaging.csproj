@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- messaging-api.yml。制御系(Generated/Api)とデータ系(Generated/Blob)の2クライアントを同梱し
+       MessagingClient ファサードで統合する。 -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Kiota.Bundle" Version="$(KiotaBundleVersion)" />
+    <ProjectReference Include="..\Line.Core\Line.Core.csproj" />
+  </ItemGroup>
+</Project>

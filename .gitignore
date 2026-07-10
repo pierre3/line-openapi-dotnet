@@ -1,0 +1,61 @@
+# ---------------------------------------------------------------------------
+# LINE OpenAPI → .NET クライアント / .gitignore
+#
+# 規約（CLAUDE.md）:
+#   - bin/ obj/ は追跡しない
+#   - 生成物 src/**/Generated/ と kiota-lock.json は「追跡する」
+#     → 下の bin/ obj/ 除外は Generated/ に触れないため、明示の negate は不要
+# ---------------------------------------------------------------------------
+
+# ビルド成果物 / 中間ファイル
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio / Rider / VS Code のユーザー固有ファイル
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*_i.c
+*_p.c
+*.rsuser
+
+# テスト結果 / カバレッジ
+[Tt]est[Rr]esult*/
+[Cc]overage*/
+*.coverage
+*.coveragexml
+*.trx
+BenchmarkDotNet.Artifacts/
+
+# NuGet
+*.nupkg
+*.snupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+*.nuget.props
+*.nuget.targets
+
+# .NET Core / ツール
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Kiota の生成ログ（生成物本体・kiota-lock.json は追跡するが、ログは除外）
+.kiota.log
+**/Generated/.kiota.log
+
+# OS 生成ファイル
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Claude Code のローカル個人設定（共有しない）。
+# .claude/agents/ などレビュー資産は追跡する。
+.claude/settings.local.json

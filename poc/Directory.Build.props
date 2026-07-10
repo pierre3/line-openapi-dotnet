@@ -1,0 +1,18 @@
+<Project>
+  <!-- 全プロジェクト共通設定（G0/G1 設計方針準拠） -->
+  <PropertyGroup>
+    <!-- サポート対象はモダン .NET のみ。net10.0 単一（netstandard2.0 / .NET Framework は対象外, rev.3） -->
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- 生成コードの XML doc 欠落などの警告を抑制（opaque box 前提） -->
+    <NoWarn>$(NoWarn);CS1591;CS1573</NoWarn>
+
+    <!-- Kiota ランタイムのバージョンを一元管理（R3: 生成物とロックステップ運用）。
+         生成時に `kiota info -l CSharp` が推奨するバージョンに合わせて更新すること。 -->
+    <KiotaBundleVersion>1.22.2</KiotaBundleVersion>
+  </PropertyGroup>
+</Project>

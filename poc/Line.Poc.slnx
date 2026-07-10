@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Line.ChannelAccessToken/Line.ChannelAccessToken.csproj" />
+    <Project Path="src/Line.Core/Line.Core.csproj" />
+    <Project Path="src/Line.Liff/Line.Liff.csproj" />
+    <Project Path="src/Line.Messaging.Webhook/Line.Messaging.Webhook.csproj" />
+    <Project Path="src/Line.Messaging/Line.Messaging.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Line.Poc.Tests/Line.Poc.Tests.csproj" />
+  </Folder>
+</Solution>

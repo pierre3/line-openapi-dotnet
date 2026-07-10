@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- channel-access-token.yml 生成クライアント + 更新型トークンプロバイダの置き場所。
+       （更新型プロバイダを Core でなくここに置くことで Core→ChannelAccessToken の逆依存を回避） -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Kiota.Bundle" Version="$(KiotaBundleVersion)" />
+    <ProjectReference Include="..\Line.Core\Line.Core.csproj" />
+  </ItemGroup>
+</Project>

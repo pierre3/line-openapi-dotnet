@@ -1,0 +1,317 @@
+---
+openapi: 3.0.0
+info:
+  title: Channel Access Token API
+  version: "0.0.1"
+  description:
+    This document describes Channel Access Token API.
+
+servers:
+  - url: "https://api.line.me"
+
+tags:
+  - name: channel-access-token
+
+paths:
+  "/oauth2/v3/token":
+    post:
+      externalDocs:
+        url: https://developers.line.biz/en/reference/messaging-api/#issue-stateless-channel-access-token
+      tags:
+        - channel-access-token
+      operationId: issueStatelessChannelToken
+      description: |
+        Issues a new stateless channel access token, which doesn't have max active token limit
+        unlike the other token types.
+        The newly issued token is only valid for 15 minutes but can not be revoked until it naturally expires.
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              oneOf:
+                - $ref: "#/components/schemas/IssueStatelessChannelTokenByJWTAssertionRequest"
+                - $ref: "#/components/schemas/IssueStatelessChannelTokenByClientSecretRequest"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/IssueStatelessChannelAccessTokenResponse"
+
+  "/oauth2/v2.1/tokens/kid":
+    get:
+      externalDocs:
+        url: https://developers.line.biz/en/reference/messaging-api/#get-all-valid-channel-access-token-key-ids-v2-1
+      tags:
+        - channel-access-token
+      operationId: getsAllValidChannelAccessTokenKeyIds
+      description: "Gets all valid channel access token key IDs."
+      parameters:
+        - name: client_assertion_type
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: client_assertion
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ChannelAccessTokenKeyIdsResponse"
+
+  "/oauth2/v2.1/token":
+    post:
+      externalDocs:
+        url: https://developers.line.biz/en/reference/messaging-api/#issue-channel-access-token-v2-1
+      tags:
+        - channel-access-token
+      operationId: issueChannelTokenByJWT
+      description: "Issues a channel access token that allows you to specify a desired expiration date. This method lets you use JWT assertion for authentication."
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              description: "request of the issueChannelTokenByJWT"
+              type: object
+              properties:
+                grant_type:
+                  type: string
+                client_assertion_type:
+                  type: string
+                client_assertion:
+                  type: string
+              required:
+                - grant_type
+                - client_assertion_type
+                - client_assertion
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/IssueChannelAccessTokenResponse"
+
+  "/oauth2/v2.1/verify":
+    get:
+      tags:
+        - channel-access-token
+      operationId: verifyChannelTokenByJWT
+      parameters:
+        - name: access_token
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/VerifyChannelAccessTokenResponse"
+
+  "/oauth2/v2.1/revoke":
+    post:
+      tags:
+        - channel-access-token
+      operationId: revokeChannelTokenByJWT
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                client_id:
+                  type: string
+                client_secret:
+                  type: string
+                access_token:
+                  type: string
+              required:
+                - client_id
+                - client_secret
+                - access_token
+      responses:
+        "200":
+          description: "OK"
+
+  "/v2/oauth/accessToken":
+    post:
+      tags:
+        - channel-access-token
+      operationId: issueChannelToken
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                grant_type:
+                  type: string
+                client_id:
+                  type: string
+                client_secret:
+                  type: string
+              required:
+                - grant_type
+                - client_id
+                - client_secret
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/IssueShortLivedChannelAccessTokenResponse"
+        "400":
+          description: "Bad Request"
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+
+  "/v2/oauth/verify":
+    post:
+      tags:
+        - channel-access-token
+      operationId: verifyChannelToken
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                access_token:
+                  type: string
+              required:
+                - access_token
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/VerifyChannelAccessTokenResponse"
+
+  "/v2/oauth/revoke":
+    post:
+      tags:
+        - channel-access-token
+      operationId: revokeChannelToken
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                access_token:
+                  type: string
+              required:
+                - access_token
+      responses:
+        "200":
+          description: "OK"
+
+components:
+  schemas:
+    IssueStatelessChannelTokenByJWTAssertionRequest:
+      type: object
+      required: [grant_type, client_assertion, client_assertion_type]
+      properties:
+        grant_type:
+          type: string
+          enum: [ client_credentials ]
+        client_assertion_type:
+          type: string
+          enum: [ "urn:ietf:params:oauth:client-assertion-type:jwt-bearer" ]
+        client_assertion:
+          type: string
+    IssueStatelessChannelTokenByClientSecretRequest:
+      type: object
+      required: [grant_type, client_id, client_secret]
+      properties:
+        grant_type:
+          type: string
+          enum: [ client_credentials ]
+        client_id:
+          type: string
+        client_secret:
+          type: string
+    IssueStatelessChannelAccessTokenResponse:
+      required: [access_token, expires_in, token_type]
+      type: object
+      properties:
+        access_token:
+          type: string
+        expires_in:
+          type: integer
+          format: int32
+        token_type:
+          type: string
+          default: Bearer
+    ChannelAccessTokenKeyIdsResponse:
+      required: [kids]
+      type: object
+      properties:
+        kids:
+          type: array
+          items:
+            type: string
+    IssueShortLivedChannelAccessTokenResponse:
+      required: [access_token, expires_in, token_type]
+      type: object
+      properties:
+        access_token:
+          type: string
+        expires_in:
+          type: integer
+          format: int32
+        token_type:
+          type: string
+          default: Bearer
+    IssueChannelAccessTokenResponse:
+      required: [access_token, expires_in, token_type, key_id]
+      type: object
+      properties:
+        access_token:
+          type: string
+        expires_in:
+          type: integer
+          format: int32
+        token_type:
+          type: string
+          default: Bearer
+        key_id:
+          type: string
+    VerifyChannelAccessTokenResponse:
+      required: [client_id, expires_in]
+      type: object
+      properties:
+        client_id:
+          type: string
+        expires_in:
+          type: integer
+          format: int64
+        scope:
+          type: string
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        error_description:
+          type: string

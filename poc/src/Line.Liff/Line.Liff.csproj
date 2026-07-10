@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- liff.yml。単一ホスト。 -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Kiota.Bundle" Version="$(KiotaBundleVersion)" />
+    <ProjectReference Include="..\Line.Core\Line.Core.csproj" />
+  </ItemGroup>
+</Project>
