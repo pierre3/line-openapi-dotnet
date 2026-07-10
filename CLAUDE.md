@@ -28,40 +28,41 @@ LINE 公開 OpenAPI 仕様（https://github.com/line/line-openapi）から、**K
 
 - **G0 設計:** PASS（`docs/reviews/2026-07-09-G0-design-review-rev2.md`）
 - **G1 仕様:** 実質 PASS（`docs/reviews/2026-07-09-G1-spec-review.md`）。残 PoC 確認 `/oauth2/v3/token` の oneOf → G2 で確認済（型付き合成ボディ、G3 で手書きヘルパ候補）。
-- **G2 PoC:** 生成→ビルド→テスト実行済（`docs/reviews/2026-07-10-G2-poc-result.md`）。コード＋テスト・アーキ両レビュー = CONCERNS → 高重大度の R1 BaseUrl 順序バグ等を修正・回帰テスト追加済（`docs/reviews/2026-07-10-G2-review.md`）。**条件付き GO を推奨、人の go/no-go 待ち。** ビルド 0 警告、テスト既定 5/5・webhook 込み 6/6。
-- G3 手書き実装 / G4 リリース前 が後続。G2 の中重大度指摘（DI・form-urlencoded/ns2.0 実行時/多態テスト拡張・版整合 R3）は G3 スコープ。
+- **G2 PoC:** 生成→ビルド→テスト実行済（`docs/reviews/2026-07-10-G2-poc-result.md`）。コード＋テスト・アーキ両レビュー = CONCERNS → 高重大度の R1 BaseUrl 順序バグ等を修正・回帰テスト追加済（`docs/reviews/2026-07-10-G2-review.md`）。**人の go/no-go = GO（条件付き GO 推奨を受理, 2026-07-10）。**
+- **G3 手書き実装:** 完了（`docs/reviews/2026-07-10-G3-implementation.md`）。更新型トークンプロバイダ・DI 統合・テスト拡張・版整合 R3 を実装し G2 の中重大度指摘を解消。ビルド 0 警告 / テスト **18/18**（webhook 多態は既定実行化）/ NuGet 監査脆弱性なし。
+- G4 リリース前 が後続。
 
 ## 次にやること
 
-- **人の go/no-go**（G2）: `docs/reviews/2026-07-10-G2-review.md` を確認し、G3 通過可否を判断。
-- **G3 手書き実装**（go の場合）: 更新型トークンプロバイダ（短期/JWT、Core への逆依存回避）・DI 統合（`IHttpClientFactory`/共有ハンドラ/`AllowedHosts` 注入）・Webhook 署名の本実装。G2 の中重大度指摘を解消:
-  1. form-urlencoded シリアライズのラウンドトリップテスト。
-  2. webhook 多態テストを複数/未知/非メッセージイベントへ拡張し、既定/CI で常時実行。
-  3. 版整合 R3: 生成 CLI 版のピン止め＋`KiotaBundleVersion` 追従方針（現状 **1.22.2**、`kiota info` 推奨 2.0.0）。2.0.0 メジャーへ上げるか 1.x に留まるかを判断。
-  4. 上流 YAML 引用符問題（`channel-access-token.yml`）の生成前正規化 or 上流報告。
+- **G4 リリース前**（後続）:
+  1. 短期トークン発行の**実 HTTP モックテスト**（`JwtAssertionTokenSource` の実発行経路。現状は `IChannelAccessTokenSource` シーム経由でロジックのみ検証）。
+  2. 公開 API 表面の **snapshot 回帰テスト**（設計 §8）。
+  3. **Kiota 2.0 メジャー移行の是非判断**（独立タスク。現状 1.x 継続。手順は `docs/R3-kiota-version-policy.md`）。
+  4. R2 使い勝手: `Action`→`ActionObject` 改名・`/oauth2/v3/token` oneOf 合成ボディの手書きヘルパ。
+  5. LIFF クライアントの利用シーン実装（現状は生成のみ）。
   - （※ netstandard2.0 対象外化により「ns2.0 テスト実行」タスクは消滅。TFM は net10.0 単一。）
 
 ### 再現用（G2 PoC を再実行する場合）
 
-1. `dotnet tool install --global Microsoft.OpenApi.Kiota`（導入済 CLI 1.34.1）。
+1. `dotnet tool install --global Microsoft.OpenApi.Kiota`（導入済 CLI 1.34.1。`generate.ps1` が版ピン照合）。
 2. `poc/` で `pwsh scripts/generate.ps1`（kiota は `~/.dotnet/tools` を PATH に）。
-3. `dotnet build`（net8.0 / netstandard2.0）→ `dotnet test`。
-4. webhook 多態: `dotnet test -p:DefineConstants=WEBHOOK_DESERIALIZATION_READY`。
+3. `dotnet build`（net10.0 単一）→ `dotnet test`。
+4. webhook 多態は**既定実行**（`#if` ガード撤去済）。opt-in フラグは不要。
 
 ## セッション引き継ぎ（2026-07-10 時点の状態）
 
-- **進捗:** G2 PoC を実行完了。生成→ビルド(0 警告)→テスト(既定 5/5、webhook 込み 6/6)が全て通る状態。G2 レビュー(コード＋テスト・アーキ)実施済で高重大度バグ修正済。**人の go/no-go 待ち**（→ G3 or 追加対応）。
-- **環境（このマシン）:** .NET SDK 8.0.421 ほか（8/9/10 併存）。Kiota CLI **1.34.1** 導入済（`~/.dotnet/tools`。bash では PATH 追加、PowerShell では `$env:PATH += ";$env:USERPROFILE\.dotnet\tools"`）。ビルド/テストは PowerShell 実行が安定。
-- **⚠️ `poc/` はまだ git リポジトリではない**（`git init` 未実施）。規約「`kiota-lock.json` をコミット」を回すには、G3 冒頭で `git init` ＋ `.gitignore`（`bin/`・`obj/` 除外、`Generated/` と `kiota-lock.json` は追跡）整備が必要。`poc/Line.Poc.sln` は作成済。
-- **このセッションで変更したファイル:**
-  - `poc/src/Line.Messaging/MessagingClient.cs` — BaseUrl 設定を構築前へ移動（R1 バグ修正）。
-  - `poc/src/Line.Core/Webhook/WebhookSignatureValidator.cs` — `ArgumentException` の paramName 修正。
-  - `poc/tests/Line.Poc.Tests/Line.Poc.Tests.csproj` — `Line.Messaging` 参照追加。
-  - `poc/tests/Line.Poc.Tests/MessagingHostRoutingTests.cs` — 新規（R1 ルーティング回帰テスト）。
-  - `poc/tests/Line.Poc.Tests/WebhookDeserializationTests.cs` — Kiota 1.x の API へ調整（`KiotaSerializer.DeserializeAsync` ＋ 明示デシリアライザ登録）。
-  - `poc/openapi/channel-access-token.yml` — L240 の `urn:...` を引用符化（下記の再発注意）。
-  - 生成物一式（`src/**/Generated/`、各 `kiota-lock.json`）を生成。
-- **⚠️ spec 修正の再発注意:** `generate.ps1` は spec を master から自動 DL（既存ファイルがあれば再取得しない）。`channel-access-token.yml` を消して再取得すると `urn:ietf:...` 未引用の YAML パースエラーが再発する（SharpYaml がフロー配列内のコロンを解釈できない）。生成前の引用符正規化 or 上流報告を G3 で決める（既存ファイルを残す限りは問題なし）。
+- **進捗:** G2 = 人の go/no-go **GO**。**G3 手書き実装 完了**（更新型トークンプロバイダ・DI 統合・テスト拡張・版整合 R3）。生成→ビルド(0 警告)→テスト **18/18** が全て通る状態。詳細 `docs/reviews/2026-07-10-G3-implementation.md`。次は G4（`次にやること`参照）。
+- **環境（このマシン）:** .NET SDK 10.0.301 ほか（3.1〜10 併存）。Kiota CLI **1.34.1** 導入済（`~/.dotnet/tools`。bash では PATH 追加、PowerShell では `$env:PATH += ";$env:USERPROFILE\.dotnet\tools"`）。ビルド/テストは PowerShell 実行が安定。
+- **git:** リポジトリは `line-dotnet/` ルートで管理下（`poc/` も追跡済）。`kiota-lock.json` はコミット対象。
+- **G3 で変更/追加したファイル:**
+  - `poc/src/Line.ChannelAccessToken/{IChannelAccessTokenSource,RefreshingChannelAccessTokenProvider,JwtAssertionTokenSource}.cs` — 更新型トークンプロバイダ（新規）。
+  - `poc/src/Line.Messaging/MessagingClient.cs` — 共有 `HttpClient` オーバーロード追加。
+  - `poc/src/Line.Messaging/DependencyInjection/{ServiceCollectionExtensions,LineMessagingOptions}.cs` — DI 統合（新規）。
+  - `poc/src/Line.Messaging/Line.Messaging.csproj` — `Microsoft.Extensions.Http`/`.Options` 追加。
+  - `poc/tests/Line.Poc.Tests/{RefreshingTokenProviderTests,FormUrlEncodedTests,DiIntegrationTests}.cs` — 新規。`WebhookDeserializationTests.cs` — ガード撤去＋多態ケース拡張。csproj に `Line.ChannelAccessToken` 参照追加。
+  - `poc/scripts/generate.ps1` — CLI 版ピン照合＋YAML 冪等正規化。
+  - `docs/R3-kiota-version-policy.md` / `docs/reviews/2026-07-10-G3-implementation.md` — 新規。
+- **spec 再発注意（解消済）:** `channel-access-token.yml` の未引用 `urn:...` は `generate.ps1` が**冪等に引用符化**するようになった（master 再取得時も安全）。
 
 ## ビルド/テストコマンド
 
@@ -70,10 +71,8 @@ LINE 公開 OpenAPI 仕様（https://github.com/line/line-openapi）から、**K
 pwsh poc/scripts/generate.ps1
 # ビルド
 dotnet build
-# テスト
+# テスト（webhook 多態含め既定で全実行）
 dotnet test
-# webhook 多態テスト有効化
-dotnet test -p:DefineConstants=WEBHOOK_DESERIALIZATION_READY
 ```
 
 ## 規約

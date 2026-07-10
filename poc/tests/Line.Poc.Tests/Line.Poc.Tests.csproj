@@ -11,6 +11,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Line.Core\Line.Core.csproj" />
+    <ProjectReference Include="..\..\src\Line.ChannelAccessToken\Line.ChannelAccessToken.csproj" />
     <ProjectReference Include="..\..\src\Line.Messaging\Line.Messaging.csproj" />
     <ProjectReference Include="..\..\src\Line.Messaging.Webhook\Line.Messaging.Webhook.csproj" />
   </ItemGroup>

@@ -1,4 +1,5 @@
 using System;
+using System.Net.Http;
 using Microsoft.Kiota.Abstractions.Authentication;
 using Microsoft.Kiota.Http.HttpClientLibrary;
 using Line.Core.Authentication;
@@ -25,12 +26,19 @@ public sealed class MessagingClient
     /// <summary>データ系クライアント（コンテンツ取得・画像アップロードなど、api-data.line.me）。</summary>
     public MessagingBlobApiClient Blob { get; }
 
-    public MessagingClient(IAuthenticationProvider authProvider)
+    /// <param name="authProvider">認証プロバイダ（静的トークン / 更新型のいずれでも可）。</param>
+    /// <param name="httpClient">
+    /// 制御系・データ系の 2 アダプタで共有する <see cref="HttpClient"/>。
+    /// DI 経由で <c>IHttpClientFactory</c> が供給する（ハンドラプール共有・Kiota 既定ミドルウェア適用）。
+    /// null の場合は各アダプタが既定 <see cref="HttpClient"/> を内部生成する（PoC/簡易用）。
+    /// アダプタが URL を組み立てるため、<see cref="HttpClient.BaseAddress"/> は使用されず共有で問題ない。
+    /// </param>
+    public MessagingClient(IAuthenticationProvider authProvider, HttpClient? httpClient = null)
     {
         if (authProvider is null) throw new ArgumentNullException(nameof(authProvider));
 
         // 制御系: 仕様の server(api.line.me) をそのまま使う。
-        var apiAdapter = new HttpClientRequestAdapter(authProvider);
+        var apiAdapter = new HttpClientRequestAdapter(authProvider, httpClient: httpClient);
         Api = new MessagingApiClient(apiAdapter);
 
         // データ系: 別アダプタを用意し、BaseUrl を api-data.line.me へ明示設定する。
@@ -38,7 +46,7 @@ public sealed class MessagingClient
         // 重要: 生成クライアントはコンストラクタで baseurl を PathParameters へ確定させる
         // （空なら api.line.me を既定採用）。よって BaseUrl は必ず「構築前」に設定すること。
         // 構築後に設定しても PathParameters には反映されず、リクエストは api.line.me に飛ぶ。
-        var blobAdapter = new HttpClientRequestAdapter(authProvider);
+        var blobAdapter = new HttpClientRequestAdapter(authProvider, httpClient: httpClient);
         blobAdapter.BaseUrl = $"https://{LineHosts.ApiData}";
         Blob = new MessagingBlobApiClient(blobAdapter);
     }

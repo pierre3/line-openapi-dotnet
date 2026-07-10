@@ -1,15 +1,9 @@
-// Webhook 多態デシリアライズの検証（生成モデル依存）。
+// Webhook 多態デシリアライズの検証（看板機能）。
 //
-// このテストは kiota 生成後の型名に依存するため、既定ではコンパイルされません。
-// 手順:
-//   1) scripts/generate を実行して src/Line.Messaging.Webhook/Generated/Models を生成。
-//   2) 生成された実際のルート型名（多くは CallbackRequest）とイベント派生型名
-//      （MessageEvent / TextMessageContent 等）を確認し、下記の型名を必要に応じて修正。
-//   3) Line.Poc.Tests.csproj に <DefineConstants>WEBHOOK_DESERIALIZATION_READY</DefineConstants> を
-//      追加（または dotnet test -p:DefineConstants=WEBHOOK_DESERIALIZATION_READY）して有効化。
-//
-// これは「生成された多態モデルが discriminator で正しく復元されるか」を確認する PoC の要。
-#if WEBHOOK_DESERIALIZATION_READY
+// G2 では生成後の型名未確定のため #if WEBHOOK_DESERIALIZATION_READY で opt-in だったが、
+// G3 で型名を確定（CallbackRequest / MessageEvent / FollowEvent / PostbackEvent /
+// TextMessageContent、未知は基底 Event へフォールバック）したため既定/CI で常時実行する（§2-D）。
+using System.Threading.Tasks;
 using Line.Messaging.Webhook.Generated.Models;
 using Microsoft.Kiota.Abstractions;
 using Microsoft.Kiota.Abstractions.Serialization;
@@ -26,7 +20,8 @@ public class WebhookDeserializationTests
         ApiClientBuilder.RegisterDefaultDeserializer<JsonParseNodeFactory>();
     }
 
-    private const string SamplePayload = @"{
+    // message(text) 単一イベント。
+    private const string SinglePayload = @"{
       ""destination"": ""U0123456789abcdef"",
       ""events"": [
         {
@@ -42,21 +37,78 @@ public class WebhookDeserializationTests
       ]
     }";
 
+    // message / follow / postback / 未知(future) の混在。
+    private const string MixedPayload = @"{
+      ""destination"": ""U0123456789abcdef"",
+      ""events"": [
+        {
+          ""type"": ""message"",
+          ""message"": { ""type"": ""text"", ""id"": ""1"", ""text"": ""hi"" },
+          ""timestamp"": 1, ""mode"": ""active"",
+          ""source"": { ""type"": ""user"", ""userId"": ""U1"" },
+          ""deliveryContext"": { ""isRedelivery"": false }
+        },
+        {
+          ""type"": ""follow"",
+          ""timestamp"": 2, ""mode"": ""active"",
+          ""source"": { ""type"": ""user"", ""userId"": ""U2"" },
+          ""replyToken"": ""rt"",
+          ""deliveryContext"": { ""isRedelivery"": false }
+        },
+        {
+          ""type"": ""postback"",
+          ""postback"": { ""data"": ""action=buy&id=1"" },
+          ""timestamp"": 3, ""mode"": ""active"",
+          ""source"": { ""type"": ""group"", ""groupId"": ""G1"" },
+          ""replyToken"": ""rt2"",
+          ""deliveryContext"": { ""isRedelivery"": false }
+        },
+        {
+          ""type"": ""someFutureEventTypeNotInSpec"",
+          ""timestamp"": 4, ""mode"": ""active"",
+          ""source"": { ""type"": ""user"", ""userId"": ""U3"" },
+          ""deliveryContext"": { ""isRedelivery"": false }
+        }
+      ]
+    }";
+
+    private static Task<CallbackRequest?> Deserialize(string json) =>
+        KiotaSerializer.DeserializeAsync<CallbackRequest>(
+            "application/json", json, CallbackRequest.CreateFromDiscriminatorValue);
+
     [Fact]
-    public async System.Threading.Tasks.Task Deserializes_Polymorphic_MessageEvent()
+    public async Task Deserializes_Single_MessageEvent_With_TextContent()
     {
-        // 型名は生成結果に合わせて調整すること。
-        var callback = await KiotaSerializer.DeserializeAsync<CallbackRequest>(
-            "application/json", SamplePayload, CallbackRequest.CreateFromDiscriminatorValue);
+        var callback = await Deserialize(SinglePayload);
 
         Assert.NotNull(callback);
-        Assert.Single(callback!.Events!);
-
-        // discriminator(type=message) により派生型 MessageEvent に復元されることを確認。
-        var msgEvent = Assert.IsType<MessageEvent>(callback.Events![0]);
-        // message.type=text により TextMessageContent に復元される。
+        Assert.Equal("U0123456789abcdef", callback!.Destination);
+        var msgEvent = Assert.IsType<MessageEvent>(Assert.Single(callback.Events!));
         var text = Assert.IsType<TextMessageContent>(msgEvent.Message);
         Assert.Equal("Hello, world", text.Text);
     }
+
+    [Fact]
+    public async Task Deserializes_Mixed_Events_To_Correct_Derived_Types()
+    {
+        var callback = await Deserialize(MixedPayload);
+
+        Assert.NotNull(callback);
+        Assert.Equal(4, callback!.Events!.Count);
+
+        Assert.IsType<MessageEvent>(callback.Events[0]);
+        Assert.IsType<FollowEvent>(callback.Events[1]);
+        var postback = Assert.IsType<PostbackEvent>(callback.Events[2]);
+        Assert.Equal("action=buy&id=1", postback.Postback!.Data);
+    }
+
+    [Fact]
+    public async Task Unknown_Event_Type_Falls_Back_To_Base_Event()
+    {
+        var callback = await Deserialize(MixedPayload);
+
+        // 未知 type は discriminator の default で基底 Event に復元される（派生型ではない）。
+        var unknown = callback!.Events![3];
+        Assert.Equal(typeof(Event), unknown.GetType());
+    }
 }
-#endif

@@ -10,9 +10,30 @@
     openapi/ に *.yml が無ければ line/line-openapi から取得します。
     （messaging-api.yml / channel-access-token.yml は同梱済み）
 #>
+param(
+  # CLI 版ピンと不一致でも続行したい場合に指定（再現性を意図的に外す時のみ）。
+  [switch]$AllowKiotaVersionMismatch
+)
+
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 Set-Location $root
+
+# --- R3: 生成 CLI 版のピン止め ---
+# 生成物の再現性のため Kiota CLI 版を固定する。ランタイム(KiotaBundleVersion, Directory.Build.props)
+# とロックステップで運用する。上げる時は本値・KiotaBundleVersion・生成物・公開 API 差分をセットで見る。
+# 方針判断（1.x 継続 / 2.0 移行）は docs/reviews の R3 メモ参照。現状は 1.x 継続（1.22.2 は CVE 修正版）。
+$ExpectedKiotaCliVersion = "1.34.1"
+$actual = (& kiota --version) 2>&1 | Select-Object -First 1
+$actualVersion = ($actual -split '\+')[0].Trim()
+if ($actualVersion -ne $ExpectedKiotaCliVersion) {
+  $msg = "Kiota CLI 版が想定と不一致: expected $ExpectedKiotaCliVersion, actual $actualVersion。" +
+         " `dotnet tool update --global Microsoft.OpenApi.Kiota --version $ExpectedKiotaCliVersion` で合わせてください。"
+  if ($AllowKiotaVersionMismatch) { Write-Warning $msg }
+  else { throw $msg }
+} else {
+  Write-Host "Kiota CLI $actualVersion (pinned) を使用します。" -ForegroundColor Green
+}
 
 $specs = @{
   "messaging-api.yml"        = "https://raw.githubusercontent.com/line/line-openapi/master/messaging-api.yml"
@@ -26,6 +47,20 @@ foreach ($name in $specs.Keys) {
   if (-not (Test-Path $path)) {
     Write-Host "downloading $name ..."
     Invoke-WebRequest -Uri $specs[$name] -OutFile $path
+  }
+}
+
+# --- 上流 YAML 正規化（冪等） ---
+# channel-access-token.yml のフロー配列内 `urn:ietf:...:jwt-bearer` は未引用だと
+# SharpYaml がコロンを誤認してパースエラーになる（master 再取得時に再発しうる）。
+# フロー配列 `[ ... ]` 直後の未引用 urn: を引用符化する。既に引用符付きなら何もしない。
+$catPath = Join-Path "openapi" "channel-access-token.yml"
+if (Test-Path $catPath) {
+  $content = Get-Content $catPath -Raw
+  $normalized = [regex]::Replace($content, '(?<=\[\s*)(urn:[^\]"'']+?)(?=\s*\])', '"$1"')
+  if ($normalized -ne $content) {
+    Set-Content -Path $catPath -Value $normalized -NoNewline
+    Write-Host "normalized unquoted urn scheme in channel-access-token.yml" -ForegroundColor Yellow
   }
 }
 
