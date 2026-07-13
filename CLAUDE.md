@@ -28,7 +28,8 @@ LINE 公開 OpenAPI 仕様（https://github.com/line/line-openapi）から、**K
 - **form-urlencoded:** `channel-access-token.yml` のトークン発行は `application/x-www-form-urlencoded`。生成時 `--structured-mime-types` に form-urlencoded を含める。
   - **⚠️ oneOf 合成ボディは form で送れない（G4④で判明）:** `/oauth2/v3/token`（ステートレストークン）の form ボディは discriminator 無し oneOf で、生成コードでは合成ラッパ `TokenRequestBuilder.TokenPostRequestBody`（`IComposedTypeWrapper`）になる。このラッパは内側要求を**入れ子オブジェクト**として直列化するため、そのまま `PostAsync` すると Kiota の Form シリアライザが `"Form serialization does not support nested objects."` で失敗する。→ 手書きヘルパ `Line.ChannelAccessToken/StatelessJwtAssertionTokenSource.cs` が合成ラッパを使わず、平坦な要求モデル（`IssueStatelessChannelTokenByJWTAssertionRequest`）を自前で `RequestInformation` に載せて送る。生成物の protected な `RequestAdapter`/`PathParameters` へは同一クラスの partial（`ChannelAccessTokenClientInternals.cs`、Generated 外・internal 公開）でアクセス。`StatelessJwtAssertionTokenSourceHttpTests` で回帰防止（平坦 form 展開を実証）。v2.1 の非ステートレス発行は合成ボディでないため `JwtAssertionTokenSource` が生成ビルダーをそのまま利用。
 - **命名周知 `Action`→`ActionObject`（R2）:** Kiota は `System.Action` 衝突回避で messaging の多態基底型を `ActionObject` に改名する（派生 `MessageAction`/`PostbackAction`/`URIAction` 等は素直）。生成物のためリネーム不可。利用側は基底を `ActionObject`、具体アクションは各派生型で構築する。公開ドキュメントで周知する事項であり公開 API の手書き変更は伴わない。
-- **webhook:** モデル専用。ただし `/callback` を除外するとモデルが生成されないため**除外しない**（生成される callback メソッドは使わない）。多態は discriminator+mapping 完備（`Message`/`Action`/`Template`/`Flex` 含む 20 型）。
+- **webhook:** モデル＋受信グルー。生成は**モデル専用**（`/callback` を除外するとモデルが生成されないため除外しない。生成される callback メソッドは使わない）。多態は discriminator+mapping 完備（`Message`/`Action`/`Template`/`Flex` 含む 20 型）。
+  - **受信ヘルパ `WebhookRequestParser`（`Line.Messaging.Webhook`）:** 署名検証（Core の `WebhookSignatureValidator`）＋本文の `CallbackRequest` 逆直列化を `ParseAsync(body, signature)` に束ねる（署名 NG=`WebhookSignatureException` / 本文 NG=`WebhookPayloadException`、基底 `WebhookException`）。**⚠️ 逆直列化は JSON 自己完結の `KiotaJsonSerializer.DeserializeAsync` を使い、グローバル既定レジストリ（`ApiClientBuilder.RegisterDefaultDeserializer`）に依存しない**（他クライアント未構築でも単独動作・副作用なし）。Kiota 2.0 は同期逆直列化 API を廃止したため `ParseAsync` は非同期のみ。イベント多態復元は生成 discriminator に委譲（ヘルパは `CallbackRequest` を返すのみ、分岐は利用側）。DI は `AddLineWebhook`（HTTP 非依存＝`IHttpClientFactory` 不要）。回帰は `WebhookRequestParserTests`/`WebhookDiIntegrationTests`。
 - **blob mime:** `*/*` の生バイナリ（Stream）。multipart ではない。
 - **署名検証の定数時間比較:** `net10.0` 単一化により `CryptographicOperations.FixedTimeEquals` を直接使用（`Line.Core/Webhook/WebhookSignatureValidator.cs`）。旧 `#if NETSTANDARD2_0` の手実装分岐は netstandard2.0 対象外化に伴い削除済み。
 
@@ -54,12 +55,12 @@ LINE 公開 OpenAPI 仕様（https://github.com/line/line-openapi）から、**K
 
 ## 次にやること
 
-G4（①〜⑤）は全て main 反映済み。優先利用シーン ①メッセージ送受信 / ②LIFF 管理 の手書き表面が揃った。以降の候補（未着手・優先度は要相談）:
+G4（①〜⑤）は全て main 反映済み。優先利用シーン ①メッセージ送受信（送信＝Messaging / 受信＝Webhook 受信ヘルパ）/ ②LIFF 管理 の手書き表面が揃った。以降の候補（未着手・優先度は要相談）:
 
-- **リリース準備（G5 想定）:** NuGet パッケージング未設定（`PackageId`/`Authors`/`Description`/`Packagelicense`/`README`/`Version` 等のメタデータ、`poc/` → 製品レイアウト昇格、CI/公開フロー）。
-- **Webhook 受信の利用シーン:** 現状 Webhook はモデル専用＋署名検証（`Line.Core`）のみ。受信ペイロードの逆直列化＋署名検証を束ねる利用側ヘルパは未提供（要否は設計判断）。
+- **リリース準備（G5 想定）:** NuGet パッケージング未設定（`PackageId`/`Authors`/`Description`/`PackageLicense`/`README`/`Version` 等のメタデータ、`poc/` → 製品レイアウト昇格、CI/公開フロー）。
 - **`Line.Bot`（任意メタパッケージ）:** 未作成。
 - **将来パッケージ:** insight / manage-audience / module / shop（仕様未取得）。
+- （消化済）Webhook 受信の利用シーンヘルパ = `WebhookRequestParser` を追加（`feat-webhook-receive`。ゲート・go/no-go は当該セッション参照）。
 
 ## 再生成・ビルド・テスト
 
