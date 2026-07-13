@@ -6,8 +6,8 @@ using Xunit;
 
 namespace Line.Poc.Tests;
 
-// 更新型トークンプロバイダ（短期/JWT）のキャッシュ・期限・並行更新二重発行防止の検証。
-// HTTP を伴わないフェイク IChannelAccessTokenSource に差し替えて純粋なロジックを確認する。
+// Verifies the refreshing token provider (short-lived/JWT) for caching, expiry, and prevention of duplicate issuance under concurrent refresh.
+// Substitutes a fake IChannelAccessTokenSource with no HTTP to check the pure logic.
 public class RefreshingTokenProviderTests
 {
     private sealed class MutableClock
@@ -17,7 +17,7 @@ public class RefreshingTokenProviderTests
         public void Advance(TimeSpan by) => _now += by;
     }
 
-    // 発行回数を数え、任意で発行完了を外部から制御できるソース。
+    // A source that counts issuances and can optionally have issuance completion controlled externally.
     private sealed class CountingSource : IChannelAccessTokenSource
     {
         private readonly TimeSpan _lifetime;
@@ -36,7 +36,7 @@ public class RefreshingTokenProviderTests
         {
             var n = Interlocked.Increment(ref _count);
             if (_gate is not null)
-                await _gate.Task.ConfigureAwait(false); // 発行完了を外部トリガまで待たせる
+                await _gate.Task.ConfigureAwait(false); // make issuance wait until an external trigger
             return new IssuedToken($"token-{n}", _lifetime);
         }
     }
@@ -56,7 +56,7 @@ public class RefreshingTokenProviderTests
 
         Assert.Equal("token-1", t1);
         Assert.Equal("token-1", t2);
-        Assert.Equal(1, source.IssueCount); // 2 回目はキャッシュヒット
+        Assert.Equal(1, source.IssueCount); // the second call is a cache hit
     }
 
     [Fact]
@@ -68,8 +68,8 @@ public class RefreshingTokenProviderTests
             source, refreshMargin: TimeSpan.FromMinutes(5), clock: () => clock.Now);
 
         var t1 = await provider.GetAuthorizationTokenAsync(ApiUri); // token-1, refreshAt = +25m
-        clock.Advance(TimeSpan.FromMinutes(26));                    // マージン込みで期限超過
-        var t2 = await provider.GetAuthorizationTokenAsync(ApiUri); // 再発行 token-2
+        clock.Advance(TimeSpan.FromMinutes(26));                    // exceed expiry including the margin
+        var t2 = await provider.GetAuthorizationTokenAsync(ApiUri); // re-issue token-2
 
         Assert.Equal("token-1", t1);
         Assert.Equal("token-2", t2);
@@ -85,16 +85,16 @@ public class RefreshingTokenProviderTests
         var provider = new RefreshingChannelAccessTokenProvider(
             source, refreshMargin: TimeSpan.FromMinutes(5), clock: () => clock.Now);
 
-        // 発行を保留したまま多数の並行要求を起動 → 全員がゲートで待つ。
+        // Launch many concurrent requests while issuance is held -> everyone waits at the gate.
         var tasks = new Task<string>[32];
         for (var i = 0; i < tasks.Length; i++)
             tasks[i] = provider.GetAuthorizationTokenAsync(ApiUri);
 
-        gate.SetResult(true);            // 発行を完了させる
+        gate.SetResult(true);            // complete the issuance
         var results = await Task.WhenAll(tasks);
 
         Assert.All(results, r => Assert.Equal("token-1", r));
-        Assert.Equal(1, source.IssueCount); // 二重発行していない
+        Assert.Equal(1, source.IssueCount); // no duplicate issuance
     }
 
     [Fact]
@@ -106,6 +106,6 @@ public class RefreshingTokenProviderTests
         var token = await provider.GetAuthorizationTokenAsync(new Uri("https://evil.example.com/"));
 
         Assert.Equal(string.Empty, token);
-        Assert.Equal(0, source.IssueCount); // 許可外にはトークン発行すらしない
+        Assert.Equal(0, source.IssueCount); // for non-allowed hosts, no token is even issued
     }
 }

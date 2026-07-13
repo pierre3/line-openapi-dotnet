@@ -14,10 +14,10 @@ using Xunit;
 
 namespace Line.Poc.Tests;
 
-// JwtAssertionTokenSource.IssueAsync の応答検証。実 HTTP は叩かず、SendAsync だけを
-// 差し替えたフェイク IRequestAdapter で任意の発行レスポンスを注入する。
-// リクエスト組み立て（form 直列化）に必要な SerializationWriterFactory / BaseUrl は
-// 実 HttpClientRequestAdapter に委譲する。
+// Response validation for JwtAssertionTokenSource.IssueAsync. Makes no real HTTP calls; injects arbitrary
+// issue responses via a fake IRequestAdapter that replaces only SendAsync.
+// The SerializationWriterFactory / BaseUrl needed for request assembly (form serialization) are
+// delegated to the real HttpClientRequestAdapter.
 public class JwtAssertionTokenSourceTests
 {
     private static JwtAssertionTokenSource CreateSource(IssueChannelAccessTokenResponse response)
@@ -37,11 +37,11 @@ public class JwtAssertionTokenSourceTests
             ExpiresIn = expiresIn,
         });
 
-        // 応答不正はすべて InvalidOperationException に揃える（IssuedToken の
-        // ArgumentOutOfRangeException が漏れ出さないこと）。
+        // All invalid responses are normalized to InvalidOperationException (so IssuedToken's
+        // ArgumentOutOfRangeException does not leak out).
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => source.IssueAsync());
-        // 主目的は例外型（InvalidOperationException）の主張。文言 assertion は null 分岐との
-        // 取り違え防止のための補助であり、メッセージ変更時は追随してよい。
+        // The primary goal is asserting the exception type (InvalidOperationException). The message assertion is an aid
+        // to prevent confusion with the null branch, and may be updated when the message changes.
         Assert.Contains("non-positive expires_in", ex.Message);
     }
 
@@ -56,8 +56,8 @@ public class JwtAssertionTokenSourceTests
             ExpiresIn = 3600,
         });
 
-        // null も空文字も応答検証段階で InvalidOperationException に揃える
-        // （IssuedToken の ArgumentException が漏れ出さないこと）。
+        // Both null and empty string are normalized to InvalidOperationException at the response-validation stage
+        // (so IssuedToken's ArgumentException does not leak out).
         await Assert.ThrowsAsync<InvalidOperationException>(() => source.IssueAsync());
     }
 
@@ -66,8 +66,8 @@ public class JwtAssertionTokenSourceTests
     [InlineData("")]
     public async Task IssueAsync_Empty_Assertion_Throws_Before_Issuing(string? assertion)
     {
-        // assertionFactory が空文字/null を返したら、HTTP を叩く前に InvalidOperationException で
-        // 弾く（外部送信前に安全側で止める）。応答内容は関与しないため任意の正常応答でよい。
+        // If assertionFactory returns empty/null, it is rejected with InvalidOperationException before making any HTTP call
+        // (stopping on the safe side before external transmission). The response content is irrelevant, so any valid response works.
         var client = new ChannelAccessTokenClient(new StubResponseAdapter(
             new IssueChannelAccessTokenResponse { AccessToken = "token-value", ExpiresIn = 3600 }));
         var source = new JwtAssertionTokenSource(client, _ => Task.FromResult(assertion!));
@@ -91,7 +91,7 @@ public class JwtAssertionTokenSourceTests
         Assert.Equal(TimeSpan.FromSeconds(3600), issued.Lifetime);
     }
 
-    // SendAsync<T> のみ固定レスポンスを返し、それ以外は実アダプタへ委譲するフェイク。
+    // A fake that returns a fixed response for SendAsync<T> only and delegates everything else to the real adapter.
     private sealed class StubResponseAdapter : IRequestAdapter
     {
         private readonly IRequestAdapter _inner =

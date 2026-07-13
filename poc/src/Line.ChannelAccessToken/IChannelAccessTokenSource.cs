@@ -5,8 +5,8 @@ using System.Threading.Tasks;
 namespace Line.ChannelAccessToken;
 
 /// <summary>
-/// 発行済みトークンとその寿命。<see cref="RefreshingChannelAccessTokenProvider"/> が
-/// キャッシュ期限を計算するために使う。
+/// An issued token together with its lifetime. Used by
+/// <see cref="RefreshingChannelAccessTokenProvider"/> to compute the cache expiry.
 /// </summary>
 public readonly struct IssuedToken
 {
@@ -20,21 +20,22 @@ public readonly struct IssuedToken
         Lifetime = lifetime;
     }
 
-    /// <summary>発行されたチャネルアクセストークン。</summary>
+    /// <summary>The issued channel access token.</summary>
     public string AccessToken { get; }
 
-    /// <summary>トークンの有効期間（発行時点からの相対）。</summary>
+    /// <summary>The token's validity period (relative to the moment of issuance).</summary>
     public TimeSpan Lifetime { get; }
 }
 
 /// <summary>
-/// チャネルアクセストークンの発行操作を抽象化するシーム。
-/// 実運用では <see cref="JwtAssertionTokenSource"/>（短期トークン <c>/oauth2/v2.1/token</c>）または
-/// <see cref="StatelessJwtAssertionTokenSource"/>（ステートレストークン <c>/oauth2/v3/token</c>）を使い、
-/// テストでは HTTP を伴わないフェイク実装に差し替えられる。
+/// Seam that abstracts the channel-access-token issuance operation.
+/// In production use <see cref="JwtAssertionTokenSource"/> (short-lived tokens,
+/// <c>/oauth2/v2.1/token</c>) or <see cref="StatelessJwtAssertionTokenSource"/>
+/// (stateless tokens, <c>/oauth2/v3/token</c>); in tests it can be replaced with a fake
+/// implementation that performs no HTTP.
 /// </summary>
 public interface IChannelAccessTokenSource
 {
-    /// <summary>トークンを 1 件発行する。</summary>
+    /// <summary>Issues a single token.</summary>
     Task<IssuedToken> IssueAsync(CancellationToken cancellationToken = default);
 }

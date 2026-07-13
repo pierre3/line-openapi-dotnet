@@ -5,9 +5,10 @@ using System.Text;
 namespace Line.Core.Webhook;
 
 /// <summary>
-/// LINE Webhook の署名検証（x-line-signature）。仕様(OpenAPI)には含まれないため手書き実装。
-/// チャネルシークレットを鍵に、リクエストボディ(生バイト)の HMAC-SHA256 を Base64 化し、
-/// ヘッダ値と定数時間比較する。
+/// LINE Webhook signature validation (x-line-signature). This is not part of the OpenAPI
+/// spec, so it is implemented by hand. Using the channel secret as the key, it computes the
+/// HMAC-SHA256 of the request body (raw bytes), Base64-encodes it, and compares it against
+/// the header value in constant time.
 /// </summary>
 public static class WebhookSignatureValidator
 {
@@ -23,7 +24,8 @@ public static class WebhookSignatureValidator
         try { provided = Convert.FromBase64String(xLineSignatureHeader); }
         catch (FormatException) { return false; }
 
-        // 定数時間比較（タイミング攻撃対策）。net10.0 単一ターゲットのため標準 API を直接使用。
+        // Constant-time comparison (timing-attack mitigation). Single net10.0 target, so we
+        // use the standard API directly.
         return CryptographicOperations.FixedTimeEquals(computed, provided);
     }
 }

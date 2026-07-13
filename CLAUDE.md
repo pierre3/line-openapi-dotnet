@@ -61,6 +61,7 @@ G4（①〜⑤）は全て main 反映済み。優先利用シーン ①メッ�
 - **`Line.Bot`（任意メタパッケージ）:** 未作成。
 - **将来パッケージ:** insight / manage-audience / module / shop（仕様未取得）。
 - （消化済）Webhook 受信の利用シーンヘルパ = `WebhookRequestParser` を追加（`feat-webhook-receive`。ゲート・go/no-go は当該セッション参照）。
+- （消化済）ユーザーマニュアル = DocFX で英語 API リファレンス＋概念記事 英/日 2 系統を `docs/manual/` に構築（`docs-manual-bilingual`）。あわせて**手書きコードの全コメントを英語化**（設計 §13）。公開ホスティング/CI 発行は G5 へ持ち越し。
 
 ## 再生成・ビルド・テスト
 
@@ -71,6 +72,9 @@ pwsh poc/scripts/generate.ps1
 dotnet build
 # テスト（webhook 多態含め既定で全実行。opt-in フラグ不要）
 dotnet test
+# ドキュメント生成（DocFX。ローカルツール＝.config/dotnet-tools.json にピン留め）
+dotnet tool restore                        # 初回のみ
+dotnet docfx docs/manual/docfx.json        # metadata + build → docs/manual/_site/（--serve でプレビュー）
 ```
 
 - Kiota CLI は `dotnet tool install --global Microsoft.OpenApi.Kiota` で導入。`generate.ps1` が版ピンを照合し、`channel-access-token.yml` の未引用 `urn:...` を**冪等に引用符化**する（master 再取得時も安全）。
@@ -82,3 +86,5 @@ dotnet test
 - 全パッケージは `Line.Core` + Kiota ランタイム版にロックステップで追従（`Directory.Build.props` の `KiotaBundleVersion`、現状 **2.0.0**）。CLI（`Microsoft.OpenApi.Kiota`）は **1.34.1** 据え置き（2.x CLI 未リリース）。Kiota は CLI とランタイムを別系統でバージョニングするため、ランタイムのみ 2.0.0（詳細は `docs/R3-kiota-version-policy.md`）。
 - **セキュリティ最低版:** `Microsoft.Kiota.Abstractions >= 1.22.0`（CVE-2026-44503 / GHSA-7j59-v9qr-6fq9 = RedirectHandler のクロスホスト時の機密ヘッダ漏洩, CVSS 7.0 High の修正版）。1.16.0 は影響を受けるため使用不可。現行 2.0.0 は修正を継承。RedirectHandler の実体は `Microsoft.Kiota.Http.HttpClientLibrary` にあるが、`Microsoft.Kiota.Bundle` が全サブパッケージを同版にロックステップ固定するため下限は Abstractions の名指しで足りる（Bundle を経由しない直接参照を足す場合のみ Http 側下限も明示）。net10.0 SDK の NuGet 監査（推移的依存含む）で検知される。
 - 破壊的変更は公開 API 表面の差分で検知。生成物内部の差分はレビュー対象外。
+- **コメントは全て英語**（XML doc `///` ＋インライン `//`、手書きコードのみ。生成物は対象外）。API リファレンスを英語で単一提供するため。設計 §13.2 準拠。プロジェクト文書（`docs/**`・本ファイル・レビュー記録）は日本語のまま。
+- **ドキュメント:** DocFX で英語 API リファレンス自動生成＋概念記事は英語/日本語 2 系統（`docs/manual/`）。設計 §13 準拠。

@@ -9,15 +9,15 @@ using Xunit;
 
 namespace Line.Poc.Tests;
 
-// channel-access-token のトークン発行が application/x-www-form-urlencoded で
-// 正しくシリアライズされるかの検証（§2-B）。実 HTTP は叩かず、生成ビルダーが組み立てる
-// RequestInformation の Content-Type と本体キーを確認する。
+// Verifies that channel-access-token token issuance is serialized correctly as
+// application/x-www-form-urlencoded (section 2-B). Makes no real HTTP calls; checks the Content-Type and
+// body keys of the RequestInformation assembled by the generated builder.
 public class FormUrlEncodedTests
 {
     private static ChannelAccessTokenClient CreateClient()
     {
-        // 認証不要のエンドポイントなので Anonymous でよい。
-        // コンストラクタが Form シリアライザを既定レジストリへ登録する（これが本テストの前提）。
+        // The endpoint requires no authentication, so Anonymous is fine.
+        // The constructor registers the Form serializer into the default registry (a precondition of this test).
         var adapter = new HttpClientRequestAdapter(new AnonymousAuthenticationProvider());
         return new ChannelAccessTokenClient(adapter);
     }
@@ -55,11 +55,11 @@ public class FormUrlEncodedTests
         using var reader = new StreamReader(req.Content);
         var payload = await reader.ReadToEndAsync();
 
-        // form-urlencoded: key=value を & 連結、値は URL エンコード。
+        // form-urlencoded: key=value joined by &, values URL-encoded.
         Assert.Contains("grant_type=client_credentials", payload);
-        Assert.Contains("client_assertion_type=urn%3Aietf", payload); // ':' はエンコードされる
+        Assert.Contains("client_assertion_type=urn%3Aietf", payload); // ':' is encoded
         Assert.Contains("client_assertion=SIGNED.JWT.VALUE", payload);
         Assert.Contains("&", payload);
-        Assert.DoesNotContain("{", payload); // JSON になっていないこと
+        Assert.DoesNotContain("{", payload); // confirm it is not JSON
     }
 }

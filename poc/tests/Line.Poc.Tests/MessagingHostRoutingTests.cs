@@ -4,12 +4,12 @@ using Xunit;
 
 namespace Line.Poc.Tests;
 
-// R1（複数 base URL）の実挙動検証。ファサード MessagingClient が
-//  - 制御系(送信)を api.line.me
-//  - データ系(コンテンツ取得)を api-data.line.me
-// へ実際にルーティングするかを、生成ビルダーが組み立てる RequestInformation.URI で確認する。
-// 実 HTTP は不要。生成クライアントは構築時に baseurl を PathParameters へ確定するため、
-// このテストは「BaseUrl 上書きが構築前に行われているか」を実効的に検証する。
+// Verification of the actual behavior of R1 (multiple base URLs). Confirms whether the MessagingClient facade
+//  - routes the control plane (send) to api.line.me
+//  - routes the data plane (content retrieval) to api-data.line.me
+// using the RequestInformation.URI assembled by the generated builder.
+// No real HTTP needed. Because the generated client fixes baseurl into PathParameters at construction time,
+// this test effectively verifies that "the BaseUrl override happens before construction".
 public class MessagingHostRoutingTests
 {
     [Fact]

@@ -4,6 +4,8 @@ LINE 公開 OpenAPI 仕様から **Kiota** で生成した .NET/C# クライア�
 
 > ローカル（Windows/.NET）での実行を想定しています。設計方針は `../docs/LINE-dotnet-client-design.md`、開発文脈は `../CLAUDE.md` を参照。
 
+> 📚 **ユーザーマニュアル（DocFX）:** 概念記事（英語・日本語）＋英語 API リファレンスを `../docs/manual/` に用意しています。ビルドは `dotnet docfx ../docs/manual/docfx.json --serve`（下記「ドキュメント生成」参照）。設計方針は `../docs/LINE-dotnet-client-design.md` §13。
+
 ## パッケージ
 
 | パッケージ | 役割 |
@@ -149,6 +151,22 @@ dotnet test                   # webhook 多態含め既定で全実行（opt-in 
 ```
 
 生成コードは `src/**/Generated/`（`kiota-lock.json` はコミット対象）。`Microsoft.Kiota.Bundle` の版は `Directory.Build.props` の `KiotaBundleVersion` で一元管理（現状 2.0.0）。
+
+---
+
+## ドキュメント生成（DocFX）
+
+ユーザーマニュアル（`../docs/manual/`）は [DocFX](https://dotnet.github.io/docfx/) で生成します。DocFX はローカルツール（`.config/dotnet-tools.json`、現状 2.78.5）としてピン留め済み。リポジトリルートで:
+
+```powershell
+dotnet tool restore                              # 初回のみ（DocFX を復元）
+dotnet docfx docs/manual/docfx.json              # metadata 抽出 + サイトビルド → docs/manual/_site/
+dotnet docfx docs/manual/docfx.json --serve      # ローカルプレビュー（http://localhost:8080）
+```
+
+- **API リファレンスは英語のみ**（手書き公開表面の XML doc コメントから自動生成。`filterConfig.yml` で `Line.*.Generated` を除外）。
+- **概念記事は英語（`en/`）・日本語（`ja/`）の 2 系統**。
+- 生成物（`docs/manual/api/`・`docs/manual/_site/`）は Git 追跡外。設定・記事のみ追跡。詳細は設計 §13。
 
 ---
 

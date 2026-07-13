@@ -10,11 +10,11 @@ using Xunit;
 
 namespace Line.Poc.Tests;
 
-// Webhook の DI 統合検証。AddLineWebhook で登録した WebhookRequestParser が
-//  - 解決できること
-//  - 設定したチャネルシークレットで実際に署名検証・逆直列化できること
-//  - 冪等（複数回登録で重複しない）／未設定シークレットで検証失敗すること
-// を確認する。HTTP は伴わない。
+// DI integration verification for Webhook. Confirms that the WebhookRequestParser registered via AddLineWebhook:
+//  - can be resolved
+//  - can actually validate the signature and deserialize with the configured channel secret
+//  - is idempotent (no duplication when registered multiple times) / fails validation when the secret is not set
+// No HTTP involved.
 public class WebhookDiIntegrationTests
 {
     private const string ChannelSecret = "di-channel-secret";
@@ -46,16 +46,16 @@ public class WebhookDiIntegrationTests
     {
         var services = new ServiceCollection();
         services.AddLineWebhook(o => o.ChannelSecret = "S1");
-        services.AddLineWebhook(o => o.ChannelSecret = "S2"); // パーサ登録は重複しない
+        services.AddLineWebhook(o => o.ChannelSecret = "S2"); // parser registration is not duplicated
 
-        // パーサのサービス登録は初回優先で重複しない。
+        // The parser's service registration is first-wins and not duplicated.
         Assert.Equal(1, services.Count(d => d.ServiceType == typeof(WebhookRequestParser)));
 
         using var sp = services.BuildServiceProvider();
         var parser = sp.GetRequiredService<WebhookRequestParser>();
 
-        // Options は Configure 累積で last-wins。実効シークレットは S2 になる:
-        //  S2 署名は成功し、S1 署名は失敗する。
+        // Options accumulate via Configure and are last-wins. The effective secret becomes S2:
+        //  the S2 signature succeeds and the S1 signature fails.
         var body = Encoding.UTF8.GetBytes(Payload);
         var callback = await parser.ParseAsync(body, Sign("S2", body));
         Assert.Equal("U0", callback.Destination);
@@ -66,7 +66,7 @@ public class WebhookDiIntegrationTests
     public void AddLineWebhook_Missing_Secret_Fails_Validation()
     {
         var services = new ServiceCollection();
-        services.AddLineWebhook(o => { /* ChannelSecret 未設定 */ });
+        services.AddLineWebhook(o => { /* ChannelSecret not set */ });
         using var sp = services.BuildServiceProvider();
 
         Assert.ThrowsAny<Exception>(() => sp.GetRequiredService<WebhookRequestParser>());

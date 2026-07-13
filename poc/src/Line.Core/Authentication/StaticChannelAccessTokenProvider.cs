@@ -7,9 +7,10 @@ using Microsoft.Kiota.Abstractions.Authentication;
 namespace Line.Core.Authentication;
 
 /// <summary>
-/// 長期チャネルアクセストークンを保持して返す最小プロバイダ（PoC 用）。
-/// 短期トークン（v2.1 / JWT）の実行時取得・更新は Line.ChannelAccessToken 側の
-/// 「更新型プロバイダ」で実装し、Core への逆依存を作らない（設計 §7）。
+/// Minimal provider that holds and returns a long-lived channel access token.
+/// Runtime issuance/refresh of short-lived tokens (v2.1 / JWT) is implemented by the
+/// "refreshing provider" in Line.ChannelAccessToken, so that Core takes no reverse
+/// dependency on it (design section 7).
 /// </summary>
 public sealed class StaticChannelAccessTokenProvider : IAccessTokenProvider
 {
@@ -31,7 +32,7 @@ public sealed class StaticChannelAccessTokenProvider : IAccessTokenProvider
         Dictionary<string, object>? additionalAuthenticationContext = null,
         CancellationToken cancellationToken = default)
     {
-        // 許可ホスト外にはトークンを付与しない（負側テスト対象）。
+        // Do not attach the token to hosts outside the allow list (covered by a negative test).
         if (!AllowedHostsValidator.IsUrlHostValid(uri))
             return Task.FromResult(string.Empty);
         return Task.FromResult(_token);

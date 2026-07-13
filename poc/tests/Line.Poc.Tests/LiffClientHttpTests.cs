@@ -14,12 +14,12 @@ using Xunit;
 
 namespace Line.Poc.Tests;
 
-// LiffClient の便利メソッドをトランスポート層まで含めて検証する。
-// HttpMessageHandler をモックし、実 HttpClientRequestAdapter 経由で
-//   ・メソッド/URL 組み立て（GET/POST /liff/v1/apps, PUT/DELETE /liff/v1/apps/{liffId}）
-//   ・JSON ボディ直列化 / レスポンス逆直列化
-//   ・空ボディ応答（PUT/DELETE）の破棄
-// が正しく通ることを確認する。実ネットワークには出ない。
+// Verifies LiffClient's convenience methods down to the transport layer.
+// Mocks HttpMessageHandler and confirms, via the real HttpClientRequestAdapter, that:
+//   - method/URL assembly (GET/POST /liff/v1/apps, PUT/DELETE /liff/v1/apps/{liffId})
+//   - JSON body serialization / response deserialization
+//   - discarding of empty-body responses (PUT/DELETE)
+// all work correctly. Does not go out to the real network.
 public class LiffClientHttpTests
 {
     private static LiffClient NewClient(RecordingHandler handler)
@@ -132,8 +132,8 @@ public class LiffClientHttpTests
             () => client.DeleteAppAsync("liff-123", cts.Token));
     }
 
-    // CreateWithStaticToken と同じ実配線（StaticChannelAccessTokenProvider に LineHosts.Api を渡す）で
-    // LiffClient を組み、モックハンドラを差し込む。認証層の end-to-end 検証用。
+    // Builds LiffClient with the same wiring as CreateWithStaticToken (passing LineHosts.Api to StaticChannelAccessTokenProvider)
+    // and injects the mock handler. For end-to-end verification of the authentication layer.
     private static LiffClient NewAuthedClient(RecordingHandler handler, params string[] allowedHosts)
     {
         var provider = new StaticChannelAccessTokenProvider(
@@ -153,7 +153,7 @@ public class LiffClientHttpTests
 
         await client.GetAppsAsync();
 
-        // 許可ホスト(api.line.me)には Authorization: Bearer が付与される。
+        // Authorization: Bearer is attached for the allowed host (api.line.me).
         Assert.Equal("Bearer", handler.Request!.Headers.Authorization!.Scheme);
         Assert.Equal("STATIC-TOKEN", handler.Request.Headers.Authorization.Parameter);
     }
@@ -165,7 +165,7 @@ public class LiffClientHttpTests
         {
             Content = new StringContent("{\"apps\":[]}", Encoding.UTF8, "application/json"),
         });
-        // 既定どおり api.line.me のみ許可。data 系ホストへ逸れた場合はトークンを付与しない。
+        // By default only api.line.me is allowed. If it strays to a data-plane host, no token is attached.
         var client = NewAuthedClient(handler);
 
         await client.Api.Liff.V1.Apps
@@ -173,7 +173,7 @@ public class LiffClientHttpTests
             .GetAsync();
 
         Assert.Equal("api-data.line.me", handler.Request!.RequestUri!.Host);
-        Assert.Null(handler.Request.Headers.Authorization); // 許可外ホストへはトークンを送らない
+        Assert.Null(handler.Request.Headers.Authorization); // Do not send the token to a non-allowed host
     }
 
     private sealed class RecordingHandler : HttpMessageHandler

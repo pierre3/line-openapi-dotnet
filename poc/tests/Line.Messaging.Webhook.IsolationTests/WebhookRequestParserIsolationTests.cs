@@ -8,17 +8,17 @@ using Xunit;
 
 namespace Line.Messaging.Webhook.IsolationTests;
 
-// レジストリ汚染の無いクリーンなプロセスで WebhookRequestParser が単独動作することの回帰テスト。
-// このアセンブリは Line.Messaging.Webhook のみ参照し、生成クライアント構築や
-// ApiClientBuilder.RegisterDefaultDeserializer を行うコードを一切含まない。
-// → Kiota 既定シリアライザレジストリ（ParseNodeFactoryRegistry.DefaultInstance）は空のまま。
-//   その状態で正当な Webhook が正しく復元できることを保証する（自己完結性の実証）。
+// Regression test that WebhookRequestParser works standalone in a clean process free of registry pollution.
+// This assembly references only Line.Messaging.Webhook and contains no code at all that constructs a generated
+// client or calls ApiClientBuilder.RegisterDefaultDeserializer.
+// -> The Kiota default serializer registry (ParseNodeFactoryRegistry.DefaultInstance) stays empty.
+//   It guarantees that a valid Webhook is correctly reconstructed in that state (proof of self-containment).
 public class WebhookRequestParserIsolationTests
 {
     private const string ChannelSecret = "isolation-secret";
 
-    // message / follow / postback / 未知 の混在。パーサ実パス（JsonParseNodeFactory 直使用）を
-    // 通しても多態復元が正しく機能することを、クリーンなレジストリ下で確認する。
+    // A mix of message / follow / postback / unknown. Confirms, under a clean registry, that polymorphic
+    // reconstruction works correctly even when run through the parser's real path (direct use of JsonParseNodeFactory).
     private const string Payload = @"{
       ""destination"": ""U0123456789abcdef"",
       ""events"": [
@@ -69,10 +69,10 @@ public class WebhookRequestParserIsolationTests
 
         Assert.Equal("U0123456789abcdef", callback.Destination);
         Assert.Equal(4, callback.Events!.Count);
-        // 多態復元もレジストリ非依存の実パスで機能する。
+        // Polymorphic reconstruction also works via the registry-independent real path.
         Assert.IsType<MessageEvent>(callback.Events[0]);
         Assert.IsType<FollowEvent>(callback.Events[1]);
         Assert.IsType<PostbackEvent>(callback.Events[2]);
-        Assert.Equal(typeof(Event), callback.Events[3].GetType()); // 未知 type は基底へフォールバック
+        Assert.Equal(typeof(Event), callback.Events[3].GetType()); // Unknown type falls back to the base type
     }
 }

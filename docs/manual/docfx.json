@@ -1,0 +1,44 @@
+{
+  "$schema": "https://raw.githubusercontent.com/dotnet/docfx/main/schemas/docfx.schema.json",
+  "metadata": [
+    {
+      "src": [
+        {
+          "src": "../..",
+          "files": [
+            "poc/src/Line.Core/Line.Core.csproj",
+            "poc/src/Line.ChannelAccessToken/Line.ChannelAccessToken.csproj",
+            "poc/src/Line.Messaging/Line.Messaging.csproj",
+            "poc/src/Line.Messaging.Webhook/Line.Messaging.Webhook.csproj",
+            "poc/src/Line.Liff/Line.Liff.csproj"
+          ]
+        }
+      ],
+      "dest": "api",
+      "filter": "filterConfig.yml",
+      "disableGitFeatures": false,
+      "properties": {
+        "TargetFramework": "net10.0"
+      }
+    }
+  ],
+  "build": {
+    "content": [
+      { "files": [ "api/**.yml", "api/index.md" ] },
+      { "files": [ "en/**.md", "en/**/toc.yml" ] },
+      { "files": [ "ja/**.md", "ja/**/toc.yml" ] },
+      { "files": [ "toc.yml", "index.md" ] }
+    ],
+    "resource": [
+      { "files": [ "images/**" ] }
+    ],
+    "output": "_site",
+    "template": [ "default", "modern" ],
+    "globalMetadata": {
+      "_appName": "LINE .NET Client",
+      "_appTitle": "LINE .NET Client Library",
+      "_enableSearch": true,
+      "_disableContribution": true
+    }
+  }
+}

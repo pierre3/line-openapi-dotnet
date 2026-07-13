@@ -6,16 +6,17 @@ using Microsoft.Extensions.Options;
 namespace Line.Messaging.Webhook.DependencyInjection;
 
 /// <summary>
-/// <see cref="WebhookRequestParser"/> を DI コンテナへ登録する拡張。
+/// Extensions that register <see cref="WebhookRequestParser"/> with the DI container.
 ///
-/// Webhook 受信は HTTP 送信を伴わない（署名検証＋逆直列化のみ）ため、Messaging/Liff と異なり
-/// <c>IHttpClientFactory</c> は不要。チャネルシークレットを <see cref="LineWebhookOptions"/> から
-/// 受け、シングルトンの <see cref="WebhookRequestParser"/> を登録する。
+/// Webhook receiving involves no HTTP sending (only signature validation + deserialization),
+/// so unlike Messaging/Liff, <c>IHttpClientFactory</c> is not needed. It takes the channel
+/// secret from <see cref="LineWebhookOptions"/> and registers a singleton
+/// <see cref="WebhookRequestParser"/>.
 /// </summary>
 public static class ServiceCollectionExtensions
 {
     /// <summary>
-    /// チャネルシークレットで <see cref="WebhookRequestParser"/> を登録する。
+    /// Registers <see cref="WebhookRequestParser"/> with the channel secret.
     /// </summary>
     public static IServiceCollection AddLineWebhook(
         this IServiceCollection services,
@@ -28,11 +29,12 @@ public static class ServiceCollectionExtensions
             .Configure(configure)
             .Validate(o => !string.IsNullOrWhiteSpace(o.ChannelSecret),
                 "LineWebhookOptions.ChannelSecret is required.")
-            .ValidateOnStart(); // 設定漏れ（無効な鍵での受信素通し）を起動時に落とす。
+            .ValidateOnStart(); // Fail at startup on a missing setting (receiving with an invalid key would otherwise pass through).
 
-        // パーサのサービス登録は初回優先（TryAddSingleton）。ただし Options 値は Configure が累積
-        // 適用されるため、複数回呼び出し時の実効 ChannelSecret は「最後の設定」が採用される（last-wins）。
-        // 二重登録は想定外構成であり、意味論は AddLineWebhook_Is_Idempotent で固定している。
+        // Registration of the parser service is first-wins (TryAddSingleton). However, Options
+        // values are applied cumulatively by Configure, so on multiple calls the effective
+        // ChannelSecret is "the last setting" (last-wins). Double registration is an unexpected
+        // configuration; its semantics are pinned by AddLineWebhook_Is_Idempotent.
         services.TryAddSingleton(sp =>
         {
             var opts = sp.GetRequiredService<IOptions<LineWebhookOptions>>().Value;

@@ -10,12 +10,12 @@ using Xunit;
 
 namespace Line.Poc.Tests;
 
-// LIFF の DI 統合検証。AddLineLiff で登録した LiffClient が
-//  - 解決できること
-//  - IHttpClientFactory 経由の共有 HttpClient を使うこと
-//  - CRUD 経路が api.line.me へルーティングされること
-//  - 冪等（複数回登録で重複しない）／未設定トークンで検証失敗すること
-// を確認する。実 HTTP は叩かない。
+// DI integration verification for LIFF. Confirms that the LiffClient registered via AddLineLiff:
+//  - can be resolved
+//  - uses a shared HttpClient via IHttpClientFactory
+//  - routes the CRUD paths to api.line.me
+//  - is idempotent (no duplication when registered multiple times) / fails validation when the token is not set
+// No real HTTP calls are made.
 public class LiffDiIntegrationTests
 {
     [Fact]
@@ -60,7 +60,7 @@ public class LiffDiIntegrationTests
     {
         var services = new ServiceCollection();
         services.AddLineLiff(o => o.ChannelAccessToken = "T1");
-        services.AddLineLiff(o => o.ChannelAccessToken = "T2"); // 2 回目は重複登録しない
+        services.AddLineLiff(o => o.ChannelAccessToken = "T2"); // the second call does not re-register
 
         Assert.Equal(1, services.Count(d => d.ServiceType == typeof(LiffClient)));
 
@@ -74,7 +74,7 @@ public class LiffDiIntegrationTests
     public void AddLineLiff_Missing_Token_Fails_Validation()
     {
         var services = new ServiceCollection();
-        services.AddLineLiff(o => { /* ChannelAccessToken 未設定 */ });
+        services.AddLineLiff(o => { /* ChannelAccessToken not set */ });
         using var sp = services.BuildServiceProvider();
 
         Assert.ThrowsAny<Exception>(() => sp.GetRequiredService<LiffClient>());

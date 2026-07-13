@@ -1,0 +1,7 @@
+# DocFX API-reference filter.
+# Scope the API reference to the HANDWRITTEN public surface only.
+# Kiota-generated code lives under a "Generated" namespace segment and is treated
+# as an opaque box (design section 13.1), so it is excluded from the reference.
+apiRules:
+  - exclude:
+      uidRegex: ^Line\..*\.Generated(\.|$)

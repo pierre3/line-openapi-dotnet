@@ -17,10 +17,10 @@ using Xunit;
 
 namespace Line.Poc.Tests;
 
-// StatelessJwtAssertionTokenSource（/oauth2/v3/token）の実発行経路をトランスポート層まで
-// 含めて検証する。特に oneOf 合成ボディ（TokenPostRequestBody / IComposedTypeWrapper）が
-// 実 HttpClientRequestAdapter 経由で application/x-www-form-urlencoded の平坦なフォーム本体に
-// 直列化されること（＝手書きヘルパが合成ラッパを正しく隠蔽できていること）を実証する。
+// Verifies the real issue path of StatelessJwtAssertionTokenSource (/oauth2/v3/token) down to the transport layer.
+// In particular, proves that the oneOf composed body (TokenPostRequestBody / IComposedTypeWrapper) is serialized,
+// via the real HttpClientRequestAdapter, into a flat application/x-www-form-urlencoded form body
+// (i.e. that the hand-written helper correctly hides the composed wrapper).
 public class StatelessJwtAssertionTokenSourceHttpTests
 {
     private const string ExpectedAssertionType =
@@ -28,8 +28,8 @@ public class StatelessJwtAssertionTokenSourceHttpTests
 
     private static StatelessJwtAssertionTokenSource CreateSource(RecordingHandler handler)
     {
-        // BaseUrl はクライアント構築時に確定するため、アダプタ→クライアントの順で構築する
-        // （既定 https://api.line.me が採用される）。
+        // Because BaseUrl is fixed when the client is constructed, build in adapter -> client order
+        // (the default https://api.line.me is adopted).
         var adapter = new HttpClientRequestAdapter(
             new AnonymousAuthenticationProvider(),
             httpClient: new HttpClient(handler));
@@ -40,7 +40,7 @@ public class StatelessJwtAssertionTokenSourceHttpTests
     [Fact]
     public async Task IssueAsync_SendsFormEncodedPost_To_V3_And_ParsesJsonResponse()
     {
-        // ステートレストークンは 15 分（900 秒）寿命。
+        // Stateless tokens have a 15-minute (900-second) lifetime.
         var json =
             "{\"access_token\":\"stateless-token\",\"expires_in\":900,\"token_type\":\"Bearer\"}";
         var handler = new RecordingHandler(new HttpResponseMessage(HttpStatusCode.OK)
@@ -51,7 +51,7 @@ public class StatelessJwtAssertionTokenSourceHttpTests
 
         var issued = await source.IssueAsync();
 
-        // --- リクエスト（トランスポート層）の検証 ---
+        // --- Verification of the request (transport layer) ---
         Assert.NotNull(handler.Request);
         Assert.Equal(HttpMethod.Post, handler.Request!.Method);
         Assert.Equal("https://api.line.me/oauth2/v3/token", handler.Request.RequestUri!.ToString());
@@ -60,22 +60,22 @@ public class StatelessJwtAssertionTokenSourceHttpTests
             handler.Request.Content!.Headers.ContentType!.MediaType);
         Assert.Contains("application/json", handler.Request.Headers.Accept.ToString());
 
-        // 合成ラッパが平坦なフォームキーに展開されていること（JSON 入れ子でないこと）。
+        // The composed wrapper is expanded into flat form keys (not nested JSON).
         var form = ParseForm(handler.RequestBody!);
         Assert.Equal("client_credentials", form["grant_type"]);
         Assert.Equal(ExpectedAssertionType, form["client_assertion_type"]);
         Assert.Equal("SIGNED.JWT.VALUE", form["client_assertion"]);
         Assert.DoesNotContain("{", handler.RequestBody);
 
-        // --- レスポンス（JSON 逆直列化 → IssuedToken）の検証 ---
+        // --- Verification of the response (JSON deserialization -> IssuedToken) ---
         Assert.Equal("stateless-token", issued.AccessToken);
         Assert.Equal(TimeSpan.FromSeconds(900), issued.Lifetime);
     }
 
     [Theory]
-    [InlineData(HttpStatusCode.BadRequest)]   // invalid_grant / 鍵不一致
-    [InlineData(HttpStatusCode.Unauthorized)] // 認証失敗
-    [InlineData((HttpStatusCode)429)]         // レート制限
+    [InlineData(HttpStatusCode.BadRequest)]   // invalid_grant / key mismatch
+    [InlineData(HttpStatusCode.Unauthorized)] // authentication failure
+    [InlineData((HttpStatusCode)429)]         // rate limit
     public async Task IssueAsync_ErrorStatus_Surfaces_ApiException(HttpStatusCode status)
     {
         var handler = new RecordingHandler(new HttpResponseMessage(status)
@@ -90,11 +90,11 @@ public class StatelessJwtAssertionTokenSourceHttpTests
     }
 
     [Theory]
-    [InlineData("{}")]                                            // 全欠落
-    [InlineData("{\"expires_in\":900}")]                          // access_token 欠落
-    [InlineData("{\"access_token\":\"token-value\"}")]            // expires_in 欠落
-    [InlineData("{\"access_token\":\"token-value\",\"expires_in\":0}")]   // 非正の expires_in
-    [InlineData("{\"access_token\":\"token-value\",\"expires_in\":-1}")]  // 負の expires_in
+    [InlineData("{}")]                                            // all missing
+    [InlineData("{\"expires_in\":900}")]                          // access_token missing
+    [InlineData("{\"access_token\":\"token-value\"}")]            // expires_in missing
+    [InlineData("{\"access_token\":\"token-value\",\"expires_in\":0}")]   // non-positive expires_in
+    [InlineData("{\"access_token\":\"token-value\",\"expires_in\":-1}")]  // negative expires_in
     public async Task IssueAsync_MissingFieldsInRawJson_Throws_InvalidOperation(string json)
     {
         var handler = new RecordingHandler(new HttpResponseMessage(HttpStatusCode.OK)
@@ -119,7 +119,7 @@ public class StatelessJwtAssertionTokenSourceHttpTests
         var source = new StatelessJwtAssertionTokenSource(client, _ => Task.FromResult(""));
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => source.IssueAsync());
-        Assert.Null(handler.Request); // アサーション空なら HTTP には出ない
+        Assert.Null(handler.Request); // with an empty assertion, nothing goes out over HTTP
     }
 
     [Fact]
@@ -141,10 +141,10 @@ public class StatelessJwtAssertionTokenSourceHttpTests
     [Fact]
     public void GeneratedComposedBody_Cannot_Be_Form_Serialized_ByDesign()
     {
-        // RATIONALE の特性化: 生成の合成ラッパ TokenPostRequestBody を素直に使い form で送ると、
-        // Kiota Form シリアライザが入れ子オブジェクトを拒否する。StatelessJwtAssertionTokenSource が
-        // 合成ラッパを回避して平坦モデルを直送している「理由」をテストとして固定する。
-        // 将来 Kiota が合成ボディの form 直列化に対応したら本テストが落ち、回避策の撤去を検討できる。
+        // RATIONALE characterization: naively using the generated composed wrapper TokenPostRequestBody and sending it as form causes
+        // the Kiota Form serializer to reject the nested object. This test pins down the "reason" why StatelessJwtAssertionTokenSource
+        // avoids the composed wrapper and sends a flat model directly.
+        // If a future Kiota supports form serialization of composed bodies, this test will fail and removal of the workaround can be considered.
         var adapter = new HttpClientRequestAdapter(new AnonymousAuthenticationProvider());
         var client = new ChannelAccessTokenClient(adapter);
         var composed = new TokenRequestBuilder.TokenPostRequestBody
@@ -171,8 +171,8 @@ public class StatelessJwtAssertionTokenSourceHttpTests
                 kv => Uri.UnescapeDataString(kv[0]),
                 kv => kv.Length > 1 ? Uri.UnescapeDataString(kv[1]) : string.Empty);
 
-    // 送信された HttpRequestMessage と（読み取り済みの）ボディ文字列を記録し、
-    // 固定レスポンスを返すモックハンドラ。実ネットワークには出ない。
+    // A mock handler that records the sent HttpRequestMessage and the (already read) body string,
+    // and returns a fixed response. Does not go out to the real network.
     private sealed class RecordingHandler : HttpMessageHandler
     {
         private readonly HttpResponseMessage _response;
