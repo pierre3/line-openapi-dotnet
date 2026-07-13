@@ -17,4 +17,38 @@
          ランタイムのみ 2.0.0 へ（1.22.2 が 1.x 系最終・保守終了のため）。詳細は R3 doc。 -->
     <KiotaBundleVersion>2.0.0</KiotaBundleVersion>
   </PropertyGroup>
+
+  <!-- NuGet パッケージ共通メタデータ（設計 §8）。公開 ID / ルート名前空間は Line.OpenApi.*。
+       PackageId はプロジェクト名（=AssemblyName）から既定継承するため個別指定は不要。
+       個別の Description は各 .csproj で設定。バージョンは当面パッケージ横断で統一（0.1.0-preview）。
+       個別 SemVer が必要になれば各 .csproj の <Version> で上書きする。 -->
+  <PropertyGroup>
+    <Version>0.1.0-preview</Version>
+    <Authors>pierre3</Authors>
+    <Company>pierre3</Company>
+    <Product>Line.OpenApi</Product>
+    <Copyright>Copyright (c) pierre3</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/pierre3/line-openapi-dotnet</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/pierre3/line-openapi-dotnet</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageTags>LINE;LINE-API;messaging;LIFF;webhook;bot;kiota;openapi</PackageTags>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+
+    <!-- SourceLink（net10 SDK 同梱）・決定的ビルド・シンボルパッケージ -->
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
+  <!-- パッケージ対象プロジェクトにルート README を同梱（PackageReadmeFile の実体）。
+       $(MSBuildThisFileDirectory) はリポジトリルート＝この props の場所。テスト等
+       IsPackable=false のプロジェクトはパックされないため無害。 -->
+  <ItemGroup Condition="'$(IsPackable)' != 'false'">
+    <None Include="$(MSBuildThisFileDirectory)README.md" Pack="true" PackagePath="\" Visible="false" />
+  </ItemGroup>
 </Project>

@@ -15,17 +15,17 @@ use case.
 |---|---|
 | 📘 **[Guide (English)](en/getting-started.md)** | Tutorials and conceptual articles in English. |
 | 📗 **[ガイド (日本語)](ja/getting-started.md)** | 日本語のチュートリアルと概念記事。 |
-| 📚 **[API Reference](xref:Line.Messaging)** | Auto-generated reference for the hand-written public surface. |
+| 📚 **[API Reference](xref:Line.OpenApi.Messaging)** | Auto-generated reference for the hand-written public surface. |
 
 ## Packages
 
 | Package | Role |
 |---|---|
-| `Line.Core` | Shared foundation (auth providers, webhook signature validation, allowed hosts). |
-| `Line.ChannelAccessToken` | Channel-access-token issuance (v2.1 JWT / v3 stateless, refreshing provider). |
-| `Line.Messaging` | Message send & receive (`MessagingClient` facade = control plane + data plane). |
-| `Line.Messaging.Webhook` | Webhook models + receive glue (`WebhookRequestParser` = signature check + deserialization). |
-| `Line.Liff` | LIFF app management (`LiffClient` facade). |
+| `Line.OpenApi.Core` | Shared foundation (auth providers, webhook signature validation, allowed hosts). |
+| `Line.OpenApi.ChannelAccessToken` | Channel-access-token issuance (v2.1 JWT / v3 stateless, refreshing provider). |
+| `Line.OpenApi.Messaging` | Message send & receive (`MessagingClient` facade = control plane + data plane). |
+| `Line.OpenApi.Messaging.Webhook` | Webhook models + receive glue (`WebhookRequestParser` = signature check + deserialization). |
+| `Line.OpenApi.Liff` | LIFF app management (`LiffClient` facade). |
 
 > The API reference documents only the **hand-written public surface**. The Kiota-generated
 > request builders and models are treated as an opaque box; you use them through the fluent

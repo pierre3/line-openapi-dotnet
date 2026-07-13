@@ -8,7 +8,7 @@ tools: Read, Grep, Glob, Bash, WebFetch
 
 ## レビュー観点
 
-1. **設計判断（ADR）の妥当性** — パッケージ分割（`Line.Core` + `Line.ChannelAccessToken`/`Line.Messaging`/`Line.Messaging.Webhook`/`Line.Liff`/`Line.Bot`）と一方向依存、2 クライアント分離生成、ファサード設計に致命的な穴がないか。R1（複数 base URL）の検証計画があるか。
+1. **設計判断（ADR）の妥当性** — パッケージ分割（`Line.OpenApi.Core` + `Line.OpenApi.ChannelAccessToken`/`Line.OpenApi.Messaging`/`Line.OpenApi.Messaging.Webhook`/`Line.OpenApi.Liff`/`Line.Bot`）と一方向依存、2 クライアント分離生成、ファサード設計に致命的な穴がないか。R1（複数 base URL）の検証計画があるか。
 2. **テスト観点/カバレッジの充足** — 以下が押さえられているか:
    - R1 ルーティング回帰（`MessagingHostRoutingTests`）。
    - form-urlencoded シリアライズのラウンドトリップ。

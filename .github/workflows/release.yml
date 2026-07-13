@@ -1,0 +1,83 @@
+# Release: pack + publish to NuGet.org on a version tag (design sections 8, 9).
+# Trigger by pushing a tag like `v0.1.0-preview`. The resolved version is applied at
+# BUILD time (not just pack) so the assembly's AssemblyVersion/FileVersion and the
+# .nupkg version stay in sync. Falls back to Directory.Build.props when no version is given.
+#
+# Required repository secret:
+#   NUGET_API_KEY - an nuget.org API key scoped to the Line.OpenApi.* package IDs.
+name: release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Package version (e.g. 0.1.0-preview). Defaults to Directory.Build.props.'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    # Bind to a protected environment so nuget.org publishing can require reviewers /
+    # branch or tag protection rules (configure under Settings > Environments > nuget).
+    environment: nuget
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      # Derive the package version: tag (strip leading "v") on tag push, else the
+      # workflow_dispatch input, else empty (falls back to Directory.Build.props).
+      # The input is read via env to avoid inline expansion into the shell.
+      - name: Resolve version
+        id: ver
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            echo "value=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          elif [ -n "${INPUT_VERSION}" ]; then
+            echo "value=${INPUT_VERSION}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Restore
+        run: dotnet restore LineOpenApi.slnx
+
+      # Apply the version at build time too, so the assembly stamps match the package.
+      - name: Build
+        env:
+          VERSION: ${{ steps.ver.outputs.value }}
+        run: |
+          VERSION_ARG=""
+          if [ -n "${VERSION}" ]; then VERSION_ARG="-p:Version=${VERSION}"; fi
+          dotnet build LineOpenApi.slnx --configuration Release --no-restore $VERSION_ARG
+
+      - name: Test
+        run: dotnet test LineOpenApi.slnx --configuration Release --no-build --verbosity normal
+
+      - name: Pack
+        env:
+          VERSION: ${{ steps.ver.outputs.value }}
+        run: |
+          VERSION_ARG=""
+          if [ -n "${VERSION}" ]; then VERSION_ARG="-p:Version=${VERSION}"; fi
+          dotnet pack LineOpenApi.slnx --configuration Release --no-build -o artifacts $VERSION_ARG
+
+      - name: Push to NuGet.org
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: >
+          dotnet nuget push "artifacts/*.nupkg"
+          --api-key "$NUGET_API_KEY"
+          --source https://api.nuget.org/v3/index.json
+          --skip-duplicate

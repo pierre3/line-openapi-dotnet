@@ -1,18 +1,18 @@
 # Webhook 受信
 
-@Line.Messaging.Webhook.WebhookRequestParser は 2 つのステップを 1 呼び出しに束ねます:
+@Line.OpenApi.Messaging.Webhook.WebhookRequestParser は 2 つのステップを 1 呼び出しに束ねます:
 
 1. `x-line-signature` ヘッダをリクエスト生ボディに対して検証し、
 2. 本文を強く型付けされた `CallbackRequest` へ逆直列化します。
 
-失敗時には例外を投げます: 署名が不正なら @Line.Messaging.Webhook.WebhookSignatureException、
-本文を逆直列化できなければ @Line.Messaging.Webhook.WebhookPayloadException（どちらも
-@Line.Messaging.Webhook.WebhookException を基底とします）。
+失敗時には例外を投げます: 署名が不正なら @Line.OpenApi.Messaging.Webhook.WebhookSignatureException、
+本文を逆直列化できなければ @Line.OpenApi.Messaging.Webhook.WebhookPayloadException（どちらも
+@Line.OpenApi.Messaging.Webhook.WebhookException を基底とします）。
 
 ## パーサの登録
 
 ```csharp
-using Line.Messaging.Webhook.DependencyInjection;
+using Line.OpenApi.Messaging.Webhook.DependencyInjection;
 
 services.AddLineWebhook(o => o.ChannelSecret = "CHANNEL_SECRET");
 // 解決: sp.GetRequiredService<WebhookRequestParser>()
@@ -26,8 +26,8 @@ Webhook 受信は送信 HTTP を伴わないため、この登録に `IHttpClien
 モデルバインドの*前*に本文を読む必要があります。
 
 ```csharp
-using Line.Messaging.Webhook;
-using Line.Messaging.Webhook.Generated.Models;
+using Line.OpenApi.Messaging.Webhook;
+using Line.OpenApi.Messaging.Webhook.Generated.Models;
 
 app.MapPost("/webhook", async (HttpRequest request, WebhookRequestParser parser) =>
 {

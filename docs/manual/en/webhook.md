@@ -1,18 +1,18 @@
 # Receiving Webhooks
 
-@Line.Messaging.Webhook.WebhookRequestParser bundles two steps into one call:
+@Line.OpenApi.Messaging.Webhook.WebhookRequestParser bundles two steps into one call:
 
 1. verify the `x-line-signature` header against the raw request body, and
 2. deserialize the body into a strongly-typed `CallbackRequest`.
 
-On failure it throws: @Line.Messaging.Webhook.WebhookSignatureException when the signature is
-invalid, and @Line.Messaging.Webhook.WebhookPayloadException when the body cannot be
-deserialized (both derive from @Line.Messaging.Webhook.WebhookException).
+On failure it throws: @Line.OpenApi.Messaging.Webhook.WebhookSignatureException when the signature is
+invalid, and @Line.OpenApi.Messaging.Webhook.WebhookPayloadException when the body cannot be
+deserialized (both derive from @Line.OpenApi.Messaging.Webhook.WebhookException).
 
 ## Register the parser
 
 ```csharp
-using Line.Messaging.Webhook.DependencyInjection;
+using Line.OpenApi.Messaging.Webhook.DependencyInjection;
 
 services.AddLineWebhook(o => o.ChannelSecret = "CHANNEL_SECRET");
 // resolve: sp.GetRequiredService<WebhookRequestParser>()
@@ -27,8 +27,8 @@ Webhook receiving performs no outbound HTTP, so this registration needs no
 signature is computed over the raw bytes, so you must read the body *before* model binding.
 
 ```csharp
-using Line.Messaging.Webhook;
-using Line.Messaging.Webhook.Generated.Models;
+using Line.OpenApi.Messaging.Webhook;
+using Line.OpenApi.Messaging.Webhook.Generated.Models;
 
 app.MapPost("/webhook", async (HttpRequest request, WebhookRequestParser parser) =>
 {

@@ -9,18 +9,18 @@ without changing call sites.
 
 | Strategy | Type | When to use |
 |---|---|---|
-| Static (long-lived) | @Line.Core.Authentication.StaticChannelAccessTokenProvider | You already hold a long-lived token. |
-| Short-lived (v2.1 JWT) | @Line.ChannelAccessToken.JwtAssertionTokenSource | Issue a token via JWT assertion (`/oauth2/v2.1/token`). |
-| Stateless (v3) | @Line.ChannelAccessToken.StatelessJwtAssertionTokenSource | Issue a 15-minute stateless token (`/oauth2/v3/token`). |
-| Auto-refresh wrapper | @Line.ChannelAccessToken.RefreshingChannelAccessTokenProvider | Cache a short-lived/stateless token and re-issue near expiry. |
+| Static (long-lived) | @Line.OpenApi.Core.Authentication.StaticChannelAccessTokenProvider | You already hold a long-lived token. |
+| Short-lived (v2.1 JWT) | @Line.OpenApi.ChannelAccessToken.JwtAssertionTokenSource | Issue a token via JWT assertion (`/oauth2/v2.1/token`). |
+| Stateless (v3) | @Line.OpenApi.ChannelAccessToken.StatelessJwtAssertionTokenSource | Issue a 15-minute stateless token (`/oauth2/v3/token`). |
+| Auto-refresh wrapper | @Line.OpenApi.ChannelAccessToken.RefreshingChannelAccessTokenProvider | Cache a short-lived/stateless token and re-issue near expiry. |
 
 ## Static token
 
-The simplest case: hold a token and return it. This provider lives in `Line.Core` and only
+The simplest case: hold a token and return it. This provider lives in `Line.OpenApi.Core` and only
 attaches the token to allowed hosts (see [Security](security.md)).
 
 ```csharp
-using Line.Core.Authentication;
+using Line.OpenApi.Core.Authentication;
 using Microsoft.Kiota.Abstractions.Authentication;
 
 var provider = new StaticChannelAccessTokenProvider("CHANNEL_ACCESS_TOKEN");
@@ -32,13 +32,13 @@ wires this up for you.
 
 ## Short-lived tokens (JWT assertion)
 
-Use @Line.ChannelAccessToken.JwtAssertionTokenSource to issue a short-lived token from a signed
+Use @Line.OpenApi.ChannelAccessToken.JwtAssertionTokenSource to issue a short-lived token from a signed
 JWT assertion. Signing with your channel's private key is application-specific, so you supply
 the assertion through a factory — **this library never handles signing keys**.
 
 ```csharp
-using Line.ChannelAccessToken;
-using Line.ChannelAccessToken.Generated;
+using Line.OpenApi.ChannelAccessToken;
+using Line.OpenApi.ChannelAccessToken.Generated;
 
 var tokenClient = new ChannelAccessTokenClient(requestAdapter); // Kiota-generated client
 var source = new JwtAssertionTokenSource(
@@ -50,7 +50,7 @@ IssuedToken token = await source.IssueAsync();
 
 ## Stateless tokens (v3)
 
-@Line.ChannelAccessToken.StatelessJwtAssertionTokenSource issues a **stateless** token from
+@Line.OpenApi.ChannelAccessToken.StatelessJwtAssertionTokenSource issues a **stateless** token from
 `/oauth2/v3/token`. Stateless tokens have no limit on the number of concurrently active tokens,
 but they live for only 15 minutes and cannot be revoked before expiry — so pair them with the
 refreshing provider and issue on demand.
@@ -63,13 +63,13 @@ refreshing provider and issue on demand.
 
 ## Auto-refreshing provider
 
-@Line.ChannelAccessToken.RefreshingChannelAccessTokenProvider wraps any
+@Line.OpenApi.ChannelAccessToken.RefreshingChannelAccessTokenProvider wraps any
 `IChannelAccessTokenSource`, caches the issued token, and re-issues it once the refresh margin
 before expiry is reached. It prevents duplicate issuance under concurrent refresh, and it is
 `IDisposable`.
 
 ```csharp
-using Line.ChannelAccessToken;
+using Line.OpenApi.ChannelAccessToken;
 
 using var provider = new RefreshingChannelAccessTokenProvider(
     source,                              // e.g. JwtAssertionTokenSource / StatelessJwtAssertionTokenSource
@@ -81,4 +81,4 @@ var messaging = new MessagingClient(auth);
 
 To use a refreshing provider with DI, inject it through the auth-provider overload of
 `AddLineMessaging` / `AddLineLiff` — see [Dependency Injection & Hosting](di-and-hosting.md).
-This keeps `Line.Messaging` / `Line.Liff` free of a dependency on `Line.ChannelAccessToken`.
+This keeps `Line.OpenApi.Messaging` / `Line.OpenApi.Liff` free of a dependency on `Line.OpenApi.ChannelAccessToken`.

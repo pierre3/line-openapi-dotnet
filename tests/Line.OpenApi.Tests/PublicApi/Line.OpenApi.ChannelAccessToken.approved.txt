@@ -1,0 +1,30 @@
+namespace Line.OpenApi.ChannelAccessToken
+{
+    public interface IChannelAccessTokenSource
+    {
+        System.Threading.Tasks.Task<Line.OpenApi.ChannelAccessToken.IssuedToken> IssueAsync(System.Threading.CancellationToken cancellationToken = default);
+    }
+    public readonly struct IssuedToken
+    {
+        public IssuedToken(string accessToken, System.TimeSpan lifetime) { }
+        public string AccessToken { get; }
+        public System.TimeSpan Lifetime { get; }
+    }
+    public sealed class JwtAssertionTokenSource : Line.OpenApi.ChannelAccessToken.IChannelAccessTokenSource
+    {
+        public JwtAssertionTokenSource(Line.OpenApi.ChannelAccessToken.Generated.ChannelAccessTokenClient client, System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task<string>> assertionFactory) { }
+        public System.Threading.Tasks.Task<Line.OpenApi.ChannelAccessToken.IssuedToken> IssueAsync(System.Threading.CancellationToken cancellationToken = default) { }
+    }
+    public sealed class RefreshingChannelAccessTokenProvider : Microsoft.Kiota.Abstractions.Authentication.IAccessTokenProvider, System.IDisposable
+    {
+        public RefreshingChannelAccessTokenProvider(Line.OpenApi.ChannelAccessToken.IChannelAccessTokenSource source, System.TimeSpan? refreshMargin = default, System.Collections.Generic.IEnumerable<string>? allowedHosts = null, System.Func<System.DateTimeOffset>? clock = null) { }
+        public Microsoft.Kiota.Abstractions.Authentication.AllowedHostsValidator AllowedHostsValidator { get; }
+        public void Dispose() { }
+        public System.Threading.Tasks.Task<string> GetAuthorizationTokenAsync(System.Uri uri, System.Collections.Generic.Dictionary<string, object>? additionalAuthenticationContext = null, System.Threading.CancellationToken cancellationToken = default) { }
+    }
+    public sealed class StatelessJwtAssertionTokenSource : Line.OpenApi.ChannelAccessToken.IChannelAccessTokenSource
+    {
+        public StatelessJwtAssertionTokenSource(Line.OpenApi.ChannelAccessToken.Generated.ChannelAccessTokenClient client, System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task<string>> assertionFactory) { }
+        public System.Threading.Tasks.Task<Line.OpenApi.ChannelAccessToken.IssuedToken> IssueAsync(System.Threading.CancellationToken cancellationToken = default) { }
+    }
+}

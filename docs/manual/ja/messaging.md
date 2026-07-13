@@ -1,12 +1,12 @@
 # メッセージ送信
 
-@Line.Messaging.MessagingClient は Messaging API のファサードです。2 つの Kiota クライアント —
+@Line.OpenApi.Messaging.MessagingClient は Messaging API のファサードです。2 つの Kiota クライアント —
 **制御系**（`api.line.me`、送信と大半の操作用）と**データ系**（`api-data.line.me`、バイナリ
 コンテンツ用）— を統合し、どのホストに向かう呼び出しかを意識せずに済むようにします。
 
 ```csharp
-using Line.Messaging;
-using Line.Messaging.Generated.Api.Models;
+using Line.OpenApi.Messaging;
+using Line.OpenApi.Messaging.Generated.Api.Models;
 
 var client = MessagingClient.CreateWithStaticToken("CHANNEL_ACCESS_TOKEN");
 ```

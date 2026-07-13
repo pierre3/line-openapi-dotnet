@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- 共通基盤: 手書きのみ（生成コードなし）。認証プロバイダ・署名検証・許可ホスト。 -->
+  <PropertyGroup>
+    <Description>Shared foundation for the Line.OpenApi .NET client libraries generated from the official LINE OpenAPI specs with Kiota: authentication providers, webhook signature validation (HMAC-SHA256), and allowed-host control.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Kiota.Bundle" Version="$(KiotaBundleVersion)" />
+  </ItemGroup>
+</Project>

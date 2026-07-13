@@ -1,13 +1,13 @@
 # Sending Messages
 
-@Line.Messaging.MessagingClient is the facade for the Messaging API. It unifies two
+@Line.OpenApi.Messaging.MessagingClient is the facade for the Messaging API. It unifies two
 Kiota clients — the **control plane** (`api.line.me`, for sending and most operations) and the
 **data plane** (`api-data.line.me`, for binary content) — so you do not have to think about
 which host a call targets.
 
 ```csharp
-using Line.Messaging;
-using Line.Messaging.Generated.Api.Models;
+using Line.OpenApi.Messaging;
+using Line.OpenApi.Messaging.Generated.Api.Models;
 
 var client = MessagingClient.CreateWithStaticToken("CHANNEL_ACCESS_TOKEN");
 ```

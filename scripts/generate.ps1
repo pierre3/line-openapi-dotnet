@@ -22,7 +22,8 @@ Set-Location $root
 # --- R3: 生成 CLI 版のピン止め ---
 # 生成物の再現性のため Kiota CLI 版を固定する。ランタイム(KiotaBundleVersion, Directory.Build.props)
 # とロックステップで運用する。上げる時は本値・KiotaBundleVersion・生成物・公開 API 差分をセットで見る。
-# 方針判断（1.x 継続 / 2.0 移行）は docs/reviews の R3 メモ参照。現状は 1.x 継続（1.22.2 は CVE 修正版）。
+# 方針判断は docs/R3-kiota-version-policy.md 参照。ランタイムは 2.0.0 へ移行済み（Directory.Build.props の
+# KiotaBundleVersion）。CLI は 2.x 未リリースのため 1.34.1 据え置き（CLI とランタイムは別系統バージョニング）。
 $ExpectedKiotaCliVersion = "1.34.1"
 $actual = (& kiota --version) 2>&1 | Select-Object -First 1
 $actualVersion = ($actual -split '\+')[0].Trim()
@@ -74,8 +75,8 @@ function Invoke-Kiota { param([string[]]$KiotaArgs)
 Invoke-Kiota @(
   "generate","-l","CSharp","-d","./openapi/messaging-api.yml",
   "--exclude-path","**/content","--exclude-path","**/content/**",
-  "-c","MessagingApiClient","-n","Line.Messaging.Generated.Api",
-  "-o","./src/Line.Messaging/Generated/Api",
+  "-c","MessagingApiClient","-n","Line.OpenApi.Messaging.Generated.Api",
+  "-o","./src/Line.OpenApi.Messaging/Generated/Api",
   "--exclude-backward-compatible",
   "--structured-mime-types","application/json"
 )
@@ -84,16 +85,16 @@ Invoke-Kiota @(
 Invoke-Kiota @(
   "generate","-l","CSharp","-d","./openapi/messaging-api.yml",
   "--include-path","**/content","--include-path","**/content/**",
-  "-c","MessagingBlobApiClient","-n","Line.Messaging.Generated.Blob",
-  "-o","./src/Line.Messaging/Generated/Blob",
+  "-c","MessagingBlobApiClient","-n","Line.OpenApi.Messaging.Generated.Blob",
+  "-o","./src/Line.OpenApi.Messaging/Generated/Blob",
   "--exclude-backward-compatible"
 )
 
 # 3) Channel Access Token — form-urlencoded を含める
 Invoke-Kiota @(
   "generate","-l","CSharp","-d","./openapi/channel-access-token.yml",
-  "-c","ChannelAccessTokenClient","-n","Line.ChannelAccessToken.Generated",
-  "-o","./src/Line.ChannelAccessToken/Generated",
+  "-c","ChannelAccessTokenClient","-n","Line.OpenApi.ChannelAccessToken.Generated",
+  "-o","./src/Line.OpenApi.ChannelAccessToken/Generated",
   "--exclude-backward-compatible",
   "--structured-mime-types","application/json","--structured-mime-types","application/x-www-form-urlencoded"
 )
@@ -104,16 +105,16 @@ Invoke-Kiota @(
 #    生成される callback メソッド（server が example.com）は使わずモデルのみ利用する。
 Invoke-Kiota @(
   "generate","-l","CSharp","-d","./openapi/webhook.yml",
-  "-c","WebhookModels","-n","Line.Messaging.Webhook.Generated",
-  "-o","./src/Line.Messaging.Webhook/Generated",
+  "-c","WebhookModels","-n","Line.OpenApi.Messaging.Webhook.Generated",
+  "-o","./src/Line.OpenApi.Messaging.Webhook/Generated",
   "--exclude-backward-compatible"
 )
 
 # 5) LIFF
 Invoke-Kiota @(
   "generate","-l","CSharp","-d","./openapi/liff.yml",
-  "-c","LiffApiClient","-n","Line.Liff.Generated",
-  "-o","./src/Line.Liff/Generated",
+  "-c","LiffApiClient","-n","Line.OpenApi.Liff.Generated",
+  "-o","./src/Line.OpenApi.Liff/Generated",
   "--exclude-backward-compatible",
   "--structured-mime-types","application/json"
 )

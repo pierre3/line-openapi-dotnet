@@ -1,0 +1,35 @@
+namespace Line.OpenApi.Messaging.Webhook.DependencyInjection
+{
+    public sealed class LineWebhookOptions
+    {
+        public LineWebhookOptions() { }
+        public string ChannelSecret { get; set; }
+    }
+    public static class ServiceCollectionExtensions
+    {
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddLineWebhook(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, System.Action<Line.OpenApi.Messaging.Webhook.DependencyInjection.LineWebhookOptions> configure) { }
+    }
+}
+namespace Line.OpenApi.Messaging.Webhook
+{
+    public class WebhookException : System.Exception
+    {
+        public WebhookException(string message) { }
+        public WebhookException(string message, System.Exception? innerException) { }
+    }
+    public sealed class WebhookPayloadException : Line.OpenApi.Messaging.Webhook.WebhookException
+    {
+        public WebhookPayloadException(string message) { }
+        public WebhookPayloadException(string message, System.Exception? innerException) { }
+    }
+    public sealed class WebhookRequestParser
+    {
+        public WebhookRequestParser(string channelSecret) { }
+        public System.Threading.Tasks.Task<Line.OpenApi.Messaging.Webhook.Generated.Models.CallbackRequest> ParseAsync(byte[] body, string? signatureHeader, System.Threading.CancellationToken cancellationToken = default) { }
+        public static System.Threading.Tasks.Task<Line.OpenApi.Messaging.Webhook.Generated.Models.CallbackRequest> ParseAsync(string channelSecret, byte[] body, string? signatureHeader, System.Threading.CancellationToken cancellationToken = default) { }
+    }
+    public sealed class WebhookSignatureException : Line.OpenApi.Messaging.Webhook.WebhookException
+    {
+        public WebhookSignatureException(string message) { }
+    }
+}

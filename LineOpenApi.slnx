@@ -1,13 +1,13 @@
 <Solution>
   <Folder Name="/src/">
-    <Project Path="src/Line.ChannelAccessToken/Line.ChannelAccessToken.csproj" />
-    <Project Path="src/Line.Core/Line.Core.csproj" />
-    <Project Path="src/Line.Liff/Line.Liff.csproj" />
-    <Project Path="src/Line.Messaging.Webhook/Line.Messaging.Webhook.csproj" />
-    <Project Path="src/Line.Messaging/Line.Messaging.csproj" />
+    <Project Path="src/Line.OpenApi.ChannelAccessToken/Line.OpenApi.ChannelAccessToken.csproj" />
+    <Project Path="src/Line.OpenApi.Core/Line.OpenApi.Core.csproj" />
+    <Project Path="src/Line.OpenApi.Liff/Line.OpenApi.Liff.csproj" />
+    <Project Path="src/Line.OpenApi.Messaging.Webhook/Line.OpenApi.Messaging.Webhook.csproj" />
+    <Project Path="src/Line.OpenApi.Messaging/Line.OpenApi.Messaging.csproj" />
   </Folder>
   <Folder Name="/tests/">
-    <Project Path="tests/Line.Messaging.Webhook.IsolationTests/Line.Messaging.Webhook.IsolationTests.csproj" />
-    <Project Path="tests/Line.Tests/Line.Tests.csproj" />
+    <Project Path="tests/Line.OpenApi.Messaging.Webhook.IsolationTests/Line.OpenApi.Messaging.Webhook.IsolationTests.csproj" />
+    <Project Path="tests/Line.OpenApi.Tests/Line.OpenApi.Tests.csproj" />
   </Folder>
 </Solution>

@@ -1,0 +1,28 @@
+namespace Line.OpenApi.Liff.DependencyInjection
+{
+    public sealed class LineLiffOptions
+    {
+        public LineLiffOptions() { }
+        public string[]? AllowedHosts { get; set; }
+        public string ChannelAccessToken { get; set; }
+    }
+    public static class ServiceCollectionExtensions
+    {
+        public const string HttpClientName = "Line.OpenApi.Liff";
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddLineLiff(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, System.Action<Line.OpenApi.Liff.DependencyInjection.LineLiffOptions> configure) { }
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddLineLiff(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, System.Func<System.IServiceProvider, Microsoft.Kiota.Abstractions.Authentication.IAuthenticationProvider> authProviderFactory) { }
+    }
+}
+namespace Line.OpenApi.Liff
+{
+    public sealed class LiffClient
+    {
+        public LiffClient(Microsoft.Kiota.Abstractions.Authentication.IAuthenticationProvider authProvider, System.Net.Http.HttpClient? httpClient = null) { }
+        public Line.OpenApi.Liff.Generated.LiffApiClient Api { get; }
+        public System.Threading.Tasks.Task<Line.OpenApi.Liff.Generated.Models.AddLiffAppResponse?> AddAppAsync(Line.OpenApi.Liff.Generated.Models.AddLiffAppRequest request, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task DeleteAppAsync(string liffId, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task<Line.OpenApi.Liff.Generated.Models.GetAllLiffAppsResponse?> GetAppsAsync(System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task UpdateAppAsync(string liffId, Line.OpenApi.Liff.Generated.Models.UpdateLiffAppRequest request, System.Threading.CancellationToken cancellationToken = default) { }
+        public static Line.OpenApi.Liff.LiffClient CreateWithStaticToken(string channelAccessToken) { }
+    }
+}

@@ -12,22 +12,22 @@
 
 ## パッケージ
 
-必要な利用シーンに応じてパッケージを参照します。いずれも `Line.Core` に依存します。
+必要な利用シーンに応じてパッケージを参照します。いずれも `Line.OpenApi.Core` に依存します。
 
 | パッケージ | 用途 |
 |---|---|
-| `Line.Messaging` | プッシュ/応答メッセージの送信、メッセージコンテンツの取得。 |
-| `Line.Messaging.Webhook` | Webhook イベントの受信と検証。 |
-| `Line.Liff` | LIFF アプリの作成・管理。 |
-| `Line.ChannelAccessToken` | 短期/ステートレスなチャネルアクセストークンの発行。 |
+| `Line.OpenApi.Messaging` | プッシュ/応答メッセージの送信、メッセージコンテンツの取得。 |
+| `Line.OpenApi.Messaging.Webhook` | Webhook イベントの受信と検証。 |
+| `Line.OpenApi.Liff` | LIFF アプリの作成・管理。 |
+| `Line.OpenApi.ChannelAccessToken` | 短期/ステートレスなチャネルアクセストークンの発行。 |
 
 ## 最初のメッセージ送信
 
 最も手早い方法は、長期チャネルアクセストークンを使うものです:
 
 ```csharp
-using Line.Messaging;
-using Line.Messaging.Generated.Api.Models;
+using Line.OpenApi.Messaging;
+using Line.OpenApi.Messaging.Generated.Api.Models;
 
 var client = MessagingClient.CreateWithStaticToken("CHANNEL_ACCESS_TOKEN");
 
@@ -58,7 +58,7 @@ await client.Api.V2.Bot.Message.Push.PostAsync(new PushMessageRequest
 
 `client.Api.V2.Bot.Message.Push.PostAsync(...)` のような流れるようなビルダーパスは、Kiota が
 生成したコードに由来します。これは意図的な「opaque box（不透明な箱）」です。リクエストは
-これらのビルダーを通じて組み立て、[API リファレンス](xref:Line.Messaging)ではそれらへの
+これらのビルダーを通じて組み立て、[API リファレンス](xref:Line.OpenApi.Messaging)ではそれらへの
 アクセスを提供する手書きファサードを解説します（トップのナビゲーションバーから閲覧できます）。
 最初に知っておくべき命名の癖: Kiota は多態のアクション基底型を（`System.Action` との衝突を
 避けるため）`ActionObject` に改名します。`MessageAction` / `PostbackAction` / `URIAction` などの

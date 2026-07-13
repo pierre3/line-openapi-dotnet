@@ -8,18 +8,18 @@ Messaging API と LIFF API の呼び出しは、Bearer トークンとして運�
 
 | 戦略 | 型 | 使いどころ |
 |---|---|---|
-| 静的（長期） | @Line.Core.Authentication.StaticChannelAccessTokenProvider | 長期トークンを既に保持している。 |
-| 短期（v2.1 JWT） | @Line.ChannelAccessToken.JwtAssertionTokenSource | JWT アサーションで発行（`/oauth2/v2.1/token`）。 |
-| ステートレス（v3） | @Line.ChannelAccessToken.StatelessJwtAssertionTokenSource | 15 分のステートレストークンを発行（`/oauth2/v3/token`）。 |
-| 自動更新ラッパ | @Line.ChannelAccessToken.RefreshingChannelAccessTokenProvider | 短期/ステートレストークンをキャッシュし期限手前で再発行。 |
+| 静的（長期） | @Line.OpenApi.Core.Authentication.StaticChannelAccessTokenProvider | 長期トークンを既に保持している。 |
+| 短期（v2.1 JWT） | @Line.OpenApi.ChannelAccessToken.JwtAssertionTokenSource | JWT アサーションで発行（`/oauth2/v2.1/token`）。 |
+| ステートレス（v3） | @Line.OpenApi.ChannelAccessToken.StatelessJwtAssertionTokenSource | 15 分のステートレストークンを発行（`/oauth2/v3/token`）。 |
+| 自動更新ラッパ | @Line.OpenApi.ChannelAccessToken.RefreshingChannelAccessTokenProvider | 短期/ステートレストークンをキャッシュし期限手前で再発行。 |
 
 ## 静的トークン
 
-最も単純なケース: トークンを保持して返します。このプロバイダは `Line.Core` にあり、許可された
+最も単純なケース: トークンを保持して返します。このプロバイダは `Line.OpenApi.Core` にあり、許可された
 ホストにのみトークンを付与します（[セキュリティ](security.md)参照）。
 
 ```csharp
-using Line.Core.Authentication;
+using Line.OpenApi.Core.Authentication;
 using Microsoft.Kiota.Abstractions.Authentication;
 
 var provider = new StaticChannelAccessTokenProvider("CHANNEL_ACCESS_TOKEN");
@@ -31,13 +31,13 @@ var auth = new BaseBearerTokenAuthenticationProvider(provider);
 
 ## 短期トークン（JWT アサーション）
 
-@Line.ChannelAccessToken.JwtAssertionTokenSource を使うと、署名済み JWT アサーションから短期
+@Line.OpenApi.ChannelAccessToken.JwtAssertionTokenSource を使うと、署名済み JWT アサーションから短期
 トークンを発行できます。チャネルの秘密鍵での署名はアプリ固有のため、アサーションはファクトリ
 経由で供給します — **本ライブラリは署名鍵を扱いません**。
 
 ```csharp
-using Line.ChannelAccessToken;
-using Line.ChannelAccessToken.Generated;
+using Line.OpenApi.ChannelAccessToken;
+using Line.OpenApi.ChannelAccessToken.Generated;
 
 var tokenClient = new ChannelAccessTokenClient(requestAdapter); // Kiota 生成クライアント
 var source = new JwtAssertionTokenSource(
@@ -49,7 +49,7 @@ IssuedToken token = await source.IssueAsync();
 
 ## ステートレストークン（v3）
 
-@Line.ChannelAccessToken.StatelessJwtAssertionTokenSource は `/oauth2/v3/token` から
+@Line.OpenApi.ChannelAccessToken.StatelessJwtAssertionTokenSource は `/oauth2/v3/token` から
 **ステートレス**トークンを発行します。ステートレストークンは同時に有効なトークン数に上限が
 ありませんが、有効期間は 15 分だけで満了まで失効できません。そのため更新型プロバイダと組み
 合わせ、都度発行する運用にします。
@@ -62,12 +62,12 @@ IssuedToken token = await source.IssueAsync();
 
 ## 自動更新プロバイダ
 
-@Line.ChannelAccessToken.RefreshingChannelAccessTokenProvider は任意の
+@Line.OpenApi.ChannelAccessToken.RefreshingChannelAccessTokenProvider は任意の
 `IChannelAccessTokenSource` をラップし、発行したトークンをキャッシュして、期限手前の更新
 マージンに達したら再発行します。並行更新時の二重発行を防止し、`IDisposable` です。
 
 ```csharp
-using Line.ChannelAccessToken;
+using Line.OpenApi.ChannelAccessToken;
 
 using var provider = new RefreshingChannelAccessTokenProvider(
     source,                              // 例: JwtAssertionTokenSource / StatelessJwtAssertionTokenSource
@@ -79,4 +79,4 @@ var messaging = new MessagingClient(auth);
 
 更新型プロバイダを DI で使うには、`AddLineMessaging` / `AddLineLiff` の認証プロバイダ
 オーバーロード経由で注入します（[DI とホスティング](di-and-hosting.md)参照）。これにより
-`Line.Messaging` / `Line.Liff` が `Line.ChannelAccessToken` に依存せずに済みます。
+`Line.OpenApi.Messaging` / `Line.OpenApi.Liff` が `Line.OpenApi.ChannelAccessToken` に依存せずに済みます。
