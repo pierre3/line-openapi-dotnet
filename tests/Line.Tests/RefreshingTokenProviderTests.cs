@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Line.ChannelAccessToken;
 using Xunit;
 
-namespace Line.Poc.Tests;
+namespace Line.Tests;
 
 // Verifies the refreshing token provider (short-lived/JWT) for caching, expiry, and prevention of duplicate issuance under concurrent refresh.
 // Substitutes a fake IChannelAccessTokenSource with no HTTP to check the pure logic.

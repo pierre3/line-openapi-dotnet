@@ -12,7 +12,7 @@ using Microsoft.Kiota.Abstractions.Authentication;
 using Microsoft.Kiota.Http.HttpClientLibrary;
 using Xunit;
 
-namespace Line.Poc.Tests;
+namespace Line.Tests;
 
 // Verifies LiffClient's convenience methods down to the transport layer.
 // Mocks HttpMessageHandler and confirms, via the real HttpClientRequestAdapter, that:

@@ -8,7 +8,7 @@ tools: Read, Grep, Glob, Bash, WebFetch
 
 ## レビュー観点
 
-1. **OpenAPI 妥当性** — `poc/openapi/*.yml` がパース可能か。YAML 引用符問題（`channel-access-token.yml` の `urn:ietf:...` 未引用など）を確認。
+1. **OpenAPI 妥当性** — `openapi/*.yml` がパース可能か。YAML 引用符問題（`channel-access-token.yml` の `urn:ietf:...` 未引用など）を確認。
 2. **Kiota 検証警告** — `DivergentResponseSchema` / `GetWithBody` / `InconsistentTypeFormat` などの発生有無と影響。可能なら `kiota` の検証出力を参照（`$env:PATH += ";$env:USERPROFILE\.dotnet\tools"`）。
 3. **複数 base URL / server 定義（R1）** — `messaging-api.yml` の制御系 `api.line.me` と data 系 `api-data.line.me` の混在。data 系 5 件が全て `/v2/bot/` 配下・共通サフィックス `/content` で識別できるか。2 クライアント分離生成の前提が崩れていないか。
 4. **命名品質（R2）** — 生成される公開シンボル名・パス命名の質。

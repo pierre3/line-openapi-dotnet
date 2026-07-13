@@ -7,8 +7,8 @@
 
 | 要素 | 値 | 管理場所 |
 |---|---|---|
-| 生成 CLI（Microsoft.OpenApi.Kiota） | **1.34.1**（2.x CLI 未リリース＝最新） | `poc/scripts/generate.ps1` の `$ExpectedKiotaCliVersion` |
-| ランタイム（Microsoft.Kiota.Bundle） | **2.0.0** | `poc/Directory.Build.props` の `KiotaBundleVersion` |
+| 生成 CLI（Microsoft.OpenApi.Kiota） | **1.34.1**（2.x CLI 未リリース＝最新） | `scripts/generate.ps1` の `$ExpectedKiotaCliVersion` |
+| ランタイム（Microsoft.Kiota.Bundle） | **2.0.0** | `Directory.Build.props` の `KiotaBundleVersion` |
 | `kiota info -l CSharp` の推奨 | 2.0.0（CLI 1.34.1 自身の推奨） | （情報のみ） |
 
 > **重要（版体系の実態）:** Kiota は **CLI とランタイムを別系統でバージョニング**する。CLI は 1.34.1 が最新で 2.x は未リリース。ランタイム（Bundle/Abstractions）のみ 2.0.0 が最新 stable。したがって「2.0 移行」は **CLI 据え置き＋ランタイムのみのバンプ**であり、生成コード表面は変わらない（再生成不要）。

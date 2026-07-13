@@ -7,7 +7,7 @@ using System.Runtime.CompilerServices;
 using PublicApiGenerator;
 using Xunit;
 
-namespace Line.Poc.Tests;
+namespace Line.Tests;
 
 // Snapshot regression test for the public API surface (G4-2, design sections 8, 10).
 //

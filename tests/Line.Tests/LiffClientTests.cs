@@ -4,7 +4,7 @@ using Line.Liff;
 using Line.Liff.Generated.Models;
 using Xunit;
 
-namespace Line.Poc.Tests;
+namespace Line.Tests;
 
 // Path verification for the LiffClient facade. Uses the generated builder's RequestInformation to confirm that
 // each CRUD operation is assembled with the correct method/URL against the single host (api.line.me).

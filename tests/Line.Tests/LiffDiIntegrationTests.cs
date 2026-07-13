@@ -8,7 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Kiota.Abstractions.Authentication;
 using Xunit;
 
-namespace Line.Poc.Tests;
+namespace Line.Tests;
 
 // DI integration verification for LIFF. Confirms that the LiffClient registered via AddLineLiff:
 //  - can be resolved

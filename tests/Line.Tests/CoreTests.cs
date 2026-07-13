@@ -5,7 +5,7 @@ using Line.Core.Authentication;
 using Line.Core.Webhook;
 using Xunit;
 
-namespace Line.Poc.Tests;
+namespace Line.Tests;
 
 // Verification of Line.Core's hand-written logic. Independent of generated code, so it always builds and runs.
 public class CoreTests

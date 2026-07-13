@@ -1,10 +1,10 @@
 <#
-  LINE .NET クライアント PoC — Kiota 生成スクリプト (Windows / PowerShell)
+  LINE .NET クライアント — Kiota 生成スクリプト (Windows / PowerShell)
 
   前提:
     - .NET SDK 8 以降
     - Kiota CLI:  dotnet tool install --global Microsoft.OpenApi.Kiota
-    - リポジトリ直下（poc/）で実行すること
+    - リポジトリルートで実行すること
 
   仕様の取得:
     openapi/ に *.yml が無ければ line/line-openapi から取得します。

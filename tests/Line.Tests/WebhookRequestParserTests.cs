@@ -6,7 +6,7 @@ using Line.Messaging.Webhook;
 using Line.Messaging.Webhook.Generated.Models;
 using Xunit;
 
-namespace Line.Poc.Tests;
+namespace Line.Tests;
 
 // Verifies the receive entry point of WebhookRequestParser (signature validation + deserialization).
 // Focus:
@@ -14,7 +14,7 @@ namespace Line.Poc.Tests;
 //  - polymorphic reconstruction itself is covered by the existing WebhookDeserializationTests, so only one case is checked here
 //
 // Note: "working standalone without depending on the global default registry" cannot be proven within this
-// assembly (Line.Poc.Tests) because other tests may pollute ParseNodeFactoryRegistry.DefaultInstance. That self-containment
+// assembly (Line.Tests) because other tests may pollute ParseNodeFactoryRegistry.DefaultInstance. That self-containment
 // is guaranteed structurally by an implementation that uses JsonParseNodeFactory directly, and regression is guaranteed by the
 // independent assembly Line.Messaging.Webhook.IsolationTests (references only Webhook = a clean registry).
 public class WebhookRequestParserTests

@@ -1,6 +1,0 @@
-bin/
-obj/
-*.user
-# Kiota 生成コードは基本コミット対象（kiota-lock.json と共に）。
-# ただし PoC 段階で除外したい場合は下記を有効化:
-# src/**/Generated/

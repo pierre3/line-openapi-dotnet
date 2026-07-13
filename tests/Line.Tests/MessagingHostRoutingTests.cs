@@ -2,7 +2,7 @@ using Line.Messaging;
 using Line.Messaging.Generated.Api.Models;
 using Xunit;
 
-namespace Line.Poc.Tests;
+namespace Line.Tests;
 
 // Verification of the actual behavior of R1 (multiple base URLs). Confirms whether the MessagingClient facade
 //  - routes the control plane (send) to api.line.me

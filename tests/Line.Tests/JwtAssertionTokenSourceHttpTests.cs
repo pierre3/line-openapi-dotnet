@@ -13,7 +13,7 @@ using Microsoft.Kiota.Abstractions.Authentication;
 using Microsoft.Kiota.Http.HttpClientLibrary;
 using Xunit;
 
-namespace Line.Poc.Tests;
+namespace Line.Tests;
 
 // Verifies JwtAssertionTokenSource's "real issue path" down to the transport layer.
 // The existing JwtAssertionTokenSourceTests replaces IRequestAdapter.SendAsync<T>, so it

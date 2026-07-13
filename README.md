@@ -2,9 +2,9 @@
 
 LINE 公開 OpenAPI 仕様から **Kiota** で生成した .NET/C# クライアントに、利用シーン単位の手書きファサード／DI／受信グルーを重ねたクライアントライブラリ群です。**TFM は `net10.0` 単一**（netstandard2.0 / .NET Framework は対象外）。
 
-> ローカル（Windows/.NET）での実行を想定しています。設計方針は `../docs/LINE-dotnet-client-design.md`、開発文脈は `../CLAUDE.md` を参照。
+> ローカル（Windows/.NET）での実行を想定しています。設計方針は `docs/LINE-dotnet-client-design.md`、開発文脈は `CLAUDE.md` を参照。
 
-> 📚 **ユーザーマニュアル（DocFX）:** 概念記事（英語・日本語）＋英語 API リファレンスを `../docs/manual/` に用意しています。ビルドは `dotnet docfx ../docs/manual/docfx.json --serve`（下記「ドキュメント生成」参照）。設計方針は `../docs/LINE-dotnet-client-design.md` §13。
+> 📚 **ユーザーマニュアル（DocFX）:** 概念記事（英語・日本語）＋英語 API リファレンスを `docs/manual/` に用意しています。ビルドは `dotnet docfx docs/manual/docfx.json --serve`（下記「ドキュメント生成」参照）。設計方針は `docs/LINE-dotnet-client-design.md` §13。
 
 ## パッケージ
 
@@ -141,7 +141,7 @@ app.MapPost("/webhook", async (HttpRequest request, WebhookRequestParser parser)
 
 ## 再生成・ビルド・テスト
 
-`poc/` 直下で:
+リポジトリルートで:
 
 ```powershell
 # 生成（specs は openapi/ に同梱。channel-access-token.yml の未引用 urn を冪等に引用符化）
@@ -156,7 +156,7 @@ dotnet test                   # webhook 多態含め既定で全実行（opt-in 
 
 ## ドキュメント生成（DocFX）
 
-ユーザーマニュアル（`../docs/manual/`）は [DocFX](https://dotnet.github.io/docfx/) で生成します。DocFX はローカルツール（`.config/dotnet-tools.json`、現状 2.78.5）としてピン留め済み。リポジトリルートで:
+ユーザーマニュアル（`docs/manual/`）は [DocFX](https://dotnet.github.io/docfx/) で生成します。DocFX はローカルツール（`.config/dotnet-tools.json`、現状 2.78.5）としてピン留め済み。リポジトリルートで:
 
 ```powershell
 dotnet tool restore                              # 初回のみ（DocFX を復元）
@@ -172,7 +172,7 @@ dotnet docfx docs/manual/docfx.json --serve      # ローカルプレビュー�
 
 ## 付録: PoC 検証メモ
 
-G0〜G4 で以下を実機確認済み（詳細は `../docs/reviews/`）:
+G0〜G4 で以下を実機確認済み（詳細は `docs/reviews/`）:
 
 1. **ホスト分離** — `Line.Messaging/Generated/Api`(制御系) と `.../Generated/Blob`(`content` 系) を 2 クライアント分離生成し、`MessagingClient` が Blob 側 BaseUrl を `api-data.line.me` に設定。回帰は `MessagingHostRoutingTests`。
 2. **form-urlencoded** — `Line.ChannelAccessToken` のトークン発行が型付きモデルで送出（`/oauth2/v3/token` の oneOf 合成ボディは form 非対応のため手書きヘルパで平坦化）。
@@ -183,7 +183,8 @@ G0〜G4 で以下を実機確認済み（詳細は `../docs/reviews/`）:
 ## 構成
 
 ```
-poc/
+（リポジトリルート）
+├── LineOpenApi.slnx             # ソリューション
 ├── Directory.Build.props        # 共通 TFM(net10.0)/nullable/Kiota版
 ├── openapi/                     # 仕様スナップショット
 ├── scripts/generate.ps1 / .sh   # Kiota 生成コマンド
@@ -193,5 +194,8 @@ poc/
 │   ├── Line.Messaging/          # 制御系+データ系2クライアント + MessagingClient ファサード
 │   ├── Line.Messaging.Webhook/  # webhook モデル + WebhookRequestParser（受信グルー）
 │   └── Line.Liff/               # LIFF + LiffClient ファサード
-└── tests/Line.Poc.Tests/        # 手書き表面のテスト（署名/受信/ルーティング/DI/snapshot 等）
+├── tests/
+│   ├── Line.Tests/              # 手書き表面のテスト（署名/受信/ルーティング/DI/snapshot 等）
+│   └── Line.Messaging.Webhook.IsolationTests/  # レジストリ非依存の独立検証
+└── docs/                        # 設計・レビュー記録・ユーザーマニュアル（manual/）
 ```
