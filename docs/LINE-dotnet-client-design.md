@@ -125,6 +125,8 @@ Line.Bot → (Messaging + Messaging.Webhook + ChannelAccessToken)
 
 > 注意: Webhook イベントは oneOf + discriminator の多態構造。Kiota は discriminator が無いと `MissingDiscriminator` 警告を出し多態復元が不完全になりうる。生成時の警告有無を G1 で確認し、多態デシリアライズをテストで検証（§10）。
 
+**受信グルー（実装済み）:** 上記の「署名検証（Core）＋逆直列化」を利用側が毎回手組みするのは煩雑なため、`Line.Messaging.Webhook` に薄い受信ヘルパ `WebhookRequestParser` を追加した（優先利用シーン①「メッセージ送受信」の受信側を完成させる）。`ParseAsync(body, signature)` が生バイトに対する署名検証（NG は `WebhookSignatureException`）と `CallbackRequest` への逆直列化（失敗は `WebhookPayloadException`、基底 `WebhookException`）を 1 呼び出しに束ねる。逆直列化は **JSON 自己完結の `KiotaJsonSerializer` を使い、グローバルな既定シリアライザレジストリ（`RegisterDefaultDeserializer`）に依存しない**（Messaging クライアント未構築でも単独動作・副作用なし）。イベントの多態復元は生成コードの discriminator に委ね、ヘルパは `CallbackRequest` を返すのみ。DI は `AddLineWebhook`（HTTP 送信を伴わないため `IHttpClientFactory` は不要）。これにより本パッケージは「モデル専用」から「モデル＋受信グルー」へ拡張された（署名検証の実体は引き続き `Line.Core`）。
+
 ### 4.4 複数 base URL 問題と確定対処
 
 **前提（事実）:** Kiota は 1 クライアント = root `servers` の**先頭 1 件のみ**を base URL に採用し、オペレーション単位の `servers` オーバーライドを尊重しない（`MultipleServerEntries` 検証警告）。`messaging-api.yml` はコンテンツ取得系（`getMessageContent` 等）を `api-data.line.me` に割り当てるため、**単一クライアント生成では誤ホストになる**。「可能性」ではなく確定制約として扱う。
@@ -243,6 +245,7 @@ GitHub Actions（週次 cron + 手動）で仕様 DL → 生成/更新 → build
 - HTTP モックで URL テンプレート・クエリ・**認証ヘッダ**・**正しいホスト（api-data 系）**組み立てを検証。実 API は叩かない。
 - `AllowedHostsValidator` の負側テスト、短期トークンの期限/並行更新テスト。
 - 回帰: 公開 API 表面の snapshot テスト。
+- **自己完結性（グローバル状態非依存）の回帰は、参照を最小化した独立テストアセンブリで保証する。** 例: Webhook 受信ヘルパがデシリアライザのグローバル既定レジストリに依存しないことは、`Line.Messaging.Webhook` のみ参照する `Line.Messaging.Webhook.IsolationTests`（他クライアントや `RegisterDefaultDeserializer` を含まない＝クリーンなプロセス）で検証する。通常のテストアセンブリは他テストがプロセス共有レジストリを汚染しうるため、この種の主張を証明できない。同種の「グローバル非依存」主張が他パッケージで生じた場合も同方式を横展開する。
 
 ---
 

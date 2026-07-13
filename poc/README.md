@@ -1,84 +1,166 @@
-# LINE .NET クライアント — PoC (G2)
+# LINE .NET クライアント
 
-Kiota で LINE OpenAPI から .NET クライアントを生成し、設計方針（利用シーン単位分割・複数 base URL 対処・form-urlencoded・webhook 多態）が実際に成立するかを検証する最小構成です。**このサンドボックスでは .NET SDK を導入できないため、ローカル（Windows/.NET）で実行してください。**
+LINE 公開 OpenAPI 仕様から **Kiota** で生成した .NET/C# クライアントに、利用シーン単位の手書きファサード／DI／受信グルーを重ねたクライアントライブラリ群です。**TFM は `net10.0` 単一**（netstandard2.0 / .NET Framework は対象外）。
+
+> ローカル（Windows/.NET）での実行を想定しています。設計方針は `../docs/LINE-dotnet-client-design.md`、開発文脈は `../CLAUDE.md` を参照。
+
+## パッケージ
+
+| パッケージ | 役割 |
+|---|---|
+| `Line.Core` | 共通基盤（認証プロバイダ・Webhook 署名検証・許可ホスト） |
+| `Line.ChannelAccessToken` | チャネルアクセストークン発行（v2.1 JWT / v3 ステートレス・更新型プロバイダ） |
+| `Line.Messaging` | メッセージ送受信（`MessagingClient` ファサード＝制御系＋データ系 2 クライアント統合） |
+| `Line.Messaging.Webhook` | Webhook モデル＋受信グルー（`WebhookRequestParser`＝署名検証＋逆直列化） |
+| `Line.Liff` | LIFF アプリ管理（`LiffClient` ファサード） |
 
 ## 前提
 
-- .NET SDK 8 以降（`dotnet --version`）
-- Kiota CLI:
-  ```
-  dotnet tool install --global Microsoft.OpenApi.Kiota
-  ```
+- .NET SDK 10 以降（`dotnet --version`）
+- （再生成する場合のみ）Kiota CLI: `dotnet tool install --global Microsoft.OpenApi.Kiota`
 
-## 手順
+---
+
+## 利用チュートリアル
+
+### 1. メッセージ送信（Line.Messaging）
+
+```csharp
+using Line.Messaging;
+using Line.Messaging.Generated.Api.Models;
+
+// 簡易生成（長期チャネルアクセストークン）
+var client = MessagingClient.CreateWithStaticToken("CHANNEL_ACCESS_TOKEN");
+
+await client.Api.V2.Bot.Message.Push.PostAsync(new PushMessageRequest
+{
+    To = "U0123456789abcdef...",
+    Messages = new()
+    {
+        new TextMessage { Text = "Hello, world" },
+    },
+});
+
+// コンテンツ取得はデータ系(api-data.line.me)へ自動ルーティングされる
+var stream = await client.Blob.V2.Bot.Message["<messageId>"].Content.GetAsync();
+```
+
+DI（推奨。`IHttpClientFactory` によるハンドラ共有・CVE 修正版ミドルウェア適用）:
+
+```csharp
+using Line.Messaging.DependencyInjection;
+
+services.AddLineMessaging(o => o.ChannelAccessToken = "CHANNEL_ACCESS_TOKEN");
+// 解決: sp.GetRequiredService<MessagingClient>()
+```
+
+短期トークン（v2.1 JWT アサーション等）を使う場合は、更新型プロバイダを認証プロバイダ注入経路で渡す:
+
+```csharp
+services.AddLineMessaging(sp => /* IAuthenticationProvider を返す（Line.ChannelAccessToken の更新型プロバイダ等） */);
+```
+
+### 2. LIFF アプリ管理（Line.Liff）
+
+```csharp
+using Line.Liff;
+using Line.Liff.Generated.Models;
+
+var liff = LiffClient.CreateWithStaticToken("CHANNEL_ACCESS_TOKEN");
+
+var apps  = await liff.GetAppsAsync();
+var added = await liff.AddAppAsync(new AddLiffAppRequest
+{
+    View = new LiffView { Type = LiffView_type.Full, Url = "https://example.com" },
+});
+await liff.UpdateAppAsync(added!.LiffId!, new UpdateLiffAppRequest { Description = "updated" });
+await liff.DeleteAppAsync(added.LiffId!);
+```
+
+DI: `services.AddLineLiff(o => o.ChannelAccessToken = "…");`
+
+### 3. Webhook 受信（Line.Messaging.Webhook）
+
+`WebhookRequestParser` が **署名検証（`x-line-signature`）＋本文の逆直列化**を 1 呼び出しに束ねます。署名 NG は `WebhookSignatureException`、本文不正は `WebhookPayloadException`（どちらも基底 `WebhookException`）を投げます。
+
+```csharp
+using Line.Messaging.Webhook.DependencyInjection;
+
+services.AddLineWebhook(o => o.ChannelSecret = "CHANNEL_SECRET");
+// 解決: sp.GetRequiredService<WebhookRequestParser>()
+```
+
+ASP.NET Core での受信例（**生ボディの取得と署名ヘッダの抽出は利用側の責務**。署名は生バイト列に対して検証するため、モデルバインド前の生ボディを読むこと）:
+
+```csharp
+using Line.Messaging.Webhook;
+using Line.Messaging.Webhook.Generated.Models;
+
+app.MapPost("/webhook", async (HttpRequest request, WebhookRequestParser parser) =>
+{
+    using var ms = new MemoryStream();
+    await request.Body.CopyToAsync(ms);
+    var body = ms.ToArray();                                  // 署名対象の生バイト
+    var signature = request.Headers["x-line-signature"];
+
+    CallbackRequest callback;
+    try
+    {
+        callback = await parser.ParseAsync(body, signature);
+    }
+    catch (WebhookSignatureException) { return Results.Unauthorized(); }  // 署名 NG
+    catch (WebhookPayloadException)   { return Results.BadRequest(); }    // 本文 NG
+
+    // イベントは type discriminator で具象型に復元済み（未知 type は基底 Event）。
+    // ここから先の分岐は利用側で行う:
+    foreach (var ev in callback.Events!)
+    {
+        switch (ev)
+        {
+            case MessageEvent m when m.Message is TextMessageContent t:
+                Console.WriteLine($"text: {t.Text}");
+                break;
+            case FollowEvent:                 /* 友だち追加 */          break;
+            case PostbackEvent p:             /* p.Postback!.Data */    break;
+            // 未知イベントは基底 Event 型のまま届く（無視も可）
+        }
+    }
+    return Results.Ok();
+});
+```
+
+> マルチテナント（チャネルごとに異なるシークレット）では、静的オーバーロード
+> `WebhookRequestParser.ParseAsync(channelSecret, body, signature)` を使う。
+>
+> 本文サイズの上限（DoS 対策）は本ヘルパの責務外。ASP.NET Core の `MaxRequestBodySize` 等、
+> 上流で生ボディのサイズ制限を設けること。
+
+---
+
+## 再生成・ビルド・テスト
 
 `poc/` 直下で:
 
-**1) 生成**（specs は `openapi/` に同梱。無い分は自動取得）
-
 ```powershell
-# Windows
-./scripts/generate.ps1
-```
-```bash
-# macOS / Linux
-bash scripts/generate.sh
+# 生成（specs は openapi/ に同梱。channel-access-token.yml の未引用 urn を冪等に引用符化）
+./scripts/generate.ps1        # macOS/Linux は bash scripts/generate.sh
+dotnet build                  # net10.0 単一
+dotnet test                   # webhook 多態含め既定で全実行（opt-in フラグ不要）
 ```
 
-**2) ソリューション作成 & ビルド**
+生成コードは `src/**/Generated/`（`kiota-lock.json` はコミット対象）。`Microsoft.Kiota.Bundle` の版は `Directory.Build.props` の `KiotaBundleVersion` で一元管理（現状 2.0.0）。
 
-```bash
-dotnet new sln -n Line.Poc
-dotnet sln add src/Line.Core/Line.Core.csproj `
-               src/Line.ChannelAccessToken/Line.ChannelAccessToken.csproj `
-               src/Line.Messaging/Line.Messaging.csproj `
-               src/Line.Messaging.Webhook/Line.Messaging.Webhook.csproj `
-               src/Line.Liff/Line.Liff.csproj `
-               tests/Line.Poc.Tests/Line.Poc.Tests.csproj
-dotnet build
-```
-（PowerShell 以外では行継続子 `` ` `` を各 csproj をスペース区切りに置き換えてください。）
+---
 
-**3) テスト**
+## 付録: PoC 検証メモ
 
-```bash
-dotnet test
-```
+G0〜G4 で以下を実機確認済み（詳細は `../docs/reviews/`）:
 
-`CoreTests`（署名検証・許可ホスト負側）は生成物に依存せず必ず動きます。webhook 多態デシリアライズテストは生成後に有効化します（下記）。
-
-## 検証してほしいこと（PoC チェックリスト）
-
-1. **Kiota 検証警告** — 生成時ログの警告。特に messaging で `MultipleServerEntries`（想定内）、`MissingDiscriminator` が出ないか。
-2. **ホスト分離** — `src/Line.Messaging/Generated/Api` に送信系、`.../Generated/Blob` に `content` 系のみが分かれて生成されるか。`MessagingClient` が両方を構築でき、Blob 側 BaseUrl が `api-data.line.me` になるか。
-3. **form-urlencoded** — `Line.ChannelAccessToken/Generated` でトークン発行の本体が型付きモデルになっているか（stream に退化していないか）。
-4. **webhook 多態** — `Line.Messaging.Webhook/Generated/Models` に `CallbackRequest` と各イベント派生型（`MessageEvent` 等）が生成され、下記テストで discriminator 復元が成功するか。
-5. **net10.0 ビルド** — 全ライブラリが `net10.0`（単一 TFM）でビルドできるか（`Microsoft.Kiota.Bundle` の net10.0 動作確認）。netstandard2.0 / .NET Framework は対象外。
-6. **使い勝手（R2）** — 生成された主要メソッドのシグネチャ（例: メッセージ送信、コンテンツ取得）が実用的か。fluent ビルダーのパスが不自然でないか。
-
-### webhook 多態テストの有効化
-
-生成後、`Generated/Models` の実際の型名を確認し（多くは `CallbackRequest` / `MessageEvent` / `TextMessageContent`）、必要なら `WebhookDeserializationTests.cs` の型名を調整のうえ:
-
-```
-dotnet test -p:DefineConstants=WEBHOOK_DESERIALIZATION_READY
-```
-
-## フィードバックとして共有してほしい出力
-
-G2 コードレビュー（次ゲート）のため、以下を貼り付けていただけると精緻に進められます。
-
-- `generate` 実行時の**警告ログ全文**。
-- `dotnet build`（`net10.0`）の結果。エラー/警告があればその内容。
-- `dotnet test` の結果。
-- 生成された**メッセージ送信**と**コンテンツ取得**のメソッドシグネチャ（`MessagingClient` の使い方が確定できるように）。
-- webhook のルート型名とイベント派生型名。
-
-## 既知の注意点
-
-- **`MessagingClient` のビルダーパス** — `MessagingClient.cs` の使用例コメント（`.V2.Bot.Message.Push...` 等）は生成結果に依存する仮のパスです。生成後に実パスへ調整してください。構築ロジック（2 アダプタ + BaseUrl 上書き）自体は確定です。
-- **webhook `/callback`** — モデルは唯一のオペレーション `/callback` 経由で生成されるため、これを除外しません。生成される `callback` メソッド（server は example.com のダミー）は使わず、モデルのみ利用します。
-- **`Microsoft.Kiota.Bundle` のバージョン** — `Directory.Build.props` の `KiotaBundleVersion` を、`kiota info -l CSharp` が推奨する版に合わせてください。
+1. **ホスト分離** — `Line.Messaging/Generated/Api`(制御系) と `.../Generated/Blob`(`content` 系) を 2 クライアント分離生成し、`MessagingClient` が Blob 側 BaseUrl を `api-data.line.me` に設定。回帰は `MessagingHostRoutingTests`。
+2. **form-urlencoded** — `Line.ChannelAccessToken` のトークン発行が型付きモデルで送出（`/oauth2/v3/token` の oneOf 合成ボディは form 非対応のため手書きヘルパで平坦化）。
+3. **webhook 多態** — `CallbackRequest` と各イベント派生型を discriminator で復元。回帰は `WebhookDeserializationTests`。
+4. **net10.0 単一ビルド** — 全ライブラリが `net10.0` でビルド。
+5. **公開 API 表面 snapshot** — 手書き表面のみ `PublicApiSnapshotTests` で回帰検知（Generated 除外＋完全性ガード）。
 
 ## 構成
 
@@ -89,9 +171,9 @@ poc/
 ├── scripts/generate.ps1 / .sh   # Kiota 生成コマンド
 ├── src/
 │   ├── Line.Core/               # 認証プロバイダ・署名検証・許可ホスト（手書き）
-│   ├── Line.ChannelAccessToken/ # トークン発行（form-urlencoded 込み生成）
+│   ├── Line.ChannelAccessToken/ # トークン発行（form-urlencoded 込み生成＋手書きヘルパ）
 │   ├── Line.Messaging/          # 制御系+データ系2クライアント + MessagingClient ファサード
-│   ├── Line.Messaging.Webhook/  # webhook モデル専用
-│   └── Line.Liff/               # LIFF
-└── tests/Line.Poc.Tests/        # 署名/許可ホスト（常時）+ webhook 多態（生成後有効化）
+│   ├── Line.Messaging.Webhook/  # webhook モデル + WebhookRequestParser（受信グルー）
+│   └── Line.Liff/               # LIFF + LiffClient ファサード
+└── tests/Line.Poc.Tests/        # 手書き表面のテスト（署名/受信/ルーティング/DI/snapshot 等）
 ```

@@ -34,6 +34,7 @@ public class PublicApiSnapshotTests
         ("Line.ChannelAccessToken", typeof(Line.ChannelAccessToken.JwtAssertionTokenSource).Assembly),
         ("Line.Messaging", typeof(Line.Messaging.MessagingClient).Assembly),
         ("Line.Liff", typeof(Line.Liff.LiffClient).Assembly),
+        ("Line.Messaging.Webhook", typeof(Line.Messaging.Webhook.WebhookRequestParser).Assembly),
     };
 
     public static IEnumerable<object[]> RegisteredNames()

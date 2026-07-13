@@ -1,7 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <!-- webhook.yml のモデル専用。受信ペイロードのデシリアライズに使用。署名検証は Line.Core。 -->
+  <!-- webhook.yml のモデル＋受信グルー（WebhookRequestParser: 署名検証＋逆直列化）。署名検証は Line.Core。 -->
   <ItemGroup>
     <PackageReference Include="Microsoft.Kiota.Bundle" Version="$(KiotaBundleVersion)" />
+    <!-- 受信ヘルパが JsonParseNodeFactory を直接使う（既定レジストリ非依存）ため明示参照。
+         Bundle 経由でも推移的に入るが、直接依存を明示する。 -->
+    <PackageReference Include="Microsoft.Kiota.Serialization.Json" Version="$(KiotaBundleVersion)" />
+    <!-- DI 統合（HTTP 送信なしのため IHttpClientFactory は不要。Options のみ）。 -->
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.0" />
     <ProjectReference Include="..\Line.Core\Line.Core.csproj" />
   </ItemGroup>
 </Project>
