@@ -7,25 +7,26 @@ using Line.ChannelAccessToken.Generated.Oauth2.V21.Token;
 namespace Line.ChannelAccessToken;
 
 /// <summary>
-/// 生成クライアント（<see cref="ChannelAccessTokenClient"/>）を消費し、
-/// JWT アサーションで短期チャネルアクセストークン（<c>/oauth2/v2.1/token</c>）を発行する
-/// <see cref="IChannelAccessTokenSource"/> 実装。
+/// An <see cref="IChannelAccessTokenSource"/> implementation that consumes the generated
+/// client (<see cref="ChannelAccessTokenClient"/>) and issues a short-lived channel access
+/// token (<c>/oauth2/v2.1/token</c>) via a JWT assertion.
 ///
-/// JWT アサーション自体の生成（チャネルの秘密鍵での署名）はアプリ固有のため、
-/// 呼び出し側が assertionFactory で供給する（本ライブラリは署名鍵を扱わない）。
+/// Producing the JWT assertion itself (signing with the channel's private key) is
+/// application-specific, so the caller supplies it through assertionFactory (this library
+/// never handles signing keys).
 /// </summary>
 public sealed class JwtAssertionTokenSource : IChannelAccessTokenSource
 {
-    // RFC 7523: JWT Bearer client assertion。
+    // RFC 7523: JWT Bearer client assertion.
     private const string JwtBearerAssertionType =
         "urn:ietf:params:oauth:client-assertion-type:jwt-bearer";
 
     private readonly ChannelAccessTokenClient _client;
     private readonly Func<CancellationToken, Task<string>> _assertionFactory;
 
-    /// <param name="client">生成済み <see cref="ChannelAccessTokenClient"/>。</param>
+    /// <param name="client">A constructed <see cref="ChannelAccessTokenClient"/>.</param>
     /// <param name="assertionFactory">
-    /// 発行のたびに署名済み JWT アサーション文字列を返すファクトリ。
+    /// Factory that returns a signed JWT assertion string on each issuance.
     /// </param>
     public JwtAssertionTokenSource(
         ChannelAccessTokenClient client,
@@ -52,15 +53,17 @@ public sealed class JwtAssertionTokenSource : IChannelAccessTokenSource
             .PostAsync(body, cancellationToken: cancellationToken)
             .ConfigureAwait(false);
 
-        // access_token は空文字も不正応答として扱う（null のみだと空文字が IssuedToken
-        // コンストラクタの ArgumentException として漏れ、expires_in と非対称になる）。
+        // Treat an empty access_token as an invalid response too (otherwise an empty string
+        // would leak out as the ArgumentException from the IssuedToken constructor, which is
+        // asymmetric with expires_in handling).
         if (string.IsNullOrEmpty(response?.AccessToken) || response.ExpiresIn is null)
             throw new InvalidOperationException(
                 "Token issuance response did not contain access_token / expires_in.");
 
-        // expires_in が 0 以下だと IssuedToken コンストラクタが ArgumentOutOfRangeException を
-        // 投げ、他の「応答が不正」ケース（InvalidOperationException）とエラー面が食い違う。
-        // 応答検証としてここで揃える（expires_in は秘匿値でないため値を含めてよい）。
+        // A non-positive expires_in would make the IssuedToken constructor throw
+        // ArgumentOutOfRangeException, giving a different error surface than the other
+        // "invalid response" cases (InvalidOperationException). Normalize it here as part of
+        // response validation (expires_in is not a secret, so it is fine to include the value).
         if (response.ExpiresIn.Value <= 0)
             throw new InvalidOperationException(
                 $"Token issuance response contained a non-positive expires_in ({response.ExpiresIn.Value}).");

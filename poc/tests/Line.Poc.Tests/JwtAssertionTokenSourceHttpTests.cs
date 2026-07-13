@@ -15,14 +15,14 @@ using Xunit;
 
 namespace Line.Poc.Tests;
 
-// JwtAssertionTokenSource の「実発行経路」をトランスポート層まで含めて検証する。
-// 既存の JwtAssertionTokenSourceTests は IRequestAdapter.SendAsync<T> を差し替えるため
-// 発行ロジック＋応答検証は見るが、実 HttpClientRequestAdapter が担う
-//   ・POST /oauth2/v2.1/token へのメソッド/URL 組み立て
-//   ・application/x-www-form-urlencoded によるボディ直列化
-//   ・Accept ヘッダ
-//   ・JSON レスポンスの逆直列化
-// は通らない。ここでは HttpMessageHandler をモックし、実アダプタ経由で上記を通す。
+// Verifies JwtAssertionTokenSource's "real issue path" down to the transport layer.
+// The existing JwtAssertionTokenSourceTests replaces IRequestAdapter.SendAsync<T>, so it
+// exercises the issue logic + response validation but does not cover what the real HttpClientRequestAdapter handles:
+//   - method/URL assembly for POST /oauth2/v2.1/token
+//   - body serialization via application/x-www-form-urlencoded
+//   - the Accept header
+//   - deserialization of the JSON response
+// Here we mock HttpMessageHandler and exercise the above through the real adapter.
 public class JwtAssertionTokenSourceHttpTests
 {
     private const string ExpectedAssertionType =
@@ -30,8 +30,8 @@ public class JwtAssertionTokenSourceHttpTests
 
     private static JwtAssertionTokenSource CreateSource(RecordingHandler handler)
     {
-        // BaseUrl はクライアント構築時に確定するため、アダプタ→クライアントの順で構築する
-        // （既定 https://api.line.me が採用される）。
+        // Because BaseUrl is fixed when the client is constructed, build in adapter -> client order
+        // (the default https://api.line.me is adopted).
         var adapter = new HttpClientRequestAdapter(
             new AnonymousAuthenticationProvider(),
             httpClient: new HttpClient(handler));
@@ -52,7 +52,7 @@ public class JwtAssertionTokenSourceHttpTests
 
         var issued = await source.IssueAsync();
 
-        // --- リクエスト（トランスポート層）の検証 ---
+        // --- Verification of the request (transport layer) ---
         Assert.NotNull(handler.Request);
         Assert.Equal(HttpMethod.Post, handler.Request!.Method);
         Assert.Equal("https://api.line.me/oauth2/v2.1/token", handler.Request.RequestUri!.ToString());
@@ -66,20 +66,20 @@ public class JwtAssertionTokenSourceHttpTests
         Assert.Equal(ExpectedAssertionType, form["client_assertion_type"]);
         Assert.Equal("SIGNED.JWT.VALUE", form["client_assertion"]);
 
-        // --- レスポンス（JSON 逆直列化 → IssuedToken）の検証 ---
+        // --- Verification of the response (JSON deserialization -> IssuedToken) ---
         Assert.Equal("real-token", issued.AccessToken);
         Assert.Equal(TimeSpan.FromSeconds(2592000), issued.Lifetime);
     }
 
     [Theory]
-    [InlineData(HttpStatusCode.BadRequest)]   // invalid_grant / 鍵不一致
-    [InlineData(HttpStatusCode.Unauthorized)] // 認証失敗
-    [InlineData((HttpStatusCode)429)]         // レート制限
+    [InlineData(HttpStatusCode.BadRequest)]   // invalid_grant / key mismatch
+    [InlineData(HttpStatusCode.Unauthorized)] // authentication failure
+    [InlineData((HttpStatusCode)429)]         // rate limit
     public async Task IssueAsync_ErrorStatus_Surfaces_ApiException(HttpStatusCode status)
     {
-        // 生成 PostAsync は errorMapping=default で発行するため、非 2xx は
-        // JwtAssertionTokenSource の InvalidOperationException 正規化には到達せず、
-        // Kiota の ApiException がそのまま呼び出し側へ抜ける。この挙動は HTTP 経路でしか踏めない。
+        // Because the generated PostAsync issues with errorMapping=default, non-2xx responses
+        // do not reach JwtAssertionTokenSource's InvalidOperationException normalization;
+        // Kiota's ApiException propagates directly to the caller. This behavior can only be exercised on the HTTP path.
         var handler = new RecordingHandler(new HttpResponseMessage(status)
         {
             Content = new StringContent(
@@ -92,14 +92,14 @@ public class JwtAssertionTokenSourceHttpTests
     }
 
     [Theory]
-    [InlineData("{}")]                                   // 全欠落
-    [InlineData("{\"expires_in\":3600}")]                // access_token 欠落
-    [InlineData("{\"access_token\":\"token-value\"}")]   // expires_in 欠落
+    [InlineData("{}")]                                   // all missing
+    [InlineData("{\"expires_in\":3600}")]                // access_token missing
+    [InlineData("{\"access_token\":\"token-value\"}")]   // expires_in missing
     public async Task IssueAsync_MissingFieldsInRawJson_Throws_InvalidOperation(string json)
     {
-        // 既存 JwtAssertionTokenSourceTests は構築済みモデルを stub が返すため、実 JSON
-        // 逆直列化を経ていない。生 JSON を実アダプタで逆直列化した際に欠落フィールドが
-        // null に落ち、応答検証が InvalidOperationException に正規化されることをここで実証する。
+        // The existing JwtAssertionTokenSourceTests has its stub return a pre-built model, so it does not go through real JSON
+        // deserialization. Here we prove that when raw JSON is deserialized by the real adapter, missing fields
+        // fall to null and the response validation is normalized to InvalidOperationException.
         var handler = new RecordingHandler(new HttpResponseMessage(HttpStatusCode.OK)
         {
             Content = new StringContent(json, Encoding.UTF8, "application/json"),
@@ -132,8 +132,8 @@ public class JwtAssertionTokenSourceHttpTests
                 kv => Uri.UnescapeDataString(kv[0]),
                 kv => kv.Length > 1 ? Uri.UnescapeDataString(kv[1]) : string.Empty);
 
-    // 送信された HttpRequestMessage と（読み取り済みの）ボディ文字列を記録し、
-    // 固定レスポンスを返すモックハンドラ。実ネットワークには出ない。
+    // A mock handler that records the sent HttpRequestMessage and the (already read) body string,
+    // and returns a fixed response. Does not go out to the real network.
     private sealed class RecordingHandler : HttpMessageHandler
     {
         private readonly HttpResponseMessage _response;

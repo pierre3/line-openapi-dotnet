@@ -7,10 +7,10 @@ using Xunit;
 
 namespace Line.Poc.Tests;
 
-// Line.Core の手書きロジックの検証。生成コードに依存しないため常にビルド・実行可能。
+// Verification of Line.Core's hand-written logic. Independent of generated code, so it always builds and runs.
 public class CoreTests
 {
-    // --- 署名検証（既知値テスト） ---
+    // --- Signature validation (known-value test) ---
     [Fact]
     public void Signature_Valid_ReturnsTrue()
     {
@@ -36,18 +36,18 @@ public class CoreTests
         Assert.False(WebhookSignatureValidator.IsValid(secret, body, null));
     }
 
-    // --- AllowedHostsValidator の負側テスト ---
+    // --- Negative-side tests for AllowedHostsValidator ---
     [Fact]
     public async System.Threading.Tasks.Task Token_NotAttached_ToDisallowedHost()
     {
-        var provider = new StaticChannelAccessTokenProvider("TOKEN"); // 既定: api.line.me / api-data.line.me
+        var provider = new StaticChannelAccessTokenProvider("TOKEN"); // default: api.line.me / api-data.line.me
 
         var apiToken = await provider.GetAuthorizationTokenAsync(new Uri("https://api.line.me/v2/bot/message/push"));
         var dataToken = await provider.GetAuthorizationTokenAsync(new Uri("https://api-data.line.me/v2/bot/message/x/content"));
         var evilToken = await provider.GetAuthorizationTokenAsync(new Uri("https://evil.example.com/"));
 
         Assert.Equal("TOKEN", apiToken);
-        Assert.Equal("TOKEN", dataToken);   // データ系ホストにも付与される
-        Assert.Equal(string.Empty, evilToken); // 許可外には付与しない
+        Assert.Equal("TOKEN", dataToken);   // also attached for data-plane hosts
+        Assert.Equal(string.Empty, evilToken); // not attached for non-allowed hosts
     }
 }

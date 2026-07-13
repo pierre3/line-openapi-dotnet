@@ -9,25 +9,25 @@ using Xunit;
 
 namespace Line.Poc.Tests;
 
-// 公開 API 表面の snapshot 回帰テスト（G4②・設計 §8, §10）。
+// Snapshot regression test for the public API surface (G4-2, design sections 8, 10).
 //
-// ねらい: 破壊的変更を「公開 API 表面（public 型/シグネチャ）」の差分として検知する。
-// 設計 §8 の指針どおり **手書き表面のみ** を対象とし、Kiota 生成コード
-// （名前空間に "Generated" セグメントを含むもの）は除外して内部生成差分のノイズを避ける。
+// Goal: detect breaking changes as diffs in the "public API surface (public types/signatures)".
+// Per design section 8, targets **only the hand-written surface** and excludes Kiota-generated code
+// (namespaces containing a "Generated" segment) to avoid noise from internal generation diffs.
 //
-// 線引きの注意: トップレベルの生成型は除外するが、**手書き型の公開シグネチャに露出する
-// 生成型は残す**（例: MessagingClient.Api → Generated.Api.MessagingApiClient）。これは
-// 公開契約の一部なので検知対象とするのが正しい。生成型名のリネームがシグネチャ経由で
-// リークすると snapshot も振れる点は意図した挙動。
+// Boundary note: top-level generated types are excluded, but **generated types exposed in the public
+// signatures of hand-written types are kept** (e.g. MessagingClient.Api -> Generated.Api.MessagingApiClient). This
+// is part of the public contract, so it is correct to include it in detection. A rename of a generated type name leaking
+// through a signature also shifting the snapshot is intended behavior.
 //
-// 承認フロー（ApprovalTests 方式）:
-//   - 期待値は PublicApi/<Assembly>.approved.txt にコミットしておく。
-//   - 実行値が一致すれば PASS。差分があれば <Assembly>.received.txt を書き出して FAIL。
-//   - 意図した変更なら received を確認のうえ approved へ反映（上書き）して再実行する。
+// Approval flow (ApprovalTests style):
+//   - Commit the expected value to PublicApi/<Assembly>.approved.txt.
+//   - PASS if the runtime value matches. On a diff, write <Assembly>.received.txt and FAIL.
+//   - For an intended change, review received, apply it to approved (overwrite), and re-run.
 public class PublicApiSnapshotTests
 {
-    // snapshot を取る手書き公開表面を持つアセンブリの登録簿。
-    // 新パッケージに手書き公開 API を追加したらここへ足す（漏れは下の完全性テストが検知）。
+    // Registry of assemblies whose hand-written public surface is snapshotted.
+    // Add here when a new package gains a hand-written public API (omissions are caught by the completeness test below).
     private static readonly IReadOnlyList<(string Name, Assembly Assembly)> Registered = new[]
     {
         ("Line.Core", typeof(Line.Core.Authentication.LineHosts).Assembly),
@@ -48,10 +48,10 @@ public class PublicApiSnapshotTests
         AssertPublicApi(assembly, name);
     }
 
-    // 完全性ガード（設計 §8 の対象選定漏れ防止）:
-    // テストが参照する Line.* アセンブリのうち「手書き public 型を持つのに未登録」を検知する。
-    // 新パッケージ（現状 0 件の Line.Messaging.Webhook 等）に手書き公開 API を足したのに
-    // snapshot 登録を忘れた場合、無警告の保護漏れにならないようここで FAIL させる。
+    // Completeness guard (prevents missing selections per design section 8):
+    // Detects Line.* assemblies referenced by the test that "have hand-written public types but are unregistered".
+    // If a new package (such as Line.Messaging.Webhook, currently with 0) gains a hand-written public API but
+    // its snapshot registration is forgotten, this FAILs here to avoid a silent protection gap.
     [Fact]
     public void All_Handwritten_Line_Assemblies_Are_Registered()
     {
@@ -69,12 +69,12 @@ public class PublicApiSnapshotTests
             .ToList();
 
         Assert.True(missing.Count == 0,
-            "手書き public 型を持つのに snapshot 未登録のアセンブリがあります: " +
+            "Some assemblies have hand-written public types but are not registered for snapshotting: " +
             string.Join(", ", missing) +
-            "。PublicApiSnapshotTests.Registered に追加し、approved.txt を作成してください。");
+            ". Add them to PublicApiSnapshotTests.Registered and create their approved.txt.");
     }
 
-    // 手書き公開 API のみを対象にした snapshot を生成し、approved と突き合わせる。
+    // Generates a snapshot targeting only the hand-written public API and compares it against approved.
     private static void AssertPublicApi(Assembly assembly, string name)
     {
         var actual = GenerateHandwrittenPublicApi(assembly);
@@ -88,9 +88,9 @@ public class PublicApiSnapshotTests
         {
             File.WriteAllText(receivedPath, actual);
             Assert.Fail(
-                $"承認ファイルがありません: {approvedPath}\n" +
-                $"生成された表面を確認のうえ、{Path.GetFileName(receivedPath)} を " +
-                $"{Path.GetFileName(approvedPath)} にリネームしてコミットしてください。");
+                $"Approved file is missing: {approvedPath}\n" +
+                $"Review the generated surface, then rename {Path.GetFileName(receivedPath)} to " +
+                $"{Path.GetFileName(approvedPath)} and commit it.");
         }
 
         var approved = Normalize(File.ReadAllText(approvedPath));
@@ -98,20 +98,20 @@ public class PublicApiSnapshotTests
         {
             File.WriteAllText(receivedPath, actual);
             Assert.Fail(
-                $"公開 API 表面が承認 snapshot と一致しません: {name}\n" +
-                $"意図した変更なら {Path.GetFileName(receivedPath)} を確認のうえ " +
-                $"{Path.GetFileName(approvedPath)} へ反映してください。\n" +
+                $"Public API surface does not match the approved snapshot: {name}\n" +
+                $"If this change is intended, review {Path.GetFileName(receivedPath)} and " +
+                $"apply it to {Path.GetFileName(approvedPath)}.\n" +
                 $"received: {receivedPath}");
         }
 
-        // 一致したら残っている received を掃除する。
+        // On a match, clean up any leftover received file.
         if (File.Exists(receivedPath))
         {
             File.Delete(receivedPath);
         }
     }
 
-    // Kiota 生成型を除いた手書き公開型のみで API 文字列を生成する。
+    // Generates the API string from only hand-written public types, excluding Kiota-generated types.
     private static string GenerateHandwrittenPublicApi(Assembly assembly)
     {
         var handwrittenTypes = assembly.GetExportedTypes()
@@ -121,7 +121,7 @@ public class PublicApiSnapshotTests
         return assembly.GeneratePublicApi(new ApiGeneratorOptions
         {
             IncludeTypes = handwrittenTypes,
-            // アセンブリ属性はビルド構成でノイズになりやすいため除外する。
+            // Assembly attributes tend to be noisy across build configurations, so they are excluded.
             IncludeAssemblyAttributes = false,
         });
     }
@@ -129,9 +129,9 @@ public class PublicApiSnapshotTests
     private static bool HasHandwrittenPublicTypes(Assembly assembly)
         => assembly.GetExportedTypes().Any(t => !IsGenerated(t));
 
-    // 名前空間に "Generated" セグメントが含まれれば生成型とみなす。
-    // セグメント単位で判定するため "Line.Core.GeneratedHelpers" のような手書き名前空間を
-    // 誤検知しない（.Contains(".Generated") ではなく分割一致）。
+    // A type is considered generated if its namespace contains a "Generated" segment.
+    // Because it matches on a per-segment basis, it does not misclassify a hand-written namespace like
+    // "Line.Core.GeneratedHelpers" (split-based matching rather than .Contains(".Generated")).
     private static bool IsGenerated(Type type)
         => (type.Namespace ?? string.Empty)
             .Split('.')

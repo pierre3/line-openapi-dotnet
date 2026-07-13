@@ -1,0 +1,10 @@
+- name: Home
+  href: index.md
+- name: Guide (English)
+  href: en/
+  homepage: en/getting-started.md
+- name: ガイド (日本語)
+  href: ja/
+  homepage: ja/getting-started.md
+- name: API Reference
+  href: api/

@@ -11,20 +11,21 @@ using Microsoft.Kiota.Http.HttpClientLibrary;
 namespace Line.Messaging.DependencyInjection;
 
 /// <summary>
-/// <see cref="MessagingClient"/> を DI コンテナへ登録する拡張。
+/// Extensions that register <see cref="MessagingClient"/> with the DI container.
 ///
-/// M-3 対応: 2 アダプタが各々既定 <see cref="HttpClient"/> を内部生成する問題を解消する。
-/// <c>IHttpClientFactory</c> の名前付きクライアント（ハンドラプール共有）＋ Kiota 既定ミドルウェア
-/// （<c>KiotaClientFactory.GetDefaultHandlerActivatableTypes()</c> 経由で CVE 修正版 RedirectHandler を含む）
-/// を適用し、許可ホストは <see cref="LineMessagingOptions.AllowedHosts"/> から注入する。
+/// M-3 fix: resolves the problem of the two adapters each creating their own default
+/// <see cref="HttpClient"/>. It applies a named <c>IHttpClientFactory</c> client (shared
+/// handler pool) plus the Kiota default middleware (including the CVE-fixed RedirectHandler,
+/// via <c>KiotaClientFactory.GetDefaultHandlerActivatableTypes()</c>), and injects the allowed
+/// hosts from <see cref="LineMessagingOptions.AllowedHosts"/>.
 /// </summary>
 public static class ServiceCollectionExtensions
 {
-    /// <summary>DI 内部で用いる名前付き HttpClient 名。</summary>
+    /// <summary>Name of the named HttpClient used internally by DI.</summary>
     public const string HttpClientName = "Line.Messaging";
 
     /// <summary>
-    /// 静的（長期）チャネルアクセストークンで <see cref="MessagingClient"/> を登録する。
+    /// Registers <see cref="MessagingClient"/> with a static (long-lived) channel access token.
     /// </summary>
     public static IServiceCollection AddLineMessaging(
         this IServiceCollection services,
@@ -48,9 +49,9 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
-    /// 任意の認証プロバイダで <see cref="MessagingClient"/> を登録する。
-    /// 更新型トークンプロバイダ（Line.ChannelAccessToken）を注入する場合はこちらを使う
-    /// （Line.Messaging → Line.ChannelAccessToken の依存を作らないための注入経路）。
+    /// Registers <see cref="MessagingClient"/> with an arbitrary authentication provider.
+    /// Use this overload to inject a refreshing token provider (Line.ChannelAccessToken); it is
+    /// the injection path that avoids a Line.Messaging -> Line.ChannelAccessToken dependency.
     /// </summary>
     public static IServiceCollection AddLineMessaging(
         this IServiceCollection services,
@@ -59,15 +60,17 @@ public static class ServiceCollectionExtensions
         if (services is null) throw new ArgumentNullException(nameof(services));
         if (authProviderFactory is null) throw new ArgumentNullException(nameof(authProviderFactory));
 
-        // 冪等化: 複数回呼ばれても名前付きクライアントに Kiota 既定ハンドラを重複追記しない。
-        // （重複するとリトライ/リダイレクトが多重化する。マーカーで初回のみ差し込む。）
+        // Idempotency: even if called multiple times, do not add the Kiota default handlers to
+        // the named client more than once. (Duplicates would multiply retries/redirects. A
+        // marker ensures they are inserted only on the first call.)
         if (!services.Any(d => d.ServiceType == typeof(LineMessagingMarker)))
         {
             services.AddSingleton<LineMessagingMarker>();
 
-            // 名前付き HttpClient + Kiota 既定ハンドラ（RedirectHandler 等の CVE 修正版を含む）。
-            // 1.22.2 には IHttpClientBuilder.AttachKiotaHandlers が無いため、DI ネイティブに
-            // 既定ハンドラ型を都度生成して差し込む（IHttpClientFactory のプール/ローテーションと整合）。
+            // Named HttpClient + Kiota default handlers (including CVE-fixed RedirectHandler etc.).
+            // 1.22.2 has no IHttpClientBuilder.AttachKiotaHandlers, so we instantiate the default
+            // handler types ourselves and insert them the DI-native way (consistent with
+            // IHttpClientFactory's pooling/rotation).
             var builder = services.AddHttpClient(HttpClientName);
             foreach (var handlerType in KiotaClientFactory.GetDefaultHandlerActivatableTypes())
             {
@@ -76,7 +79,7 @@ public static class ServiceCollectionExtensions
             }
         }
 
-        // 初回登録が有効（TryAdd）。複数回呼び出し時は最初の認証プロバイダ設定が採用される。
+        // First registration wins (TryAdd). On multiple calls, the first auth-provider setup is used.
         services.TryAddSingleton(sp =>
         {
             var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient(HttpClientName);
@@ -87,6 +90,6 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    // ハンドラ差し込みの一回性を判定するための内部マーカー。
+    // Internal marker used to decide the one-time handler insertion.
     private sealed class LineMessagingMarker { }
 }

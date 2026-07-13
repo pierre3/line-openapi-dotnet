@@ -6,9 +6,9 @@ using Xunit;
 
 namespace Line.Poc.Tests;
 
-// LiffClient ファサードの経路検証。単一ホスト(api.line.me)へ CRUD 各操作が
-// 正しい メソッド/URL で組み立てられるかを、生成ビルダーの RequestInformation で確認する。
-// 実 HTTP は不要（HTTP 経路は LiffClientHttpTests で別途検証）。
+// Path verification for the LiffClient facade. Uses the generated builder's RequestInformation to confirm that
+// each CRUD operation is assembled with the correct method/URL against the single host (api.line.me).
+// No real HTTP needed (the HTTP path is verified separately in LiffClientHttpTests).
 public class LiffClientTests
 {
     [Fact]
@@ -56,7 +56,7 @@ public class LiffClientTests
         Assert.Equal("/liff/v1/apps/liff-123", req.URI.AbsolutePath);
     }
 
-    // --- 便利メソッドの引数ガード（手書き公開契約の回帰防止） ---
+    // --- Argument guards for convenience methods (regression protection for the hand-written public contract) ---
 
     [Fact]
     public async Task AddAppAsync_NullRequest_Throws()

@@ -11,20 +11,22 @@ using Microsoft.Kiota.Http.HttpClientLibrary;
 namespace Line.Liff.DependencyInjection;
 
 /// <summary>
-/// <see cref="LiffClient"/> を DI コンテナへ登録する拡張。
+/// Extensions that register <see cref="LiffClient"/> with the DI container.
 ///
-/// <c>IHttpClientFactory</c> の名前付きクライアント（ハンドラプール共有）＋ Kiota 既定ミドルウェア
-/// （<c>KiotaClientFactory.GetDefaultHandlerActivatableTypes()</c> 経由で CVE 修正版 RedirectHandler を含む）
-/// を適用し、許可ホストは <see cref="LineLiffOptions.AllowedHosts"/> から注入する。
-/// 実装方針は Line.Messaging の同名拡張と揃えている（単一ホストな点のみ差異）。
+/// It applies a named <c>IHttpClientFactory</c> client (shared handler pool) plus the Kiota
+/// default middleware (including the CVE-fixed RedirectHandler, via
+/// <c>KiotaClientFactory.GetDefaultHandlerActivatableTypes()</c>), and injects the allowed
+/// hosts from <see cref="LineLiffOptions.AllowedHosts"/>.
+/// The implementation mirrors the same-named extension in Line.Messaging (the only difference
+/// being the single host).
 /// </summary>
 public static class ServiceCollectionExtensions
 {
-    /// <summary>DI 内部で用いる名前付き HttpClient 名。</summary>
+    /// <summary>Name of the named HttpClient used internally by DI.</summary>
     public const string HttpClientName = "Line.Liff";
 
     /// <summary>
-    /// 静的（長期）チャネルアクセストークンで <see cref="LiffClient"/> を登録する。
+    /// Registers <see cref="LiffClient"/> with a static (long-lived) channel access token.
     /// </summary>
     public static IServiceCollection AddLineLiff(
         this IServiceCollection services,
@@ -48,9 +50,9 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
-    /// 任意の認証プロバイダで <see cref="LiffClient"/> を登録する。
-    /// 更新型トークンプロバイダ（Line.ChannelAccessToken）を注入する場合はこちらを使う
-    /// （Line.Liff → Line.ChannelAccessToken の依存を作らないための注入経路）。
+    /// Registers <see cref="LiffClient"/> with an arbitrary authentication provider.
+    /// Use this overload to inject a refreshing token provider (Line.ChannelAccessToken); it is
+    /// the injection path that avoids a Line.Liff -> Line.ChannelAccessToken dependency.
     /// </summary>
     public static IServiceCollection AddLineLiff(
         this IServiceCollection services,
@@ -59,7 +61,8 @@ public static class ServiceCollectionExtensions
         if (services is null) throw new ArgumentNullException(nameof(services));
         if (authProviderFactory is null) throw new ArgumentNullException(nameof(authProviderFactory));
 
-        // 冪等化: 複数回呼ばれても名前付きクライアントに Kiota 既定ハンドラを重複追記しない。
+        // Idempotency: even if called multiple times, do not add the Kiota default handlers to
+        // the named client more than once.
         if (!services.Any(d => d.ServiceType == typeof(LineLiffMarker)))
         {
             services.AddSingleton<LineLiffMarker>();
@@ -72,7 +75,7 @@ public static class ServiceCollectionExtensions
             }
         }
 
-        // 初回登録が有効（TryAdd）。複数回呼び出し時は最初の認証プロバイダ設定が採用される。
+        // First registration wins (TryAdd). On multiple calls, the first auth-provider setup is used.
         services.TryAddSingleton(sp =>
         {
             var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient(HttpClientName);
@@ -83,6 +86,6 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    // ハンドラ差し込みの一回性を判定するための内部マーカー。
+    // Internal marker used to decide the one-time handler insertion.
     private sealed class LineLiffMarker { }
 }

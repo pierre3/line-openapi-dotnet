@@ -8,15 +8,15 @@ using Xunit;
 
 namespace Line.Poc.Tests;
 
-// WebhookRequestParser の受信入口（署名検証＋逆直列化）を検証する。
-// 重点:
-//  - 署名 OK/NG × パース OK/NG の組み合わせで正しい例外/戻り値になるか
-//  - 多態復元そのものは既存 WebhookDeserializationTests が担保するため、ここでは 1 件のみ確認
+// Verifies the receive entry point of WebhookRequestParser (signature validation + deserialization).
+// Focus:
+//  - whether combinations of signature OK/NG x parse OK/NG produce the correct exception/return value
+//  - polymorphic reconstruction itself is covered by the existing WebhookDeserializationTests, so only one case is checked here
 //
-// 注: 「グローバル既定レジストリ非依存で単独動作する」ことは、本アセンブリ（Line.Poc.Tests）内では
-// 他テストが ParseNodeFactoryRegistry.DefaultInstance を汚染しうるため証明できない。その自己完結性は
-// JsonParseNodeFactory を直接使う実装で構造的に担保し、回帰は独立アセンブリ
-// Line.Messaging.Webhook.IsolationTests（Webhook のみ参照＝クリーンなレジストリ）で保証する。
+// Note: "working standalone without depending on the global default registry" cannot be proven within this
+// assembly (Line.Poc.Tests) because other tests may pollute ParseNodeFactoryRegistry.DefaultInstance. That self-containment
+// is guaranteed structurally by an implementation that uses JsonParseNodeFactory directly, and regression is guaranteed by the
+// independent assembly Line.Messaging.Webhook.IsolationTests (references only Webhook = a clean registry).
 public class WebhookRequestParserTests
 {
     private const string ChannelSecret = "test-channel-secret";
@@ -37,7 +37,7 @@ public class WebhookRequestParserTests
       ]
     }";
 
-    // LINE と同じ方式で署名を計算する（channelSecret 鍵の HMAC-SHA256 を Base64）。
+    // Computes the signature the same way LINE does (Base64 of HMAC-SHA256 with the channelSecret key).
     private static string Sign(string channelSecret, byte[] body)
     {
         using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(channelSecret));
@@ -54,7 +54,7 @@ public class WebhookRequestParserTests
         var callback = await parser.ParseAsync(body, sig);
 
         Assert.Equal("U0123456789abcdef", callback.Destination);
-        // 多態復元は生成側に委譲。ここでは 1 件だけ具象型復元を確認する。
+        // Polymorphic reconstruction is delegated to the generated side. Here we check concrete-type reconstruction for just one case.
         var msg = Assert.IsType<MessageEvent>(Assert.Single(callback.Events!));
         var text = Assert.IsType<TextMessageContent>(msg.Message);
         Assert.Equal("Hello, world", text.Text);
@@ -75,7 +75,7 @@ public class WebhookRequestParserTests
     public async Task ParseAsync_WrongSecret_ThrowsSignatureException()
     {
         var body = Encoding.UTF8.GetBytes(ValidPayload);
-        var sig = Sign("some-other-secret", body); // 別の鍵で署名
+        var sig = Sign("some-other-secret", body); // signed with a different key
         var parser = new WebhookRequestParser(ChannelSecret);
 
         await Assert.ThrowsAsync<WebhookSignatureException>(() => parser.ParseAsync(body, sig));
@@ -108,7 +108,7 @@ public class WebhookRequestParserTests
     public async Task ParseAsync_ValidSignatureButMalformedJson_ThrowsPayloadException()
     {
         var body = Encoding.UTF8.GetBytes("{ this is not valid json ");
-        var sig = Sign(ChannelSecret, body); // 署名自体は正当（本文に対して計算）
+        var sig = Sign(ChannelSecret, body); // the signature itself is valid (computed over the body)
         var parser = new WebhookRequestParser(ChannelSecret);
 
         await Assert.ThrowsAsync<WebhookPayloadException>(() => parser.ParseAsync(body, sig));
@@ -132,7 +132,7 @@ public class WebhookRequestParserTests
     [Fact]
     public async Task WebhookSignatureException_And_PayloadException_ShareBase()
     {
-        // 呼び出し側が基底 WebhookException で一括捕捉できることを確認する。
+        // Confirms that the caller can catch everything with the base WebhookException.
         var body = Encoding.UTF8.GetBytes(ValidPayload);
         var parser = new WebhookRequestParser(ChannelSecret);
 

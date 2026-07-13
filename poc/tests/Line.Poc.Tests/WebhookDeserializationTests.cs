@@ -1,8 +1,8 @@
-// Webhook 多態デシリアライズの検証（看板機能）。
+// Verification of Webhook polymorphic deserialization (flagship feature).
 //
-// G2 では生成後の型名未確定のため #if WEBHOOK_DESERIALIZATION_READY で opt-in だったが、
-// G3 で型名を確定（CallbackRequest / MessageEvent / FollowEvent / PostbackEvent /
-// TextMessageContent、未知は基底 Event へフォールバック）したため既定/CI で常時実行する（§2-D）。
+// In G2 the post-generation type names were not yet fixed, so this was opt-in via #if WEBHOOK_DESERIALIZATION_READY, but
+// in G3 the type names were fixed (CallbackRequest / MessageEvent / FollowEvent / PostbackEvent /
+// TextMessageContent, with unknown falling back to the base Event), so it now always runs by default/in CI (section 2-D).
 using System.Threading.Tasks;
 using Line.Messaging.Webhook.Generated.Models;
 using Microsoft.Kiota.Abstractions;
@@ -16,11 +16,11 @@ public class WebhookDeserializationTests
 {
     static WebhookDeserializationTests()
     {
-        // 生成クライアントを構築しないため、JSON デシリアライザを既定レジストリへ明示登録する。
+        // Because no generated client is constructed, the JSON deserializer is explicitly registered into the default registry.
         ApiClientBuilder.RegisterDefaultDeserializer<JsonParseNodeFactory>();
     }
 
-    // message(text) 単一イベント。
+    // A single message(text) event.
     private const string SinglePayload = @"{
       ""destination"": ""U0123456789abcdef"",
       ""events"": [
@@ -37,7 +37,7 @@ public class WebhookDeserializationTests
       ]
     }";
 
-    // message / follow / postback / 未知(future) の混在。
+    // A mix of message / follow / postback / unknown(future).
     private const string MixedPayload = @"{
       ""destination"": ""U0123456789abcdef"",
       ""events"": [
@@ -107,7 +107,7 @@ public class WebhookDeserializationTests
     {
         var callback = await Deserialize(MixedPayload);
 
-        // 未知 type は discriminator の default で基底 Event に復元される（派生型ではない）。
+        // An unknown type is reconstructed to the base Event via the discriminator's default (not a derived type).
         var unknown = callback!.Events![3];
         Assert.Equal(typeof(Event), unknown.GetType());
     }
