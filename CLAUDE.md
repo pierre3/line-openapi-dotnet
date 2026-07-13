@@ -58,6 +58,7 @@ LINE 公開 OpenAPI 仕様（https://github.com/line/line-openapi）から、**K
 G4（①〜⑤）は全て main 反映済み。優先利用シーン ①メッセージ送受信（送信＝Messaging / 受信＝Webhook 受信ヘルパ）/ ②LIFF 管理 の手書き表面が揃った。以降の候補（未着手・優先度は要相談）:
 
 - **リリース準備（G5 想定）:** NuGet パッケージング未設定（`PackageId`/`Authors`/`Description`/`PackageLicense`/`README`/`Version` 等のメタデータ、CI/公開フロー）。（製品レイアウト昇格は消化済＝`poc/` を廃し `src/`・`tests/`・`openapi/`・`scripts/` をルート直下へ、ソリューション `LineOpenApi.slnx`、テスト `Line.Tests`。）
+  - **パッケージ/名前空間リネーム（`Line.*` → `Line.OpenApi.*`）が未適用**。命名は確定済（設計 §8・rev.5）。適用対象: 各プロジェクト名/ディレクトリ・`RootNamespace`/`AssemblyName`・`PackageId`、全 `src`/`tests` の `namespace`・`using`、`docfx.json` の `filterConfig.yml`（`Line.OpenApi.*.Generated` 除外）、公開 API snapshot approved、README/マニュアルのコード例、`generate.ps1`（Kiota `--namespace-name`）。
 - **`Line.Bot`（任意メタパッケージ）:** 未作成。
 - **将来パッケージ:** insight / manage-audience / module / shop（仕様未取得）。
 - （消化済）Webhook 受信の利用シーンヘルパ = `WebhookRequestParser` を追加（`feat-webhook-receive`。ゲート・go/no-go は当該セッション参照）。
@@ -88,3 +89,4 @@ dotnet docfx docs/manual/docfx.json        # metadata + build → docs/manual/_s
 - 破壊的変更は公開 API 表面の差分で検知。生成物内部の差分はレビュー対象外。
 - **コメントは全て英語**（XML doc `///` ＋インライン `//`、手書きコードのみ。生成物は対象外）。API リファレンスを英語で単一提供するため。設計 §13.2 準拠。プロジェクト文書（`docs/**`・本ファイル・レビュー記録）は日本語のまま。
 - **ドキュメント:** DocFX で英語 API リファレンス自動生成＋概念記事は英語/日本語 2 系統（`docs/manual/`）。設計 §13 準拠。
+- **公開パッケージ命名（rev.5・確定）:** NuGet `PackageId` と C# ルート名前空間は **`Line.OpenApi.*`**（`Line.OpenApi.Core`/`.ChannelAccessToken`/`.Messaging`/`.Messaging.Webhook`/`.Liff`/`.Bot`）。既公開の旧 SDK `Line.Messaging`（pierre3/kenakamu 所有）との ID・名前空間衝突回避。設計 §8「パッケージ命名」準拠。**注意: このリネームは未適用**（現行コードは素の `Line.*` 名前空間。適用は G5 リリース準備で実施）。

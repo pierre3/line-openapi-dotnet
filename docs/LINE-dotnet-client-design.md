@@ -3,13 +3,14 @@
 **対象リポジトリ:** https://github.com/line/line-openapi
 **生成ツール:** Kiota（Microsoft 製 OpenAPI クライアントジェネレータ）
 **対象言語 / ランタイム:** C# / **.NET 10 以降（LTS）**。サポート対象は**モダン .NET のみ**とし、`netstandard2.0` / .NET Framework は**対象外**（LINE 連携はモダンなシステムを想定）。
-**最終更新:** 2026-07-13（rev.4 — ドキュメント/ユーザーマニュアル方針（§13）とコメント言語ポリシー（全コメント英語化）を追加）
+**最終更新:** 2026-07-13（rev.5 — 公開パッケージ ID / ルート名前空間を `Line.OpenApi.*` に確定）
 **ステータス:** ドラフト（設計方針の合意用）
 
 ---
 
 ## 変更履歴
 
+- **rev.5 (2026-07-13):** 公開パッケージ ID / ルート名前空間を **`Line.OpenApi.*`** プレフィックスに確定（§8「パッケージ命名」・§4.2 注記）。既公開の旧 SDK `Line.Messaging`（pierre3/kenakamu 所有）との ID・名前空間衝突を回避するため。
 - **rev.4 (2026-07-13):** ドキュメント/ユーザーマニュアル方針（§13）を追加。DocFX で英語 API リファレンスを自動生成し、概念記事は英語・日本語の 2 系統で提供。あわせて**ソースコードのコメントを全て英語化するポリシー**（§13.2）を確定。
 - **rev.3 (2026-07-10):** TFM を `net10.0` 単一へ変更、netstandard2.0 を対象外に。
 - **rev.2 (2026-07-09):** パッケージ構成を「利用シーン単位の分割」に確定（優先: メッセージ送受信 Bot / LIFF 管理）。G0 レビューの必須指摘（複数 base URL、mime-types 出し分け、PoC スコープ、webhook 多態）を反映。
@@ -86,6 +87,8 @@ LINE が公開する OpenAPI 仕様（`line/line-openapi`）から、Kiota を�
 | **Line.Messaging.Webhook** | 優先 | `webhook.yml` | Webhook 受信・イベント解析（Bot） | Line.Core | モデル専用。多態(oneOf/discriminator)デシリアライズ。署名検証は Core 側 |
 | **Line.Liff** | 優先 | `liff.yml` | LIFF アプリの登録・管理 | Line.Core | 単一ホストでシンプル |
 | **Line.Bot** | 任意（メタ） | — | Bot 一式を 1 参照で導入 | Messaging + Messaging.Webhook + ChannelAccessToken | 便宜パッケージ。導入は任意 |
+
+> **命名（rev.5・確定）:** 上表の短縮ラベル（`Line.Core` 等）は**設計上の呼称**。**公開 NuGet ID と C# ルート名前空間は `Line.OpenApi.*` プレフィックス**を用いる（`Line.OpenApi.Core` / `Line.OpenApi.ChannelAccessToken` / `Line.OpenApi.Messaging` / `Line.OpenApi.Messaging.Webhook` / `Line.OpenApi.Liff` / `Line.OpenApi.Bot`）。理由は §8「パッケージ命名」参照。以降、本書で `Line.Messaging` 等と記す箇所は `Line.OpenApi.Messaging` 等に読み替える。
 | **Line.Insight** | 将来 | `insight.yml` | 統計・分析（バックオフィス） | Line.Core | 需要に応じて追加生成 |
 | **Line.ManageAudience** | 将来 | `manage-audience.yml` | オーディエンス配信（マーケティング） | Line.Core | `api-data` 系あり（§4.4 と同パターン） |
 | **Line.Module** | 将来 | `module.yml` + `module-attach.yml` | モジュール/代理連携 | Line.Core | `manager.line.biz` 含む上級シナリオ |
@@ -220,6 +223,10 @@ Webhook（モデルのみ）／LIFF も同様に個別生成。
 
 ## 8. パッケージング・配布
 
+- **パッケージ命名（rev.5・確定）:** 公開 NuGet ID と C# ルート名前空間は **`Line.OpenApi.*` プレフィックス**で統一する。
+  - **理由:** ①`Line.Messaging` は既に NuGet 公開済み（`pierre3` / `kenakamu` 所有の旧 C# SDK「SDK for the LINE Messaging API」、v1.4.5・16 万 DL）で **ID が衝突**する。②旧 SDK は **`Line.Messaging` 名前空間**も占有するため、素の `Line.*` 名前空間だと両参照時に型が衝突する。③`Line.OpenApi.*` は `Line.` ルートを保ちつつ本ライブラリ（LINE 公開 OpenAPI からの生成）を旧 SDK と明確に分離し、リポジトリ/ソリューション名（`line-openapi-dotnet` / `LineOpenApi.slnx`）とも整合する。
+  - **確認:** `Line.OpenApi.{Core,ChannelAccessToken,Messaging,Messaging.Webhook,Liff,Bot}` は 2026-07-13 時点で NuGet 全件未使用（空き）を確認済み。
+  - **適用範囲:** NuGet `PackageId`、アセンブリ名、ルート名前空間、DocFX の `filterConfig.yml`（`Line.OpenApi.*.Generated` 除外）、公開 API snapshot の approved、README/マニュアルの `using`・コード例。
 - **配布:** NuGet。SourceLink・XML ドキュメント・決定的ビルドを有効化。
 - **バージョニング:** 各パッケージ SemVer。仕様スナップショットのコミットハッシュ/取得日を `kiota-lock.json` とリリースノートに記録。
 - **回帰の baseline:** 公開 API 表面（public 型/シグネチャ）に snapshot 対象を限定し、内部生成差分のノイズを避ける（中程度指摘）。
