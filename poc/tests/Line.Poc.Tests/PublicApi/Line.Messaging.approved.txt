@@ -1,0 +1,25 @@
+namespace Line.Messaging.DependencyInjection
+{
+    public sealed class LineMessagingOptions
+    {
+        public LineMessagingOptions() { }
+        public string[]? AllowedHosts { get; set; }
+        public string ChannelAccessToken { get; set; }
+    }
+    public static class ServiceCollectionExtensions
+    {
+        public const string HttpClientName = "Line.Messaging";
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddLineMessaging(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, System.Action<Line.Messaging.DependencyInjection.LineMessagingOptions> configure) { }
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddLineMessaging(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, System.Func<System.IServiceProvider, Microsoft.Kiota.Abstractions.Authentication.IAuthenticationProvider> authProviderFactory) { }
+    }
+}
+namespace Line.Messaging
+{
+    public sealed class MessagingClient
+    {
+        public MessagingClient(Microsoft.Kiota.Abstractions.Authentication.IAuthenticationProvider authProvider, System.Net.Http.HttpClient? httpClient = null) { }
+        public Line.Messaging.Generated.Api.MessagingApiClient Api { get; }
+        public Line.Messaging.Generated.Blob.MessagingBlobApiClient Blob { get; }
+        public static Line.Messaging.MessagingClient CreateWithStaticToken(string channelAccessToken) { }
+    }
+}

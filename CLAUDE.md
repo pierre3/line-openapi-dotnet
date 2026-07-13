@@ -43,15 +43,16 @@ LINE 公開 OpenAPI 仕様（https://github.com/line/line-openapi）から、**K
 - **G2 PoC:** 生成→ビルド→テスト実行済（`docs/reviews/2026-07-10-G2-poc-result.md`）。両レビュー = CONCERNS → 高重大度の R1 BaseUrl 順序バグ等を修正・回帰テスト追加済（`docs/reviews/2026-07-10-G2-review.md`）。**人の go/no-go = GO。**
 - **G3 手書き実装:** 実装＋ゲートレビュー完了（`docs/reviews/2026-07-10-G3-implementation.md` / `-G3-review.md`。コード=CONCERNS / セキュリティ=PASS）。中位「DI 二重登録の非冪等」と低位「`_refreshAt` アトミック性」を修正・回帰テスト追加。**GO 推奨、人の go/no-go 待ち。**
   - G3 受容項目（シングルトン HttpClient のハンドラローテーション、更新型プロバイダの IDisposable 破棄、refreshMargin≥寿命の下限クランプ）を G4 スコープへ持ち越し。
-- **G4 リリース前:** 後続（下記「次にやること」）。
+- **G4 リリース前（進行中）:**
+  - **①実 HTTP モックテスト:** 完了。test-arch = PASS（`docs/reviews/2026-07-10-G4-task1-http-mock-test-review.md`）。**GO 推奨、人の go/no-go 待ち。**
+  - **②公開 API 表面 snapshot 回帰テスト:** 完了。test-arch = PASS（`docs/reviews/2026-07-13-G4-task2-public-api-snapshot-review.md`）。`PublicApiGenerator` で手書き表面のみ snapshot 化（Generated 除外）＋完全性ガード。**GO 推奨、人の go/no-go 待ち。**
+  - 残 ③〜⑤ は下記「次にやること」。
 
 ## 次にやること（G4 リリース前）
 
-1. 短期トークン発行の**実 HTTP モックテスト**（`JwtAssertionTokenSource` の実発行経路。現状は `IChannelAccessTokenSource` シーム経由でロジックのみ検証）。
-2. 公開 API 表面の **snapshot 回帰テスト**（設計 §8）。
-3. **Kiota 2.0 メジャー移行の是非判断**（独立タスク。現状 1.x 継続。手順は `docs/R3-kiota-version-policy.md`）。
-4. R2 使い勝手: `Action`→`ActionObject` 改名・`/oauth2/v3/token` oneOf 合成ボディの手書きヘルパ。
-5. LIFF クライアントの利用シーン実装（現状は生成のみ）。
+1. **Kiota 2.0 メジャー移行の是非判断**（独立タスク。現状 1.x 継続。手順は `docs/R3-kiota-version-policy.md`）。
+2. R2 使い勝手: `Action`→`ActionObject` 改名・`/oauth2/v3/token` oneOf 合成ボディの手書きヘルパ。
+3. LIFF クライアントの利用シーン実装（現状は生成のみ）。
 
 ## 再生成・ビルド・テスト
 
