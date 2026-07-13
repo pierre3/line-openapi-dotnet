@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Line.OpenApi.Samples.Console</RootNamespace>
+    <AssemblyName>Line.OpenApi.Samples.Console</AssemblyName>
+    <!-- Samples are never packed or published. This also suppresses the packaging
+         metadata / README include inherited from the root Directory.Build.props. -->
+    <IsPackable>false</IsPackable>
+    <!-- Samples are demo code, not public API surface: no XML doc file needed. -->
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Line.OpenApi.Messaging\Line.OpenApi.Messaging.csproj" />
+    <ProjectReference Include="..\..\src\Line.OpenApi.Messaging.Webhook\Line.OpenApi.Messaging.Webhook.csproj" />
+    <ProjectReference Include="..\..\src\Line.OpenApi.Liff\Line.OpenApi.Liff.csproj" />
+    <ProjectReference Include="..\..\src\Line.OpenApi.ChannelAccessToken\Line.OpenApi.ChannelAccessToken.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -6,6 +6,10 @@
     <Project Path="src/Line.OpenApi.Messaging.Webhook/Line.OpenApi.Messaging.Webhook.csproj" />
     <Project Path="src/Line.OpenApi.Messaging/Line.OpenApi.Messaging.csproj" />
   </Folder>
+  <Folder Name="/samples/">
+    <Project Path="samples/Line.OpenApi.Samples.Console/Line.OpenApi.Samples.Console.csproj" />
+    <Project Path="samples/Line.OpenApi.Samples.Webhook/Line.OpenApi.Samples.Webhook.csproj" />
+  </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Line.OpenApi.Messaging.Webhook.IsolationTests/Line.OpenApi.Messaging.Webhook.IsolationTests.csproj" />
     <Project Path="tests/Line.OpenApi.Tests/Line.OpenApi.Tests.csproj" />

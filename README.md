@@ -139,6 +139,17 @@ app.MapPost("/webhook", async (HttpRequest request, WebhookRequestParser parser)
 
 ---
 
+## サンプル
+
+`samples/` に動くデモアプリを同梱しています（NuGet パッケージには含みません）。**既定はオフライン**で、環境変数を設定すると実 API に接続します。
+
+- **`Line.OpenApi.Samples.Console`** — 送信 / LIFF 管理 / トークン発行 / Webhook パース（`dotnet run -- webhook` は資格情報不要で動作）
+- **`Line.OpenApi.Samples.Webhook`** — minimal API の Webhook 受信＋エコー返信（dev トンネルでライブデモ）
+
+実行手順・環境変数・dev トンネル設定は [`samples/README.md`](samples/README.md) を参照。
+
+---
+
 ## 再生成・ビルド・テスト
 
 リポジトリルートで:
