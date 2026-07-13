@@ -45,17 +45,21 @@ LINE 公開 OpenAPI 仕様（https://github.com/line/line-openapi）から、**K
 - **G2 PoC:** 生成→ビルド→テスト実行済（`docs/reviews/2026-07-10-G2-poc-result.md`）。両レビュー = CONCERNS → 高重大度の R1 BaseUrl 順序バグ等を修正・回帰テスト追加済（`docs/reviews/2026-07-10-G2-review.md`）。**人の go/no-go = GO。**
 - **G3 手書き実装:** 実装＋ゲートレビュー完了（`docs/reviews/2026-07-10-G3-implementation.md` / `-G3-review.md`。コード=CONCERNS / セキュリティ=PASS）。中位「DI 二重登録の非冪等」と低位「`_refreshAt` アトミック性」を修正・回帰テスト追加。**GO 推奨、人の go/no-go 待ち。**
   - G3 受容項目（シングルトン HttpClient のハンドラローテーション、更新型プロバイダの IDisposable 破棄、refreshMargin≥寿命の下限クランプ）を G4 スコープへ持ち越し。
-- **G4 リリース前（進行中）:**
-  - **①実 HTTP モックテスト:** 完了。test-arch = PASS（`docs/reviews/2026-07-10-G4-task1-http-mock-test-review.md`）。**GO 推奨、人の go/no-go 待ち。**
-  - **②公開 API 表面 snapshot 回帰テスト:** 完了。test-arch = PASS（`docs/reviews/2026-07-13-G4-task2-public-api-snapshot-review.md`）。`PublicApiGenerator` で手書き表面のみ snapshot 化（Generated 除外）＋完全性ガード。**GO 推奨、人の go/no-go 待ち。**
+- **G4 リリース前:** ①〜⑤ すべて実装・レビュー完了・**main マージ済み**。
+  - **①実 HTTP モックテスト:** 完了。test-arch = PASS（`docs/reviews/2026-07-10-G4-task1-http-mock-test-review.md`）。**GO（人の go/no-go 済み・main マージ済み）。**
+  - **②公開 API 表面 snapshot 回帰テスト:** 完了。test-arch = PASS（`docs/reviews/2026-07-13-G4-task2-public-api-snapshot-review.md`）。`PublicApiGenerator` で手書き表面のみ snapshot 化（Generated 除外）＋完全性ガード。**GO（人の go/no-go 済み・main マージ済み）。**
   - **③Kiota 2.0 移行の是非判断:** 完了 → **移行実施**（ランタイムのみ 1.22.2→2.0.0、CLI は 1.34.1 据え置き）。`docs/R3-kiota-version-policy.md` 改訂。破壊的変更は当方無影響と実証、テスト 38/38・脆弱性監査クリーン。security = PASS（`docs/reviews/2026-07-13-G4-task3-kiota-2.0-migration-review.md`）。**GO（人の go/no-go 済み）。**
-  - **④R2 使い勝手:** 完了。`Action`→`ActionObject` はドキュメント周知、`/oauth2/v3/token` は手書きヘルパ `StatelessJwtAssertionTokenSource` を追加（生成の oneOf 合成ボディが form 非対応=入れ子直列化で失敗する落とし穴を回避）。3 役ゲート = コード/セキュリティ PASS・テスト・アーキ CONCERNS 非ブロッキング（指摘反映済み）。テスト 50/50・監査クリーン（`docs/reviews/2026-07-13-G4-task4-r2-usability-review.md`）。**GO 推奨、人の go/no-go 待ち。**
-  - **⑤LIFF 利用シーン実装:** 完了。ファサード `LiffClient`（`Api` 低レベル公開＋CRUD 便利メソッド `GetApps/AddApp/UpdateApp/DeleteApp`＋`CreateWithStaticToken`）＋DI `AddLineLiff`（2 オーバーロード・冪等化・`IHttpClientFactory`＋Kiota 既定ハンドラ）。単一ホスト api.line.me（data 系なし=BaseUrl 上書き不要、R1 非該当）、許可ホストは制御系のみに限定。3 役ゲート = コード/セキュリティ/テスト・アーキ すべて PASS（test-arch CONCERNS 非ブロッキング、指摘反映済み）。テスト 76/76・監査クリーン（`docs/reviews/2026-07-13-G4-task5-liff-usage-review.md`）。**GO 推奨、人の go/no-go 待ち。**
+  - **④R2 使い勝手:** 完了。`Action`→`ActionObject` はドキュメント周知、`/oauth2/v3/token` は手書きヘルパ `StatelessJwtAssertionTokenSource` を追加（生成の oneOf 合成ボディが form 非対応=入れ子直列化で失敗する落とし穴を回避）。3 役ゲート = コード/セキュリティ PASS・テスト・アーキ CONCERNS 非ブロッキング（指摘反映済み）。テスト 50/50・監査クリーン（`docs/reviews/2026-07-13-G4-task4-r2-usability-review.md`）。**GO（人の go/no-go 済み・main マージ済み）。**
+  - **⑤LIFF 利用シーン実装:** 完了。ファサード `LiffClient`（`Api` 低レベル公開＋CRUD 便利メソッド `GetApps/AddApp/UpdateApp/DeleteApp`＋`CreateWithStaticToken`）＋DI `AddLineLiff`（2 オーバーロード・冪等化・`IHttpClientFactory`＋Kiota 既定ハンドラ）。単一ホスト api.line.me（data 系なし=BaseUrl 上書き不要、R1 非該当）、許可ホストは制御系のみに限定。3 役ゲート = コード/セキュリティ/テスト・アーキ すべて PASS（test-arch CONCERNS 非ブロッキング、指摘反映済み）。テスト 76/76・監査クリーン（`docs/reviews/2026-07-13-G4-task5-liff-usage-review.md`）。**GO（人の go/no-go 済み・main マージ済み）。**
 
 ## 次にやること
 
-- G4 タスク①②④⑤ の人の go/no-go（③ は済み）。GO 後に各保持ブランチを `main` へ `--no-ff` マージ。
-- 以降のリリース準備（NuGet パッケージング等）は未着手。
+G4（①〜⑤）は全て main 反映済み。優先利用シーン ①メッセージ送受信 / ②LIFF 管理 の手書き表面が揃った。以降の候補（未着手・優先度は要相談）:
+
+- **リリース準備（G5 想定）:** NuGet パッケージング未設定（`PackageId`/`Authors`/`Description`/`Packagelicense`/`README`/`Version` 等のメタデータ、`poc/` → 製品レイアウト昇格、CI/公開フロー）。
+- **Webhook 受信の利用シーン:** 現状 Webhook はモデル専用＋署名検証（`Line.Core`）のみ。受信ペイロードの逆直列化＋署名検証を束ねる利用側ヘルパは未提供（要否は設計判断）。
+- **`Line.Bot`（任意メタパッケージ）:** 未作成。
+- **将来パッケージ:** insight / manage-audience / module / shop（仕様未取得）。
 
 ## 再生成・ビルド・テスト
 
