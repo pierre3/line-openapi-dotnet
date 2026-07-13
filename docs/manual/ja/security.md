@@ -23,7 +23,7 @@
 ## Webhook 署名検証
 
 受信 Webhook は `x-line-signature` ヘッダで認証されます。検証は **OpenAPI 仕様には含まれない**
-ため、@Line.Core.Webhook.WebhookSignatureValidator に手書きで実装されています:
+ため、@Line.OpenApi.Core.Webhook.WebhookSignatureValidator に手書きで実装されています:
 
 - チャネルシークレットを鍵とした、**リクエスト生ボディのバイト列**の HMAC-SHA256 を Base64 化。
 - タイミング攻撃を避けるため、ヘッダ値と**定数時間**で比較
@@ -32,7 +32,7 @@
 コードへの影響:
 
 - **生バイト**に対して、モデルバインドや再エンコードの前に検証してください — さもないと署名が
-  一致しません。@Line.Messaging.Webhook.WebhookRequestParser は `byte[]` を受け取ることでこれを
+  一致しません。@Line.OpenApi.Messaging.Webhook.WebhookRequestParser は `byte[]` を受け取ることでこれを
   強制します。
 - ヘッダが欠落・不正な場合は不正として扱います（`false` を返す）。
 - **本文サイズの上限は利用側の責務です。** メモリ使用量を抑えるため、上流で生ボディの上限を

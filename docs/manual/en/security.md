@@ -24,7 +24,7 @@ rather than hard-coded, to prepare for future hosts such as `manager.line.biz`.
 
 Incoming webhooks are authenticated with the `x-line-signature` header. Validation is **not part
 of the OpenAPI spec**, so it is implemented by hand in
-@Line.Core.Webhook.WebhookSignatureValidator:
+@Line.OpenApi.Core.Webhook.WebhookSignatureValidator:
 
 - HMAC-SHA256 over the **raw request body bytes**, keyed by the channel secret, Base64-encoded.
 - Compared against the header in **constant time** (`CryptographicOperations.FixedTimeEquals`) to
@@ -33,7 +33,7 @@ of the OpenAPI spec**, so it is implemented by hand in
 Consequences for your code:
 
 - Validate against the **raw bytes**, before any model binding or re-encoding — otherwise the
-  signature will not match. @Line.Messaging.Webhook.WebhookRequestParser enforces this by taking
+  signature will not match. @Line.OpenApi.Messaging.Webhook.WebhookRequestParser enforces this by taking
   `byte[]`.
 - A missing or malformed header is treated as invalid (returns `false`).
 - **Body size limits are your responsibility.** Enforce a raw-body cap upstream (for example

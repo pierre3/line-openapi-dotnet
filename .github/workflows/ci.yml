@@ -1,0 +1,42 @@
+# CI: build + test on every push/PR to main (design section 9).
+# Kiota regeneration is intentionally NOT run here; generated code is committed and
+# the CLI version is pinned in scripts/generate.ps1. Regeneration is a separate,
+# reviewed step (see the spec-update follow-up in design section 9).
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      # NuGet vulnerability audit is the real gate: NuGetAudit runs during restore and
+      # emits NU1901-NU1904 for vulnerable direct/transitive packages. Promoting those to
+      # errors fails the build on any advisory, enforcing the security floor documented in
+      # CLAUDE.md (e.g. Kiota Abstractions >= 1.22.0). `dotnet list --vulnerable` alone does
+      # NOT fail (it returns exit 0), so it is used below only for a readable summary.
+      - name: Restore (audit advisories as errors)
+        run: >
+          dotnet restore LineOpenApi.slnx
+          -p:NuGetAuditMode=all
+          -warnaserror:NU1901,NU1902,NU1903,NU1904
+
+      - name: Build
+        run: dotnet build LineOpenApi.slnx --configuration Release --no-restore
+
+      - name: Vulnerability audit (summary)
+        run: dotnet list LineOpenApi.slnx package --vulnerable --include-transitive
+
+      - name: Test
+        run: dotnet test LineOpenApi.slnx --configuration Release --no-build --verbosity normal

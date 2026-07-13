@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- messaging-api.yml。制御系(Generated/Api)とデータ系(Generated/Blob)の2クライアントを同梱し
+       MessagingClient ファサードで統合する。 -->
+  <PropertyGroup>
+    <Description>LINE Messaging API client for .NET. The MessagingClient facade unifies the control-plane (api.line.me) and data-plane (api-data.line.me) clients. Part of the Line.OpenApi client libraries generated from the official LINE OpenAPI spec with Kiota.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Kiota.Bundle" Version="$(KiotaBundleVersion)" />
+    <!-- DI 統合: IHttpClientFactory / 名前付き HttpClient / Options -->
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.0" />
+    <ProjectReference Include="..\Line.OpenApi.Core\Line.OpenApi.Core.csproj" />
+  </ItemGroup>
+</Project>

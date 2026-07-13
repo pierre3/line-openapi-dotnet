@@ -52,13 +52,16 @@ LINE 公開 OpenAPI 仕様（https://github.com/line/line-openapi）から、**K
   - **③Kiota 2.0 移行の是非判断:** 完了 → **移行実施**（ランタイムのみ 1.22.2→2.0.0、CLI は 1.34.1 据え置き）。`docs/R3-kiota-version-policy.md` 改訂。破壊的変更は当方無影響と実証、テスト 38/38・脆弱性監査クリーン。security = PASS（`docs/reviews/2026-07-13-G4-task3-kiota-2.0-migration-review.md`）。**GO（人の go/no-go 済み）。**
   - **④R2 使い勝手:** 完了。`Action`→`ActionObject` はドキュメント周知、`/oauth2/v3/token` は手書きヘルパ `StatelessJwtAssertionTokenSource` を追加（生成の oneOf 合成ボディが form 非対応=入れ子直列化で失敗する落とし穴を回避）。3 役ゲート = コード/セキュリティ PASS・テスト・アーキ CONCERNS 非ブロッキング（指摘反映済み）。テスト 50/50・監査クリーン（`docs/reviews/2026-07-13-G4-task4-r2-usability-review.md`）。**GO（人の go/no-go 済み・main マージ済み）。**
   - **⑤LIFF 利用シーン実装:** 完了。ファサード `LiffClient`（`Api` 低レベル公開＋CRUD 便利メソッド `GetApps/AddApp/UpdateApp/DeleteApp`＋`CreateWithStaticToken`）＋DI `AddLineLiff`（2 オーバーロード・冪等化・`IHttpClientFactory`＋Kiota 既定ハンドラ）。単一ホスト api.line.me（data 系なし=BaseUrl 上書き不要、R1 非該当）、許可ホストは制御系のみに限定。3 役ゲート = コード/セキュリティ/テスト・アーキ すべて PASS（test-arch CONCERNS 非ブロッキング、指摘反映済み）。テスト 76/76・監査クリーン（`docs/reviews/2026-07-13-G4-task5-liff-usage-review.md`）。**GO（人の go/no-go 済み・main マージ済み）。**
+- **G5 リリース準備:** リネーム適用（`Line.*`→`Line.OpenApi.*`）＋NuGet パッケージング実装・3 役ゲート完了（code PASS / security PASS / test-arch CONCERNS 非ブロッキング、共通指摘反映済み）。ビルド 0 警告・テスト 92/92＋1/1・pack 5 パッケージ＋snupkg 警告なし・docfx 0 warnings・監査クリーン（`docs/reviews/2026-07-13-G5-rename-and-packaging-review.md`）。**GO 推奨、人の go/no-go 待ち（未コミット）。**
 
 ## 次にやること
 
 G4（①〜⑤）は全て main 反映済み。優先利用シーン ①メッセージ送受信（送信＝Messaging / 受信＝Webhook 受信ヘルパ）/ ②LIFF 管理 の手書き表面が揃った。以降の候補（未着手・優先度は要相談）:
 
-- **リリース準備（G5 想定）:** NuGet パッケージング未設定（`PackageId`/`Authors`/`Description`/`PackageLicense`/`README`/`Version` 等のメタデータ、CI/公開フロー）。（製品レイアウト昇格は消化済＝`poc/` を廃し `src/`・`tests/`・`openapi/`・`scripts/` をルート直下へ、ソリューション `LineOpenApi.slnx`、テスト `Line.Tests`。）
-  - **パッケージ/名前空間リネーム（`Line.*` → `Line.OpenApi.*`）が未適用**。命名は確定済（設計 §8・rev.5）。適用対象: 各プロジェクト名/ディレクトリ・`RootNamespace`/`AssemblyName`・`PackageId`、全 `src`/`tests` の `namespace`・`using`、`docfx.json` の `filterConfig.yml`（`Line.OpenApi.*.Generated` 除外）、公開 API snapshot approved、README/マニュアルのコード例、`generate.ps1`（Kiota `--namespace-name`）。
+- **（消化済）パッケージ/名前空間リネーム `Line.*` → `Line.OpenApi.*` の適用完了。** プロジェクト名/ディレクトリ・`AssemblyName`/`RootNamespace`（csproj 名から既定継承）・全 `src`/`tests` の `namespace`/`using`・`generate.ps1`＋`generate.sh` の Kiota `-n`/`-o`（**再生成済**）・`LineOpenApi.slnx`・`docfx.json` パス・公開 API snapshot approved（ファイル名＋中身）・README/マニュアル/レビュアー agent md を更新。`filterConfig.yml` の正規表現 `^Line\..*\.Generated` は新名にも一致するため変更不要。テスト 92/92＋Isolation 1/1、docfx 0 warnings、監査クリーン。
+- **（消化済）NuGet パッケージング設定完了（G5）。** 共通メタデータは `Directory.Build.props`（`Authors=pierre3`、`RepositoryUrl=https://github.com/pierre3/line-openapi-dotnet`、`PackageLicenseExpression=MIT`、`PackageReadmeFile=README.md`、`Version=0.1.0-preview`、SourceLink/決定的ビルド/snupkg シンボル）。`Description` は各 src csproj。`PackageId` はプロジェクト名から既定継承（=`Line.OpenApi.*`）。ルート `LICENSE`（MIT）追加。`dotnet pack` で 5 パッケージ＋snupkg を警告なく生成、パッケージ間依存（`Line.OpenApi.Core` 等）・README・SourceLink（commit/branch）を nuspec で確認済み。CI/公開ワークフロー `.github/workflows/ci.yml`（build+test+audit）/`release.yml`（tag `v*` で pack→NuGet push、要 `NUGET_API_KEY` secret）を追加。
+- **（消化済）G5 ゲートレビュー完了。** 3 役 = code PASS / security PASS / test-arch CONCERNS（全て非ブロッキング）。共通指摘の CI 監査ゲート実効化（restore の NuGetAudit を warnings-as-errors 化）・release.yml のバージョン一致（build にも `-p:Version`）・入力の env 経由化・publish の `environment: nuget` 付与を反映済み。記録 `docs/reviews/2026-07-13-G5-rename-and-packaging-review.md`。**GO 推奨、人の go/no-go 待ち。**
+- **未実施:** 実際の NuGet.org 公開（`NUGET_API_KEY` 投入・タグ `v*` push）。follow-up: Actions の commit SHA ピン留め（正式版前）、pack スモークテスト（任意）。
 - **`Line.Bot`（任意メタパッケージ）:** 未作成。
 - **将来パッケージ:** insight / manage-audience / module / shop（仕様未取得）。
 - （消化済）Webhook 受信の利用シーンヘルパ = `WebhookRequestParser` を追加（`feat-webhook-receive`。ゲート・go/no-go は当該セッション参照）。
@@ -89,4 +92,4 @@ dotnet docfx docs/manual/docfx.json        # metadata + build → docs/manual/_s
 - 破壊的変更は公開 API 表面の差分で検知。生成物内部の差分はレビュー対象外。
 - **コメントは全て英語**（XML doc `///` ＋インライン `//`、手書きコードのみ。生成物は対象外）。API リファレンスを英語で単一提供するため。設計 §13.2 準拠。プロジェクト文書（`docs/**`・本ファイル・レビュー記録）は日本語のまま。
 - **ドキュメント:** DocFX で英語 API リファレンス自動生成＋概念記事は英語/日本語 2 系統（`docs/manual/`）。設計 §13 準拠。
-- **公開パッケージ命名（rev.5・確定）:** NuGet `PackageId` と C# ルート名前空間は **`Line.OpenApi.*`**（`Line.OpenApi.Core`/`.ChannelAccessToken`/`.Messaging`/`.Messaging.Webhook`/`.Liff`/`.Bot`）。既公開の旧 SDK `Line.Messaging`（pierre3/kenakamu 所有）との ID・名前空間衝突回避。設計 §8「パッケージ命名」準拠。**注意: このリネームは未適用**（現行コードは素の `Line.*` 名前空間。適用は G5 リリース準備で実施）。
+- **公開パッケージ命名（rev.5・確定）:** NuGet `PackageId` と C# ルート名前空間は **`Line.OpenApi.*`**（`Line.OpenApi.Core`/`.ChannelAccessToken`/`.Messaging`/`.Messaging.Webhook`/`.Liff`/`.Bot`）。既公開の旧 SDK `Line.Messaging`（pierre3/kenakamu 所有）との ID・名前空間衝突回避。設計 §8「パッケージ命名」準拠。**適用済み（G5 リリース準備で実施）**: プロジェクト名/名前空間/`PackageId` は全て `Line.OpenApi.*`。`PackageId`・`AssemblyName`・`RootNamespace` はプロジェクト名から既定継承する（csproj で個別指定しない）。

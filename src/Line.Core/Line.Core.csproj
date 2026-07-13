@@ -1,6 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
-  <!-- 共通基盤: 手書きのみ（生成コードなし）。認証プロバイダ・署名検証・許可ホスト。 -->
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Kiota.Bundle" Version="$(KiotaBundleVersion)" />
-  </ItemGroup>
-</Project>

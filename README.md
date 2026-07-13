@@ -10,11 +10,11 @@ LINE 公開 OpenAPI 仕様から **Kiota** で生成した .NET/C# クライア�
 
 | パッケージ | 役割 |
 |---|---|
-| `Line.Core` | 共通基盤（認証プロバイダ・Webhook 署名検証・許可ホスト） |
-| `Line.ChannelAccessToken` | チャネルアクセストークン発行（v2.1 JWT / v3 ステートレス・更新型プロバイダ） |
-| `Line.Messaging` | メッセージ送受信（`MessagingClient` ファサード＝制御系＋データ系 2 クライアント統合） |
-| `Line.Messaging.Webhook` | Webhook モデル＋受信グルー（`WebhookRequestParser`＝署名検証＋逆直列化） |
-| `Line.Liff` | LIFF アプリ管理（`LiffClient` ファサード） |
+| `Line.OpenApi.Core` | 共通基盤（認証プロバイダ・Webhook 署名検証・許可ホスト） |
+| `Line.OpenApi.ChannelAccessToken` | チャネルアクセストークン発行（v2.1 JWT / v3 ステートレス・更新型プロバイダ） |
+| `Line.OpenApi.Messaging` | メッセージ送受信（`MessagingClient` ファサード＝制御系＋データ系 2 クライアント統合） |
+| `Line.OpenApi.Messaging.Webhook` | Webhook モデル＋受信グルー（`WebhookRequestParser`＝署名検証＋逆直列化） |
+| `Line.OpenApi.Liff` | LIFF アプリ管理（`LiffClient` ファサード） |
 
 ## 前提
 
@@ -25,11 +25,11 @@ LINE 公開 OpenAPI 仕様から **Kiota** で生成した .NET/C# クライア�
 
 ## 利用チュートリアル
 
-### 1. メッセージ送信（Line.Messaging）
+### 1. メッセージ送信（Line.OpenApi.Messaging）
 
 ```csharp
-using Line.Messaging;
-using Line.Messaging.Generated.Api.Models;
+using Line.OpenApi.Messaging;
+using Line.OpenApi.Messaging.Generated.Api.Models;
 
 // 簡易生成（長期チャネルアクセストークン）
 var client = MessagingClient.CreateWithStaticToken("CHANNEL_ACCESS_TOKEN");
@@ -50,7 +50,7 @@ var stream = await client.Blob.V2.Bot.Message["<messageId>"].Content.GetAsync();
 DI（推奨。`IHttpClientFactory` によるハンドラ共有・CVE 修正版ミドルウェア適用）:
 
 ```csharp
-using Line.Messaging.DependencyInjection;
+using Line.OpenApi.Messaging.DependencyInjection;
 
 services.AddLineMessaging(o => o.ChannelAccessToken = "CHANNEL_ACCESS_TOKEN");
 // 解決: sp.GetRequiredService<MessagingClient>()
@@ -59,14 +59,14 @@ services.AddLineMessaging(o => o.ChannelAccessToken = "CHANNEL_ACCESS_TOKEN");
 短期トークン（v2.1 JWT アサーション等）を使う場合は、更新型プロバイダを認証プロバイダ注入経路で渡す:
 
 ```csharp
-services.AddLineMessaging(sp => /* IAuthenticationProvider を返す（Line.ChannelAccessToken の更新型プロバイダ等） */);
+services.AddLineMessaging(sp => /* IAuthenticationProvider を返す（Line.OpenApi.ChannelAccessToken の更新型プロバイダ等） */);
 ```
 
-### 2. LIFF アプリ管理（Line.Liff）
+### 2. LIFF アプリ管理（Line.OpenApi.Liff）
 
 ```csharp
-using Line.Liff;
-using Line.Liff.Generated.Models;
+using Line.OpenApi.Liff;
+using Line.OpenApi.Liff.Generated.Models;
 
 var liff = LiffClient.CreateWithStaticToken("CHANNEL_ACCESS_TOKEN");
 
@@ -81,12 +81,12 @@ await liff.DeleteAppAsync(added.LiffId!);
 
 DI: `services.AddLineLiff(o => o.ChannelAccessToken = "…");`
 
-### 3. Webhook 受信（Line.Messaging.Webhook）
+### 3. Webhook 受信（Line.OpenApi.Messaging.Webhook）
 
 `WebhookRequestParser` が **署名検証（`x-line-signature`）＋本文の逆直列化**を 1 呼び出しに束ねます。署名 NG は `WebhookSignatureException`、本文不正は `WebhookPayloadException`（どちらも基底 `WebhookException`）を投げます。
 
 ```csharp
-using Line.Messaging.Webhook.DependencyInjection;
+using Line.OpenApi.Messaging.Webhook.DependencyInjection;
 
 services.AddLineWebhook(o => o.ChannelSecret = "CHANNEL_SECRET");
 // 解決: sp.GetRequiredService<WebhookRequestParser>()
@@ -95,8 +95,8 @@ services.AddLineWebhook(o => o.ChannelSecret = "CHANNEL_SECRET");
 ASP.NET Core での受信例（**生ボディの取得と署名ヘッダの抽出は利用側の責務**。署名は生バイト列に対して検証するため、モデルバインド前の生ボディを読むこと）:
 
 ```csharp
-using Line.Messaging.Webhook;
-using Line.Messaging.Webhook.Generated.Models;
+using Line.OpenApi.Messaging.Webhook;
+using Line.OpenApi.Messaging.Webhook.Generated.Models;
 
 app.MapPost("/webhook", async (HttpRequest request, WebhookRequestParser parser) =>
 {
@@ -174,8 +174,8 @@ dotnet docfx docs/manual/docfx.json --serve      # ローカルプレビュー�
 
 G0〜G4 で以下を実機確認済み（詳細は `docs/reviews/`）:
 
-1. **ホスト分離** — `Line.Messaging/Generated/Api`(制御系) と `.../Generated/Blob`(`content` 系) を 2 クライアント分離生成し、`MessagingClient` が Blob 側 BaseUrl を `api-data.line.me` に設定。回帰は `MessagingHostRoutingTests`。
-2. **form-urlencoded** — `Line.ChannelAccessToken` のトークン発行が型付きモデルで送出（`/oauth2/v3/token` の oneOf 合成ボディは form 非対応のため手書きヘルパで平坦化）。
+1. **ホスト分離** — `Line.OpenApi.Messaging/Generated/Api`(制御系) と `.../Generated/Blob`(`content` 系) を 2 クライアント分離生成し、`MessagingClient` が Blob 側 BaseUrl を `api-data.line.me` に設定。回帰は `MessagingHostRoutingTests`。
+2. **form-urlencoded** — `Line.OpenApi.ChannelAccessToken` のトークン発行が型付きモデルで送出（`/oauth2/v3/token` の oneOf 合成ボディは form 非対応のため手書きヘルパで平坦化）。
 3. **webhook 多態** — `CallbackRequest` と各イベント派生型を discriminator で復元。回帰は `WebhookDeserializationTests`。
 4. **net10.0 単一ビルド** — 全ライブラリが `net10.0` でビルド。
 5. **公開 API 表面 snapshot** — 手書き表面のみ `PublicApiSnapshotTests` で回帰検知（Generated 除外＋完全性ガード）。
@@ -189,13 +189,13 @@ G0〜G4 で以下を実機確認済み（詳細は `docs/reviews/`）:
 ├── openapi/                     # 仕様スナップショット
 ├── scripts/generate.ps1 / .sh   # Kiota 生成コマンド
 ├── src/
-│   ├── Line.Core/               # 認証プロバイダ・署名検証・許可ホスト（手書き）
-│   ├── Line.ChannelAccessToken/ # トークン発行（form-urlencoded 込み生成＋手書きヘルパ）
-│   ├── Line.Messaging/          # 制御系+データ系2クライアント + MessagingClient ファサード
-│   ├── Line.Messaging.Webhook/  # webhook モデル + WebhookRequestParser（受信グルー）
-│   └── Line.Liff/               # LIFF + LiffClient ファサード
+│   ├── Line.OpenApi.Core/               # 認証プロバイダ・署名検証・許可ホスト（手書き）
+│   ├── Line.OpenApi.ChannelAccessToken/ # トークン発行（form-urlencoded 込み生成＋手書きヘルパ）
+│   ├── Line.OpenApi.Messaging/          # 制御系+データ系2クライアント + MessagingClient ファサード
+│   ├── Line.OpenApi.Messaging.Webhook/  # webhook モデル + WebhookRequestParser（受信グルー）
+│   └── Line.OpenApi.Liff/               # LIFF + LiffClient ファサード
 ├── tests/
-│   ├── Line.Tests/              # 手書き表面のテスト（署名/受信/ルーティング/DI/snapshot 等）
-│   └── Line.Messaging.Webhook.IsolationTests/  # レジストリ非依存の独立検証
+│   ├── Line.OpenApi.Tests/      # 手書き表面のテスト（署名/受信/ルーティング/DI/snapshot 等）
+│   └── Line.OpenApi.Messaging.Webhook.IsolationTests/  # レジストリ非依存の独立検証
 └── docs/                        # 設計・レビュー記録・ユーザーマニュアル（manual/）
 ```

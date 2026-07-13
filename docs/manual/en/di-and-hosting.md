@@ -10,14 +10,14 @@ pooled and rotated — and applies Kiota's default middleware, which includes th
 Static token:
 
 ```csharp
-using Line.Messaging.DependencyInjection;
+using Line.OpenApi.Messaging.DependencyInjection;
 
 services.AddLineMessaging(o => o.ChannelAccessToken = "CHANNEL_ACCESS_TOKEN");
 // resolve: sp.GetRequiredService<MessagingClient>()
 ```
 
 With a custom authentication provider (for example a refreshing token provider from
-`Line.ChannelAccessToken`):
+`Line.OpenApi.ChannelAccessToken`):
 
 ```csharp
 services.AddLineMessaging(sp =>
@@ -27,13 +27,13 @@ services.AddLineMessaging(sp =>
 });
 ```
 
-This auth-provider overload is the injection path that keeps `Line.Messaging` from taking a
-dependency on `Line.ChannelAccessToken`.
+This auth-provider overload is the injection path that keeps `Line.OpenApi.Messaging` from taking a
+dependency on `Line.OpenApi.ChannelAccessToken`.
 
 ## LIFF
 
 ```csharp
-using Line.Liff.DependencyInjection;
+using Line.OpenApi.Liff.DependencyInjection;
 
 services.AddLineLiff(o => o.ChannelAccessToken = "CHANNEL_ACCESS_TOKEN");
 // resolve: sp.GetRequiredService<LiffClient>()
@@ -44,7 +44,7 @@ services.AddLineLiff(o => o.ChannelAccessToken = "CHANNEL_ACCESS_TOKEN");
 ## Webhook
 
 ```csharp
-using Line.Messaging.Webhook.DependencyInjection;
+using Line.OpenApi.Messaging.Webhook.DependencyInjection;
 
 services.AddLineWebhook(o => o.ChannelSecret = "CHANNEL_SECRET");
 // resolve: sp.GetRequiredService<WebhookRequestParser>()

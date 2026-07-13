@@ -13,7 +13,7 @@ tools: Read, Grep, Glob, Bash, WebFetch
 
 ## レビュー観点
 
-1. **認証** — 更新型トークンプロバイダ（短期/JWT）、`Line.Core` への逆依存回避。
+1. **認証** — 更新型トークンプロバイダ（短期/JWT）、`Line.OpenApi.Core` への逆依存回避。
 2. **DI 統合** — `IHttpClientFactory` / 共有ハンドラ / `AllowedHosts` 注入の妥当性。
 3. **ファサード** — `MessagingClient` の制御系/data 系 2 クライアント統合。**BaseUrl はクライアント構築前に設定**という R1 バグの再発がないか（`MessagingHostRoutingTests` の回帰確認）。
 4. **Webhook 署名** — `WebhookSignatureValidator` の公開 API と例外設計（`ArgumentException` の paramName など）。

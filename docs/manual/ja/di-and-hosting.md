@@ -10,13 +10,13 @@
 静的トークン:
 
 ```csharp
-using Line.Messaging.DependencyInjection;
+using Line.OpenApi.Messaging.DependencyInjection;
 
 services.AddLineMessaging(o => o.ChannelAccessToken = "CHANNEL_ACCESS_TOKEN");
 // 解決: sp.GetRequiredService<MessagingClient>()
 ```
 
-カスタム認証プロバイダを使う場合（例: `Line.ChannelAccessToken` の更新型トークンプロバイダ）:
+カスタム認証プロバイダを使う場合（例: `Line.OpenApi.ChannelAccessToken` の更新型トークンプロバイダ）:
 
 ```csharp
 services.AddLineMessaging(sp =>
@@ -26,13 +26,13 @@ services.AddLineMessaging(sp =>
 });
 ```
 
-この認証プロバイダのオーバーロードは、`Line.Messaging` が `Line.ChannelAccessToken` へ依存
+この認証プロバイダのオーバーロードは、`Line.OpenApi.Messaging` が `Line.OpenApi.ChannelAccessToken` へ依存
 しないようにするための注入経路です。
 
 ## LIFF
 
 ```csharp
-using Line.Liff.DependencyInjection;
+using Line.OpenApi.Liff.DependencyInjection;
 
 services.AddLineLiff(o => o.ChannelAccessToken = "CHANNEL_ACCESS_TOKEN");
 // 解決: sp.GetRequiredService<LiffClient>()
@@ -43,7 +43,7 @@ services.AddLineLiff(o => o.ChannelAccessToken = "CHANNEL_ACCESS_TOKEN");
 ## Webhook
 
 ```csharp
-using Line.Messaging.Webhook.DependencyInjection;
+using Line.OpenApi.Messaging.Webhook.DependencyInjection;
 
 services.AddLineWebhook(o => o.ChannelSecret = "CHANNEL_SECRET");
 // 解決: sp.GetRequiredService<WebhookRequestParser>()
