@@ -1,7 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <!-- liff.yml。単一ホスト。 -->
+  <!-- liff.yml。単一ホスト(api.line.me)。ファサード LiffClient で利用シーン
+       （LIFF アプリの一覧取得・追加・更新・削除）を提供する。 -->
   <ItemGroup>
     <PackageReference Include="Microsoft.Kiota.Bundle" Version="$(KiotaBundleVersion)" />
+    <!-- DI 統合: IHttpClientFactory / 名前付き HttpClient / Options -->
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.0" />
     <ProjectReference Include="..\Line.Core\Line.Core.csproj" />
   </ItemGroup>
 </Project>
