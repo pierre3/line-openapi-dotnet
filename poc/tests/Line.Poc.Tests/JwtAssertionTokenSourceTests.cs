@@ -61,6 +61,21 @@ public class JwtAssertionTokenSourceTests
         await Assert.ThrowsAsync<InvalidOperationException>(() => source.IssueAsync());
     }
 
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public async Task IssueAsync_Empty_Assertion_Throws_Before_Issuing(string? assertion)
+    {
+        // assertionFactory が空文字/null を返したら、HTTP を叩く前に InvalidOperationException で
+        // 弾く（外部送信前に安全側で止める）。応答内容は関与しないため任意の正常応答でよい。
+        var client = new ChannelAccessTokenClient(new StubResponseAdapter(
+            new IssueChannelAccessTokenResponse { AccessToken = "token-value", ExpiresIn = 3600 }));
+        var source = new JwtAssertionTokenSource(client, _ => Task.FromResult(assertion!));
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => source.IssueAsync());
+        Assert.Contains("assertion", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
     [Fact]
     public async Task IssueAsync_Valid_Response_Returns_IssuedToken()
     {

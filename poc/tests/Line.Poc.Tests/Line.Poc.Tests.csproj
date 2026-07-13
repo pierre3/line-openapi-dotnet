@@ -8,6 +8,8 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
     <PackageReference Include="xunit" Version="2.9.2" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+    <!-- 公開 API 表面の snapshot 生成（G4②・設計 §8）。手書き表面のみ対象、Generated は除外。 -->
+    <PackageReference Include="PublicApiGenerator" Version="11.5.4" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Line.Core\Line.Core.csproj" />

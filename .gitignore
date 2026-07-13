@@ -63,3 +63,7 @@ desktop.ini
 # セッション引継ぎメモ。ローカル作業でのセッションリフレッシュ専用の一時ファイルで
 # 共有しない（/handoff で生成・更新。無ければ自動生成される）。
 docs/SESSION-HANDOFF.md
+
+# 公開 API snapshot テストの実行時差分出力（G4②）。approved.txt との不一致時に
+# 生成される一時ファイル。承認済みは *.approved.txt のみ追跡し、received は共有しない。
+*.received.txt
