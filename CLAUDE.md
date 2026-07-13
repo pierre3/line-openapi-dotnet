@@ -57,7 +57,7 @@ LINE 公開 OpenAPI 仕様（https://github.com/line/line-openapi）から、**K
 
 G4（①〜⑤）は全て main 反映済み。優先利用シーン ①メッセージ送受信（送信＝Messaging / 受信＝Webhook 受信ヘルパ）/ ②LIFF 管理 の手書き表面が揃った。以降の候補（未着手・優先度は要相談）:
 
-- **リリース準備（G5 想定）:** NuGet パッケージング未設定（`PackageId`/`Authors`/`Description`/`PackageLicense`/`README`/`Version` 等のメタデータ、`poc/` → 製品レイアウト昇格、CI/公開フロー）。
+- **リリース準備（G5 想定）:** NuGet パッケージング未設定（`PackageId`/`Authors`/`Description`/`PackageLicense`/`README`/`Version` 等のメタデータ、CI/公開フロー）。（製品レイアウト昇格は消化済＝`poc/` を廃し `src/`・`tests/`・`openapi/`・`scripts/` をルート直下へ、ソリューション `LineOpenApi.slnx`、テスト `Line.Tests`。）
 - **`Line.Bot`（任意メタパッケージ）:** 未作成。
 - **将来パッケージ:** insight / manage-audience / module / shop（仕様未取得）。
 - （消化済）Webhook 受信の利用シーンヘルパ = `WebhookRequestParser` を追加（`feat-webhook-receive`。ゲート・go/no-go は当該セッション参照）。
@@ -67,7 +67,7 @@ G4（①〜⑤）は全て main 反映済み。優先利用シーン ①メッ�
 
 ```
 # 生成（Kiota CLI は ~/.dotnet/tools。PowerShell では $env:PATH += ";$env:USERPROFILE\.dotnet\tools"）
-pwsh poc/scripts/generate.ps1
+pwsh scripts/generate.ps1
 # ビルド（net10.0 単一）
 dotnet build
 # テスト（webhook 多態含め既定で全実行。opt-in フラグ不要）

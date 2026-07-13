@@ -9,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Kiota.Abstractions.Authentication;
 using Xunit;
 
-namespace Line.Poc.Tests;
+namespace Line.Tests;
 
 // Verification of DI integration (M-3). Confirms that the MessagingClient registered via AddLineMessaging:
 //  - can be resolved

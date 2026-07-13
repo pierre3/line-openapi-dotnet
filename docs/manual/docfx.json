@@ -6,11 +6,11 @@
         {
           "src": "../..",
           "files": [
-            "poc/src/Line.Core/Line.Core.csproj",
-            "poc/src/Line.ChannelAccessToken/Line.ChannelAccessToken.csproj",
-            "poc/src/Line.Messaging/Line.Messaging.csproj",
-            "poc/src/Line.Messaging.Webhook/Line.Messaging.Webhook.csproj",
-            "poc/src/Line.Liff/Line.Liff.csproj"
+            "src/Line.Core/Line.Core.csproj",
+            "src/Line.ChannelAccessToken/Line.ChannelAccessToken.csproj",
+            "src/Line.Messaging/Line.Messaging.csproj",
+            "src/Line.Messaging.Webhook/Line.Messaging.Webhook.csproj",
+            "src/Line.Liff/Line.Liff.csproj"
           ]
         }
       ],

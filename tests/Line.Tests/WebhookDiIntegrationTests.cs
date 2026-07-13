@@ -8,7 +8,7 @@ using Line.Messaging.Webhook.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
-namespace Line.Poc.Tests;
+namespace Line.Tests;
 
 // DI integration verification for Webhook. Confirms that the WebhookRequestParser registered via AddLineWebhook:
 //  - can be resolved

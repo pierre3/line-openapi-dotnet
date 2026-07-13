@@ -7,7 +7,7 @@ using Microsoft.Kiota.Abstractions.Authentication;
 using Microsoft.Kiota.Http.HttpClientLibrary;
 using Xunit;
 
-namespace Line.Poc.Tests;
+namespace Line.Tests;
 
 // Verifies that channel-access-token token issuance is serialized correctly as
 // application/x-www-form-urlencoded (section 2-B). Makes no real HTTP calls; checks the Content-Type and

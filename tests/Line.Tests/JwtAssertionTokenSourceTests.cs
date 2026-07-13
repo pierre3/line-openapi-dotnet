@@ -12,7 +12,7 @@ using Microsoft.Kiota.Abstractions.Store;
 using Microsoft.Kiota.Http.HttpClientLibrary;
 using Xunit;
 
-namespace Line.Poc.Tests;
+namespace Line.Tests;
 
 // Response validation for JwtAssertionTokenSource.IssueAsync. Makes no real HTTP calls; injects arbitrary
 // issue responses via a fake IRequestAdapter that replaces only SendAsync.

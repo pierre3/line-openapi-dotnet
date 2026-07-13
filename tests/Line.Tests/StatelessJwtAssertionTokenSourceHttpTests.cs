@@ -15,7 +15,7 @@ using Microsoft.Kiota.Abstractions.Authentication;
 using Microsoft.Kiota.Http.HttpClientLibrary;
 using Xunit;
 
-namespace Line.Poc.Tests;
+namespace Line.Tests;
 
 // Verifies the real issue path of StatelessJwtAssertionTokenSource (/oauth2/v3/token) down to the transport layer.
 // In particular, proves that the oneOf composed body (TokenPostRequestBody / IComposedTypeWrapper) is serialized,

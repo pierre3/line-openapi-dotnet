@@ -10,7 +10,7 @@ using Microsoft.Kiota.Abstractions.Serialization;
 using Microsoft.Kiota.Serialization.Json;
 using Xunit;
 
-namespace Line.Poc.Tests;
+namespace Line.Tests;
 
 public class WebhookDeserializationTests
 {
