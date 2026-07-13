@@ -33,6 +33,7 @@ public class PublicApiSnapshotTests
         ("Line.Core", typeof(Line.Core.Authentication.LineHosts).Assembly),
         ("Line.ChannelAccessToken", typeof(Line.ChannelAccessToken.JwtAssertionTokenSource).Assembly),
         ("Line.Messaging", typeof(Line.Messaging.MessagingClient).Assembly),
+        ("Line.Liff", typeof(Line.Liff.LiffClient).Assembly),
     };
 
     public static IEnumerable<object[]> RegisteredNames()

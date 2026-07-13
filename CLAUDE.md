@@ -50,11 +50,12 @@ LINE 公開 OpenAPI 仕様（https://github.com/line/line-openapi）から、**K
   - **②公開 API 表面 snapshot 回帰テスト:** 完了。test-arch = PASS（`docs/reviews/2026-07-13-G4-task2-public-api-snapshot-review.md`）。`PublicApiGenerator` で手書き表面のみ snapshot 化（Generated 除外）＋完全性ガード。**GO 推奨、人の go/no-go 待ち。**
   - **③Kiota 2.0 移行の是非判断:** 完了 → **移行実施**（ランタイムのみ 1.22.2→2.0.0、CLI は 1.34.1 据え置き）。`docs/R3-kiota-version-policy.md` 改訂。破壊的変更は当方無影響と実証、テスト 38/38・脆弱性監査クリーン。security = PASS（`docs/reviews/2026-07-13-G4-task3-kiota-2.0-migration-review.md`）。**GO（人の go/no-go 済み）。**
   - **④R2 使い勝手:** 完了。`Action`→`ActionObject` はドキュメント周知、`/oauth2/v3/token` は手書きヘルパ `StatelessJwtAssertionTokenSource` を追加（生成の oneOf 合成ボディが form 非対応=入れ子直列化で失敗する落とし穴を回避）。3 役ゲート = コード/セキュリティ PASS・テスト・アーキ CONCERNS 非ブロッキング（指摘反映済み）。テスト 50/50・監査クリーン（`docs/reviews/2026-07-13-G4-task4-r2-usability-review.md`）。**GO 推奨、人の go/no-go 待ち。**
-  - 残 ⑤ は下記「次にやること」。
+  - **⑤LIFF 利用シーン実装:** 完了。ファサード `LiffClient`（`Api` 低レベル公開＋CRUD 便利メソッド `GetApps/AddApp/UpdateApp/DeleteApp`＋`CreateWithStaticToken`）＋DI `AddLineLiff`（2 オーバーロード・冪等化・`IHttpClientFactory`＋Kiota 既定ハンドラ）。単一ホスト api.line.me（data 系なし=BaseUrl 上書き不要、R1 非該当）、許可ホストは制御系のみに限定。3 役ゲート = コード/セキュリティ/テスト・アーキ すべて PASS（test-arch CONCERNS 非ブロッキング、指摘反映済み）。テスト 76/76・監査クリーン（`docs/reviews/2026-07-13-G4-task5-liff-usage-review.md`）。**GO 推奨、人の go/no-go 待ち。**
 
-## 次にやること（G4 リリース前）
+## 次にやること
 
-1. LIFF クライアントの利用シーン実装（現状は生成のみ）。
+- G4 タスク①②④⑤ の人の go/no-go（③ は済み）。GO 後に各保持ブランチを `main` へ `--no-ff` マージ。
+- 以降のリリース準備（NuGet パッケージング等）は未着手。
 
 ## 再生成・ビルド・テスト
 
