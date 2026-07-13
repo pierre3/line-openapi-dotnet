@@ -46,13 +46,13 @@ LINE 公開 OpenAPI 仕様（https://github.com/line/line-openapi）から、**K
 - **G4 リリース前（進行中）:**
   - **①実 HTTP モックテスト:** 完了。test-arch = PASS（`docs/reviews/2026-07-10-G4-task1-http-mock-test-review.md`）。**GO 推奨、人の go/no-go 待ち。**
   - **②公開 API 表面 snapshot 回帰テスト:** 完了。test-arch = PASS（`docs/reviews/2026-07-13-G4-task2-public-api-snapshot-review.md`）。`PublicApiGenerator` で手書き表面のみ snapshot 化（Generated 除外）＋完全性ガード。**GO 推奨、人の go/no-go 待ち。**
-  - 残 ③〜⑤ は下記「次にやること」。
+  - **③Kiota 2.0 移行の是非判断:** 完了 → **移行実施**（ランタイムのみ 1.22.2→2.0.0、CLI は 1.34.1 据え置き）。`docs/R3-kiota-version-policy.md` 改訂。破壊的変更は当方無影響と実証、テスト 38/38・脆弱性監査クリーン。security = PASS（`docs/reviews/2026-07-13-G4-task3-kiota-2.0-migration-review.md`）。**GO（人の go/no-go 済み）。**
+  - 残 ④〜⑤ は下記「次にやること」。
 
 ## 次にやること（G4 リリース前）
 
-1. **Kiota 2.0 メジャー移行の是非判断**（独立タスク。現状 1.x 継続。手順は `docs/R3-kiota-version-policy.md`）。
-2. R2 使い勝手: `Action`→`ActionObject` 改名・`/oauth2/v3/token` oneOf 合成ボディの手書きヘルパ。
-3. LIFF クライアントの利用シーン実装（現状は生成のみ）。
+1. R2 使い勝手: `Action`→`ActionObject` 改名・`/oauth2/v3/token` oneOf 合成ボディの手書きヘルパ。
+2. LIFF クライアントの利用シーン実装（現状は生成のみ）。
 
 ## 再生成・ビルド・テスト
 
@@ -71,6 +71,6 @@ dotnet test
 ## 規約
 
 - 生成コードは `src/**/Generated/`。`kiota-lock.json` はコミットする。
-- 全パッケージは `Line.Core` + Kiota ランタイム版にロックステップで追従（`Directory.Build.props` の `KiotaBundleVersion`、現状 **1.22.2**）。
-- **セキュリティ最低版:** `Microsoft.Kiota.Abstractions >= 1.22.0`（CVE-2026-44503 / GHSA-7j59-v9qr-6fq9 = RedirectHandler のクロスホスト時の機密ヘッダ漏洩, CVSS 7.0 High の修正版）。1.16.0 は影響を受けるため使用不可。net10.0 SDK の NuGet 監査（推移的依存含む）で検知される。
+- 全パッケージは `Line.Core` + Kiota ランタイム版にロックステップで追従（`Directory.Build.props` の `KiotaBundleVersion`、現状 **2.0.0**）。CLI（`Microsoft.OpenApi.Kiota`）は **1.34.1** 据え置き（2.x CLI 未リリース）。Kiota は CLI とランタイムを別系統でバージョニングするため、ランタイムのみ 2.0.0（詳細は `docs/R3-kiota-version-policy.md`）。
+- **セキュリティ最低版:** `Microsoft.Kiota.Abstractions >= 1.22.0`（CVE-2026-44503 / GHSA-7j59-v9qr-6fq9 = RedirectHandler のクロスホスト時の機密ヘッダ漏洩, CVSS 7.0 High の修正版）。1.16.0 は影響を受けるため使用不可。現行 2.0.0 は修正を継承。RedirectHandler の実体は `Microsoft.Kiota.Http.HttpClientLibrary` にあるが、`Microsoft.Kiota.Bundle` が全サブパッケージを同版にロックステップ固定するため下限は Abstractions の名指しで足りる（Bundle を経由しない直接参照を足す場合のみ Http 側下限も明示）。net10.0 SDK の NuGet 監査（推移的依存含む）で検知される。
 - 破壊的変更は公開 API 表面の差分で検知。生成物内部の差分はレビュー対象外。

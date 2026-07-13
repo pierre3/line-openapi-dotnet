@@ -12,7 +12,9 @@
     <NoWarn>$(NoWarn);CS1591;CS1573</NoWarn>
 
     <!-- Kiota ランタイムのバージョンを一元管理（R3: 生成物とロックステップ運用）。
-         生成時に `kiota info -l CSharp` が推奨するバージョンに合わせて更新すること。 -->
-    <KiotaBundleVersion>1.22.2</KiotaBundleVersion>
+         生成時に `kiota info -l CSharp` が推奨するバージョンに合わせて更新すること。
+         CLI(Microsoft.OpenApi.Kiota)は 1.34.1 据え置き（2.x CLI 未リリース）。
+         ランタイムのみ 2.0.0 へ（1.22.2 が 1.x 系最終・保守終了のため）。詳細は R3 doc。 -->
+    <KiotaBundleVersion>2.0.0</KiotaBundleVersion>
   </PropertyGroup>
 </Project>
