@@ -29,7 +29,8 @@ public readonly struct IssuedToken
 
 /// <summary>
 /// チャネルアクセストークンの発行操作を抽象化するシーム。
-/// 実運用では <see cref="JwtAssertionTokenSource"/>（生成クライアントを消費）を使い、
+/// 実運用では <see cref="JwtAssertionTokenSource"/>（短期トークン <c>/oauth2/v2.1/token</c>）または
+/// <see cref="StatelessJwtAssertionTokenSource"/>（ステートレストークン <c>/oauth2/v3/token</c>）を使い、
 /// テストでは HTTP を伴わないフェイク実装に差し替えられる。
 /// </summary>
 public interface IChannelAccessTokenSource

@@ -22,4 +22,9 @@ namespace Line.ChannelAccessToken
         public void Dispose() { }
         public System.Threading.Tasks.Task<string> GetAuthorizationTokenAsync(System.Uri uri, System.Collections.Generic.Dictionary<string, object>? additionalAuthenticationContext = null, System.Threading.CancellationToken cancellationToken = default) { }
     }
+    public sealed class StatelessJwtAssertionTokenSource : Line.ChannelAccessToken.IChannelAccessTokenSource
+    {
+        public StatelessJwtAssertionTokenSource(Line.ChannelAccessToken.Generated.ChannelAccessTokenClient client, System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task<string>> assertionFactory) { }
+        public System.Threading.Tasks.Task<Line.ChannelAccessToken.IssuedToken> IssueAsync(System.Threading.CancellationToken cancellationToken = default) { }
+    }
 }

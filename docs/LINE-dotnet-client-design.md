@@ -251,12 +251,12 @@ GitHub Actions（週次 cron + 手動）で仕様 DL → 生成/更新 → build
 | ID | リスク | 影響 | 対応 |
 |---|---|---|---|
 | R1 | 複数 base URL（api.line.me/api-data.line.me） | data 系が誤ホスト | **確定対処済み**（§4.4: 分離生成 + BaseUrl 上書き）。PoC で実測確認 |
-| R2 | 生成メソッド/型名が仕様命名に依存し不自然 | 使い勝手低下 | 主要 API で命名確認、手書きファサードで補う |
+| R2 | 生成メソッド/型名が仕様命名に依存し不自然 | 使い勝手低下 | 主要 API で命名確認、手書きファサードで補う。**G4④で対処済み:** ①`Action`→`ActionObject`（Kiota が `System.Action` 衝突回避で基底多態型を改名。生成物はリネーム不可のため公開ドキュメントで周知＝下記§命名周知）②`/oauth2/v3/token` の oneOf 合成ボディを `StatelessJwtAssertionTokenSource` で隠蔽 |
 | R3 | Kiota バージョン更新で source-breaking / ランタイム不整合 | ビルド破壊・実行時例外 | バージョン固定、CI で生成物とロック検証 |
 | R4 | 仕様更新への追従漏れ | 実 API と乖離 | CI で定期再生成 + 差分 PR |
 | R5 | 将来の module-attach 等のホスト/認証差異 | 認証失敗 | §4.4 と同パターンで対処（将来） |
 | R6 | Webhook 署名検証は仕様外 | セキュリティ | `Line.Core` で HMAC-SHA256 実装 + テスト |
-| R7 | 多態の discriminator 不足 | 復元不完全 | **G1確認済(解消):** webhook / messaging とも discriminator+mapping 完備。messaging は多態20型すべて完備（Message=11, Action=9, Template=4, FlexComponent=9 等）。残るは channel-access-token `/oauth2/v3/token` の oneOf ボディ（軽微）のみ → PoC で使い勝手確認 |
+| R7 | 多態の discriminator 不足 | 復元不完全 | **G1確認済(解消):** webhook / messaging とも discriminator+mapping 完備。messaging は多態20型すべて完備（Message=11, Action=9, Template=4, FlexComponent=9 等）。残るは channel-access-token `/oauth2/v3/token` の oneOf ボディ（軽微）のみ → **G4④で対処済み**（`StatelessJwtAssertionTokenSource` が合成ボディを隠蔽） |
 | R8 | 生成コードは可読性非目標 | デバッグ困難 | opaque box 前提で合意（済） |
 
 ---

@@ -26,6 +26,8 @@ LINE 公開 OpenAPI 仕様（https://github.com/line/line-openapi）から、**K
 - **複数 base URL:** `messaging-api.yml` は制御系 `api.line.me` と data 系 `api-data.line.me` が混在。Kiota は 1 クライアント=先頭 server のみ採用。data 系は 5 件（`getMessageContent` 等の blob）で**全て `/v2/bot/` 配下、共通サフィックス `/content` で識別**。→ 制御系(`--exclude-path **/content ...`)と data 系(`--include-path **/content ...`)を 2 クライアント分離生成し、data 側は `RequestAdapter.BaseUrl = https://api-data.line.me` を設定。ファサード `MessagingClient` で統合。
   - **⚠️ 順序が重要（G2 で判明したバグ）:** 生成クライアントはコンストラクタで `baseurl` を `PathParameters` へ確定させる（空なら `api.line.me` を既定採用）。よって `BaseUrl` は必ず**クライアント構築前**に設定すること。構築後に設定しても `PathParameters` に反映されず、リクエストが `api.line.me` に飛ぶ。実装は `Line.Messaging/MessagingClient.cs` 参照、`MessagingHostRoutingTests` で回帰防止。
 - **form-urlencoded:** `channel-access-token.yml` のトークン発行は `application/x-www-form-urlencoded`。生成時 `--structured-mime-types` に form-urlencoded を含める。
+  - **⚠️ oneOf 合成ボディは form で送れない（G4④で判明）:** `/oauth2/v3/token`（ステートレストークン）の form ボディは discriminator 無し oneOf で、生成コードでは合成ラッパ `TokenRequestBuilder.TokenPostRequestBody`（`IComposedTypeWrapper`）になる。このラッパは内側要求を**入れ子オブジェクト**として直列化するため、そのまま `PostAsync` すると Kiota の Form シリアライザが `"Form serialization does not support nested objects."` で失敗する。→ 手書きヘルパ `Line.ChannelAccessToken/StatelessJwtAssertionTokenSource.cs` が合成ラッパを使わず、平坦な要求モデル（`IssueStatelessChannelTokenByJWTAssertionRequest`）を自前で `RequestInformation` に載せて送る。生成物の protected な `RequestAdapter`/`PathParameters` へは同一クラスの partial（`ChannelAccessTokenClientInternals.cs`、Generated 外・internal 公開）でアクセス。`StatelessJwtAssertionTokenSourceHttpTests` で回帰防止（平坦 form 展開を実証）。v2.1 の非ステートレス発行は合成ボディでないため `JwtAssertionTokenSource` が生成ビルダーをそのまま利用。
+- **命名周知 `Action`→`ActionObject`（R2）:** Kiota は `System.Action` 衝突回避で messaging の多態基底型を `ActionObject` に改名する（派生 `MessageAction`/`PostbackAction`/`URIAction` 等は素直）。生成物のためリネーム不可。利用側は基底を `ActionObject`、具体アクションは各派生型で構築する。公開ドキュメントで周知する事項であり公開 API の手書き変更は伴わない。
 - **webhook:** モデル専用。ただし `/callback` を除外するとモデルが生成されないため**除外しない**（生成される callback メソッドは使わない）。多態は discriminator+mapping 完備（`Message`/`Action`/`Template`/`Flex` 含む 20 型）。
 - **blob mime:** `*/*` の生バイナリ（Stream）。multipart ではない。
 - **署名検証の定数時間比較:** `net10.0` 単一化により `CryptographicOperations.FixedTimeEquals` を直接使用（`Line.Core/Webhook/WebhookSignatureValidator.cs`）。旧 `#if NETSTANDARD2_0` の手実装分岐は netstandard2.0 対象外化に伴い削除済み。
@@ -47,12 +49,12 @@ LINE 公開 OpenAPI 仕様（https://github.com/line/line-openapi）から、**K
   - **①実 HTTP モックテスト:** 完了。test-arch = PASS（`docs/reviews/2026-07-10-G4-task1-http-mock-test-review.md`）。**GO 推奨、人の go/no-go 待ち。**
   - **②公開 API 表面 snapshot 回帰テスト:** 完了。test-arch = PASS（`docs/reviews/2026-07-13-G4-task2-public-api-snapshot-review.md`）。`PublicApiGenerator` で手書き表面のみ snapshot 化（Generated 除外）＋完全性ガード。**GO 推奨、人の go/no-go 待ち。**
   - **③Kiota 2.0 移行の是非判断:** 完了 → **移行実施**（ランタイムのみ 1.22.2→2.0.0、CLI は 1.34.1 据え置き）。`docs/R3-kiota-version-policy.md` 改訂。破壊的変更は当方無影響と実証、テスト 38/38・脆弱性監査クリーン。security = PASS（`docs/reviews/2026-07-13-G4-task3-kiota-2.0-migration-review.md`）。**GO（人の go/no-go 済み）。**
-  - 残 ④〜⑤ は下記「次にやること」。
+  - **④R2 使い勝手:** 完了。`Action`→`ActionObject` はドキュメント周知、`/oauth2/v3/token` は手書きヘルパ `StatelessJwtAssertionTokenSource` を追加（生成の oneOf 合成ボディが form 非対応=入れ子直列化で失敗する落とし穴を回避）。3 役ゲート = コード/セキュリティ PASS・テスト・アーキ CONCERNS 非ブロッキング（指摘反映済み）。テスト 50/50・監査クリーン（`docs/reviews/2026-07-13-G4-task4-r2-usability-review.md`）。**GO 推奨、人の go/no-go 待ち。**
+  - 残 ⑤ は下記「次にやること」。
 
 ## 次にやること（G4 リリース前）
 
-1. R2 使い勝手: `Action`→`ActionObject` 改名・`/oauth2/v3/token` oneOf 合成ボディの手書きヘルパ。
-2. LIFF クライアントの利用シーン実装（現状は生成のみ）。
+1. LIFF クライアントの利用シーン実装（現状は生成のみ）。
 
 ## 再生成・ビルド・テスト
 
