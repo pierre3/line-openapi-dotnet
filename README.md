@@ -3,6 +3,7 @@
 # LINE .NET client (Line.OpenApi.*)
 
 [![CI](https://github.com/pierre3/line-openapi-dotnet/actions/workflows/ci.yml/badge.svg)](https://github.com/pierre3/line-openapi-dotnet/actions/workflows/ci.yml)
+[![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://pierre3.github.io/line-openapi-dotnet/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/pierre3/line-openapi-dotnet/blob/main/LICENSE)
 
 A set of .NET/C# client libraries generated from the official LINE OpenAPI specifications with [Kiota](https://learn.microsoft.com/openapi/kiota/), layered with hand-written facades / DI / receive glue organized by usage scenario.
@@ -201,8 +202,9 @@ Generated code lives under `src/**/Generated/` (`kiota-lock.json` is committed).
 
 ## Documentation
 
+- **📖 User manual (published): https://pierre3.github.io/line-openapi-dotnet/** — conceptual articles (English / Japanese) plus the English API reference.
 - Design: [`docs/LINE-dotnet-client-design.md`](https://github.com/pierre3/line-openapi-dotnet/blob/main/docs/LINE-dotnet-client-design.md)
-- User manual: generated with [DocFX](https://dotnet.github.io/docfx/) into `docs/manual/` — conceptual articles (English `en/`, Japanese `ja/`) plus an English API reference. DocFX is pinned as a local tool (`.config/dotnet-tools.json`).
+- The manual is generated with [DocFX](https://dotnet.github.io/docfx/) into `docs/manual/` and published to GitHub Pages by the `docs` workflow. DocFX is pinned as a local tool (`.config/dotnet-tools.json`); build it locally with:
 
 ```sh
 dotnet tool restore                              # first time only (restores DocFX)

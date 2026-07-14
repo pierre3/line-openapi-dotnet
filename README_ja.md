@@ -3,6 +3,7 @@
 # LINE .NET クライアント (Line.OpenApi.*)
 
 [![CI](https://github.com/pierre3/line-openapi-dotnet/actions/workflows/ci.yml/badge.svg)](https://github.com/pierre3/line-openapi-dotnet/actions/workflows/ci.yml)
+[![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://pierre3.github.io/line-openapi-dotnet/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/pierre3/line-openapi-dotnet/blob/main/LICENSE)
 
 LINE 公開 OpenAPI 仕様から [Kiota](https://learn.microsoft.com/openapi/kiota/) で生成した .NET/C# クライアントに、利用シーン単位の手書きファサード／DI／受信グルーを重ねたクライアントライブラリ群です。
@@ -201,8 +202,9 @@ bash scripts/generate.sh      # macOS / Linux
 
 ## ドキュメント
 
+- **📖 ユーザーマニュアル（公開中）: https://pierre3.github.io/line-openapi-dotnet/** — 概念記事（英語 / 日本語）＋英語 API リファレンス。
 - 設計方針: [`docs/LINE-dotnet-client-design.md`](https://github.com/pierre3/line-openapi-dotnet/blob/main/docs/LINE-dotnet-client-design.md)
-- ユーザーマニュアル: [DocFX](https://dotnet.github.io/docfx/) で概念記事（英語 `en/`・日本語 `ja/`）＋英語 API リファレンスを `docs/manual/` に生成します。DocFX はローカルツール（`.config/dotnet-tools.json`）としてピン留め済み。
+- マニュアルは [DocFX](https://dotnet.github.io/docfx/) で `docs/manual/` に生成し、`docs` ワークフローで GitHub Pages へ発行します。DocFX はローカルツール（`.config/dotnet-tools.json`）としてピン留め済み。ローカルビルドは以下:
 
 ```sh
 dotnet tool restore                              # 初回のみ（DocFX を復元）
