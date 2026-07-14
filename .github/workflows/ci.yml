@@ -40,3 +40,20 @@ jobs:
 
       - name: Test
         run: dotnet test LineOpenApi.slnx --configuration Release --no-build --verbosity normal
+
+  # Pack smoke test: guards the produced package layout (5 code packages with lib+snupkg,
+  # 1 Bot meta-package with no lib/no snupkg/3 deps) against silent packaging regressions
+  # that build+test cannot catch. See scripts/verify-packages.ps1.
+  pack-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Verify package contents
+        shell: pwsh
+        run: scripts/verify-packages.ps1 -Configuration Release

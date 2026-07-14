@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- 便宜メタパッケージ（任意）。コードを持たず、Bot 一式を 1 参照で導入するための
+       依存束ねのみ（設計 §4.2 / パッケージ一覧の Line.OpenApi.Bot）。
+       Messaging(送信) + Messaging.Webhook(受信) + ChannelAccessToken(認証) を束ねる。LIFF は含めない。 -->
+  <PropertyGroup>
+    <Description>Convenience meta-package that bundles the LINE Bot client libraries (Line.OpenApi.Messaging + Line.OpenApi.Messaging.Webhook + Line.OpenApi.ChannelAccessToken) into a single reference. Contains no code of its own. Part of the Line.OpenApi client libraries generated from the official LINE OpenAPI spec with Kiota.</Description>
+
+    <!-- 依存束ねのみ: ビルド成果物（空アセンブリ）はパッケージに含めない。 -->
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <!-- ビルド成果物が無いためシンボルパッケージ（snupkg）も生成しない（空 snupkg 回避）。
+         Directory.Build.props の IncludeSymbols=true を上書き。 -->
+    <IncludeSymbols>false</IncludeSymbols>
+    <!-- コードを持たないため XML doc も生成しない（Directory.Build.props の既定を上書き）。 -->
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <!-- NU5128: 依存グループはあるが対象 TFM の lib が無い（メタパッケージでは意図どおり）。 -->
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
+  </PropertyGroup>
+
+  <!-- ProjectReference はパック時にパッケージ依存として展開される。
+       メタパッケージの利用者へ推移的に流したいので PrivateAssets は設定しない。 -->
+  <ItemGroup>
+    <ProjectReference Include="..\Line.OpenApi.ChannelAccessToken\Line.OpenApi.ChannelAccessToken.csproj" />
+    <ProjectReference Include="..\Line.OpenApi.Messaging\Line.OpenApi.Messaging.csproj" />
+    <ProjectReference Include="..\Line.OpenApi.Messaging.Webhook\Line.OpenApi.Messaging.Webhook.csproj" />
+  </ItemGroup>
+</Project>

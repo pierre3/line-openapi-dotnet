@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/Line.OpenApi.Bot/Line.OpenApi.Bot.csproj" />
     <Project Path="src/Line.OpenApi.ChannelAccessToken/Line.OpenApi.ChannelAccessToken.csproj" />
     <Project Path="src/Line.OpenApi.Core/Line.OpenApi.Core.csproj" />
     <Project Path="src/Line.OpenApi.Liff/Line.OpenApi.Liff.csproj" />

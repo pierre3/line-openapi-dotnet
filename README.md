@@ -15,6 +15,7 @@ LINE 公開 OpenAPI 仕様から **Kiota** で生成した .NET/C# クライア�
 | `Line.OpenApi.Messaging` | メッセージ送受信（`MessagingClient` ファサード＝制御系＋データ系 2 クライアント統合） |
 | `Line.OpenApi.Messaging.Webhook` | Webhook モデル＋受信グルー（`WebhookRequestParser`＝署名検証＋逆直列化） |
 | `Line.OpenApi.Liff` | LIFF アプリ管理（`LiffClient` ファサード） |
+| `Line.OpenApi.Bot` | 便宜メタパッケージ（任意）＝Bot 一式を 1 参照で導入（`Messaging` + `Messaging.Webhook` + `ChannelAccessToken` を束ねる。コードなし・依存束ねのみ） |
 
 ## 前提
 
@@ -204,7 +205,8 @@ G0〜G4 で以下を実機確認済み（詳細は `docs/reviews/`）:
 │   ├── Line.OpenApi.ChannelAccessToken/ # トークン発行（form-urlencoded 込み生成＋手書きヘルパ）
 │   ├── Line.OpenApi.Messaging/          # 制御系+データ系2クライアント + MessagingClient ファサード
 │   ├── Line.OpenApi.Messaging.Webhook/  # webhook モデル + WebhookRequestParser（受信グルー）
-│   └── Line.OpenApi.Liff/               # LIFF + LiffClient ファサード
+│   ├── Line.OpenApi.Liff/               # LIFF + LiffClient ファサード
+│   └── Line.OpenApi.Bot/                # 便宜メタパッケージ（依存束ねのみ・コードなし）
 ├── tests/
 │   ├── Line.OpenApi.Tests/      # 手書き表面のテスト（署名/受信/ルーティング/DI/snapshot 等）
 │   └── Line.OpenApi.Messaging.Webhook.IsolationTests/  # レジストリ非依存の独立検証
