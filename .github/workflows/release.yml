@@ -8,8 +8,12 @@
 # The resolved version is applied at BUILD time (not just pack) so the assembly's
 # AssemblyVersion/FileVersion and the .nupkg version stay in sync.
 #
-# Required repository secret:
-#   NUGET_API_KEY - an nuget.org API key scoped to the Line.OpenApi.* package IDs.
+# Publishing uses NuGet.org Trusted Publishing (OIDC) - no long-lived API key secret.
+# Each publish job requests a GitHub OIDC token (permissions: id-token: write), exchanges
+# it via NuGet/login for a short-lived (1h) API key, then pushes. Requires a Trusted
+# Publishing policy on nuget.org matching this repo/workflow/environment:
+#   Repository Owner: pierre3 | Repository: line-openapi-dotnet
+#   Workflow File: release.yml | Environment: nuget
 name: release
 
 on:
@@ -33,6 +37,9 @@ jobs:
     # Bind to a protected environment so nuget.org publishing can require reviewers /
     # branch or tag protection rules (configure under Settings > Environments > nuget).
     environment: nuget
+    permissions:
+      contents: read
+      id-token: write # request a GitHub OIDC token for NuGet Trusted Publishing
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
@@ -81,12 +88,18 @@ jobs:
           if [ -n "${VERSION}" ]; then VERSION_ARG="-p:Version=${VERSION}"; fi
           dotnet pack LineOpenApi.slnx --configuration Release --no-build -o artifacts -p:ExcludeToolFromPack=true $VERSION_ARG
 
+      # Exchange the GitHub OIDC token for a short-lived nuget.org API key (valid 1h).
+      # Runs immediately before push so the key does not expire.
+      - name: NuGet login (OIDC -> temp API key)
+        id: login
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
+        with:
+          user: pierre3
+
       - name: Push to NuGet.org
-        env:
-          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
         run: >
           dotnet nuget push "artifacts/*.nupkg"
-          --api-key "$NUGET_API_KEY"
+          --api-key "${{ steps.login.outputs.NUGET_API_KEY }}"
           --source https://api.nuget.org/v3/index.json
           --skip-duplicate
 
@@ -95,6 +108,9 @@ jobs:
     if: ${{ startsWith(github.ref, 'refs/tags/tools-v') }}
     runs-on: ubuntu-latest
     environment: nuget
+    permissions:
+      contents: read
+      id-token: write # request a GitHub OIDC token for NuGet Trusted Publishing
     env:
       TOOL_PROJECT: tools/Line.OpenApi.Tools/Line.OpenApi.Tools.csproj
     steps:
@@ -126,11 +142,16 @@ jobs:
           VERSION: ${{ steps.ver.outputs.value }}
         run: dotnet pack "$TOOL_PROJECT" --configuration Release --no-build -o artifacts -p:Version="${VERSION}"
 
+      # Exchange the GitHub OIDC token for a short-lived nuget.org API key (valid 1h).
+      - name: NuGet login (OIDC -> temp API key)
+        id: login
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
+        with:
+          user: pierre3
+
       - name: Push to NuGet.org
-        env:
-          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
         run: >
           dotnet nuget push "artifacts/*.nupkg"
-          --api-key "$NUGET_API_KEY"
+          --api-key "${{ steps.login.outputs.NUGET_API_KEY }}"
           --source https://api.nuget.org/v3/index.json
           --skip-duplicate
