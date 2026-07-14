@@ -1,0 +1,50 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Line.OpenApi.Tools</RootNamespace>
+    <AssemblyName>Line.OpenApi.Tools</AssemblyName>
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <!-- Distributed as a .NET global tool: `dotnet tool install -g Line.OpenApi.Tools`
+         then invoked as `line`. -->
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>line</ToolCommandName>
+    <Description>Local CLI and MCP tool for the LINE Platform, built on the Line.OpenApi client libraries. Exposes token management, message send / bot lookup, webhook development helpers, and LIFF management both as CLI subcommands and as MCP server tools.</Description>
+
+    <!-- Independent release cadence from the library packages (spec §7):
+         the tool depends on evolving tooling and is versioned/tagged (cli-v*) on its own. -->
+    <Version>0.1.0-preview</Version>
+
+    <!-- Application, not public API surface: no XML doc file. -->
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+
+    <!-- Ship the tool-specific README on NuGet instead of the repository-root library README.
+         PackRootReadme=false opts out of the root README include in Directory.Build.props. -->
+    <PackRootReadme>false</PackRootReadme>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Tool-specific package README (tools/README.md, English). -->
+    <None Include="..\README.md" Pack="true" PackagePath="\" Visible="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Line.OpenApi.Bot bundles Messaging + Messaging.Webhook + ChannelAccessToken.
+         Liff is referenced separately (not part of the Bot meta-package). -->
+    <ProjectReference Include="..\..\src\Line.OpenApi.Bot\Line.OpenApi.Bot.csproj" />
+    <ProjectReference Include="..\..\src\Line.OpenApi.Liff\Line.OpenApi.Liff.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Line.OpenApi.Tools.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Cocona" Version="2.2.0" />
+    <PackageReference Include="ModelContextProtocol" Version="1.4.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
+  </ItemGroup>
+
+</Project>

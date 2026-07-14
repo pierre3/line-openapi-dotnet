@@ -47,8 +47,9 @@
 
   <!-- パッケージ対象プロジェクトにルート README を同梱（PackageReadmeFile の実体）。
        $(MSBuildThisFileDirectory) はリポジトリルート＝この props の場所。テスト等
-       IsPackable=false のプロジェクトはパックされないため無害。 -->
-  <ItemGroup Condition="'$(IsPackable)' != 'false'">
+       IsPackable=false のプロジェクトはパックされないため無害。
+       PackRootReadme=false を設定したプロジェクト（例: tools の CLI）は独自 README を同梱する。 -->
+  <ItemGroup Condition="'$(IsPackable)' != 'false' And '$(PackRootReadme)' != 'false'">
     <None Include="$(MSBuildThisFileDirectory)README.md" Pack="true" PackagePath="\" Visible="false" />
   </ItemGroup>
 </Project>

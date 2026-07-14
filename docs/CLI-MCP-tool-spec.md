@@ -1,4 +1,4 @@
-# Line.OpenApi.Cli — CLI / MCP ツール 仕様
+# Line.OpenApi.Tools — CLI / MCP ツール 仕様
 
 **対象:** ローカル PC で使う LINE 開発者向け実用ツール（`dotnet tool` 配布）。同一ロジックを **CLI サブコマンド**と **MCP サーバのツール**の両方で公開する。
 **前提ライブラリ:** 本リポジトリの `Line.OpenApi.*`（Messaging / Messaging.Webhook / ChannelAccessToken / Liff）。
@@ -28,7 +28,7 @@ LINE 開発・運用で「手元ですぐ試したい／自動化したい」操
 「コマンドの実体＝DI 登録したサービス層」を 1 回だけ実装し、**薄い CLI アダプタ**と**薄い MCP アダプタ**の 2 枚をかぶせる。二重実装しない。
 
 ```
-src/Line.OpenApi.Cli/                 (PackAsTool, ToolCommandName = line, PackageId = Line.OpenApi.Cli)
+src/Line.OpenApi.Tools/                 (PackAsTool, ToolCommandName = line, PackageId = Line.OpenApi.Tools)
 ├─ Program.cs            … Generic Host 構築 / DI 登録 / 実行モード分岐（既定=CLI、"mcp" で MCP stdio）
 ├─ Hosting/
 │   ├─ CliContext.cs     … プロファイル・資格情報・出力形式などの実行時コンテキスト
@@ -174,9 +174,9 @@ CLI コマンドのうち **`webhook listen` を除く**すべてを MCP ツー�
 
 ## 7. 配布・依存・テスト
 
-- **配置（確定）:** 新設 `/tools/Line.OpenApi.Cli/`（`samples/` と同格）。`/src/` はライブラリ群専用のまま保ち、pack スモークテスト（`verify-packages.ps1` の 6 パッケージ厳密照合）・公開 API snapshot の対象範囲を汚さない。`LineOpenApi.slnx` に `/tools/` フォルダを追加。
-- **配布:** `dotnet tool install -g Line.OpenApi.Cli`。`PackAsTool=true` / `ToolCommandName=line`。共通メタデータは `Directory.Build.props` を踏襲（SourceLink/決定的ビルド）。ただし **CLI は app** なので `IncludeSymbols` 等はツール向けに調整。
-- **公開サイクル（確定）:** ライブラリ群とは**別サイクル・独立バージョン**。CLI は preview の MCP SDK に依存し安定度が異なるため、ライブラリの後方互換保証に巻き込まない。バージョンは `0.1.0-preview` 起点で以後独立採番。`release.yml` のタグ規約を分離（ライブラリ `v*` / CLI `cli-v*`）。
+- **配置（確定）:** 新設 `/tools/Line.OpenApi.Tools/`（`samples/` と同格）。`/src/` はライブラリ群専用のまま保ち、pack スモークテスト（`verify-packages.ps1` の 6 パッケージ厳密照合）・公開 API snapshot の対象範囲を汚さない。`LineOpenApi.slnx` に `/tools/` フォルダを追加。
+- **配布:** `dotnet tool install -g Line.OpenApi.Tools`。`PackAsTool=true` / `ToolCommandName=line`。共通メタデータは `Directory.Build.props` を踏襲（SourceLink/決定的ビルド）。ただし **CLI は app** なので `IncludeSymbols` 等はツール向けに調整。
+- **公開サイクル（確定）:** ライブラリ群とは**別サイクル・独立バージョン**。CLI は preview の MCP SDK に依存し安定度が異なるため、ライブラリの後方互換保証に巻き込まない。バージョンは `0.1.0-preview` 起点で以後独立採番。`release.yml` のタグ規約を分離（ライブラリ `v*` / CLI `tools-v*`）。
 - **参照:** `Line.OpenApi.Bot`（Messaging + Webhook + ChannelAccessToken を束ねる）＋ `Line.OpenApi.Liff`。＋ `Cocona`、`ModelContextProtocol`、`Microsoft.Extensions.Hosting`。
 - **テスト（`Line.OpenApi.Tests` へ追加 or 専用プロジェクト）:**
   - Services 層の単体テスト（既存の実 HTTP モックハンドラ流用で LINE API 呼び出しを検証）。
@@ -192,7 +192,7 @@ CLI コマンドのうち **`webhook listen` を除く**すべてを MCP ツー�
 
 - **セキュリティ:** シークレットの平文保存を最小化（パス参照優先・ファイル権限制限・保存時警告）。ログ/verbose にトークンや署名鍵を出さないマスキング。AllowedHostsValidator は本体既定（制御系＋必要な data 系のみ）を継承し CLI から緩めない。
 - **MCP のシークレット露出（確定）:** `token issue` の MCP 戻り値は既定でメタのみ（C）、明示フラグ `--allow-secret-output` 時のみ `reveal: true` で生返却（B）。詳細は §4.5 を参照。MCP ツール戻り値がモデル文脈（プロバイダ送信・会話履歴・ログ）へ載る前提で、生トークンを既定で返さないことを不変条件とする。
-- **確定済み:** slnx 配置＝新設 `/tools/`（§7）／ `webhook listen` のトンネル＝ドキュメント案内のみ（§4.3）／ NuGet 公開＝ライブラリ群と別サイクル・独立採番・タグ `cli-v*`（§7）。**本 spec に未決事項なし。**
+- **確定済み:** slnx 配置＝新設 `/tools/`（§7）／ `webhook listen` のトンネル＝ドキュメント案内のみ（§4.3）／ NuGet 公開＝ライブラリ群と別サイクル・独立採番・タグ `tools-v*`（§7）。**本 spec に未決事項なし。**
 
 ---
 

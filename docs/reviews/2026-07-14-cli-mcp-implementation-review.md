@@ -1,7 +1,7 @@
-# 実装ゲートレビュー: Line.OpenApi.Cli（CLI / MCP ツール）
+# 実装ゲートレビュー: Line.OpenApi.Tools（CLI / MCP ツール）
 
 - **日付:** 2026-07-14
-- **対象:** `tools/Line.OpenApi.Cli/`（実装）＋ `tests/Line.OpenApi.Cli.Tests/`
+- **対象:** `tools/Line.OpenApi.Tools/`（実装）＋ `tests/Line.OpenApi.Tools.Tests/`
 - **ブランチ:** `feat-cli-mcp-tool`
 - **ゲート:** code / security / test-arch（3 役サブエージェント）
 - **判定:** **3 役すべて CONCERNS（BLOCK / High なし）＝ main マージ可。** 指摘は本セッションで反映済み。

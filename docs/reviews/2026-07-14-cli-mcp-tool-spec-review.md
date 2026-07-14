@@ -1,4 +1,4 @@
-# spec ゲートレビュー: Line.OpenApi.Cli（CLI / MCP ツール仕様）
+# spec ゲートレビュー: Line.OpenApi.Tools（CLI / MCP ツール仕様）
 
 - **日付:** 2026-07-14
 - **対象:** `docs/CLI-MCP-tool-spec.md`（実装前の仕様）
