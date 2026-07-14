@@ -175,7 +175,7 @@ line mcp                                   # MCP サーバとして起動
 - **`Line.OpenApi.Samples.Console`** — 送信 / LIFF 管理 / トークン発行 / Webhook パース（`dotnet run -- webhook` は資格情報不要で動作）
 - **`Line.OpenApi.Samples.Webhook`** — minimal API の Webhook 受信＋エコー返信（dev トンネルでライブデモ）
 
-実行手順・環境変数・dev トンネル設定は [`samples/README.md`](https://github.com/pierre3/line-openapi-dotnet/blob/main/samples/README.md) を参照してください。
+実行手順・環境変数・dev トンネル設定は [`samples/README_ja.md`](https://github.com/pierre3/line-openapi-dotnet/blob/main/samples/README_ja.md) を参照してください。
 
 ## ソースからのビルド
 
