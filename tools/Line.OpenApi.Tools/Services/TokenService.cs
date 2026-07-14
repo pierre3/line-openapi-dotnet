@@ -25,6 +25,20 @@ public enum TokenKind
 /// </summary>
 public sealed class TokenService
 {
+    private readonly HttpMessageHandler? _transport;
+
+    /// <summary>Creates the service. Tests may inject a transport handler to stub HTTP responses.</summary>
+    public TokenService(HttpMessageHandler? transport = null)
+    {
+        _transport = transport;
+    }
+
+    // The token endpoints are unauthenticated (the assertion is the credential).
+    private HttpClientRequestAdapter CreateAdapter() =>
+        _transport is null
+            ? new HttpClientRequestAdapter(new AnonymousAuthenticationProvider())
+            : new HttpClientRequestAdapter(new AnonymousAuthenticationProvider(), httpClient: new HttpClient(_transport, disposeHandler: false));
+
     /// <summary>Issues a channel access token via a signed JWT assertion.</summary>
     public async Task<TokenIssueResult> IssueAsync(
         ResolvedCredentials credentials, TokenKind kind, TimeSpan tokenLifetime, CancellationToken cancellationToken)
@@ -49,8 +63,7 @@ public sealed class TokenService
             throw new CredentialException($"Cannot read private key at '{keyPath}': {ex.Message}");
         }
 
-        // The token endpoint is unauthenticated (the assertion is the credential).
-        using var adapter = new HttpClientRequestAdapter(new AnonymousAuthenticationProvider());
+        using var adapter = CreateAdapter();
         var client = new ChannelAccessTokenClient(adapter);
 
         Task<string> AssertionFactory(CancellationToken _) =>
@@ -67,7 +80,7 @@ public sealed class TokenService
     /// <summary>Verifies a token's validity and remaining lifetime.</summary>
     public async Task<TokenVerifyResult> VerifyAsync(string accessToken, CancellationToken cancellationToken)
     {
-        using var adapter = new HttpClientRequestAdapter(new AnonymousAuthenticationProvider());
+        using var adapter = CreateAdapter();
         var client = new ChannelAccessTokenClient(adapter);
 
         try
@@ -91,7 +104,7 @@ public sealed class TokenService
         var clientId = credentials.RequireChannelId();
         var clientSecret = credentials.RequireChannelSecret();
 
-        using var adapter = new HttpClientRequestAdapter(new AnonymousAuthenticationProvider());
+        using var adapter = CreateAdapter();
         var client = new ChannelAccessTokenClient(adapter);
 
         await client.Oauth2.V21.Revoke

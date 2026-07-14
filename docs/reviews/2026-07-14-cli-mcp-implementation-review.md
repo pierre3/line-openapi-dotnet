@@ -32,9 +32,13 @@
 - **[test-arch M3] ツール表面が部分一致のみ** → 全ツール名の網羅集合一致＋`[Description]` 非空ガードを追加。
 - **[test-arch L5 / code DRY] `StoreToken` 二重実装** → `ConfigStore.StoreAccessToken` に集約（CLI/MCP 双方が利用）。
 
+## follow-up 追加対応（2026-07-14）
+
+- **[test-arch M4] サービス層の transport 注入シーム（対応済み）** → `TokenService`/`WebhookService` に `HttpMessageHandler` 注入シームを追加。`StubHttpMessageHandler` で Token verify（200 有効 / 400 無効 / 500 は ApiException 伝播）と webhook replay のステータス写像を自動テスト化。CLI テスト 36→40。
+- **CI/リリース（対応済み）** → `pack-verify` は `-p:ExcludeToolFromPack=true` で Tools を除外し 6 パッケージ契約を維持。`release.yml` を `v*`（ライブラリ）/`tools-v*`（Tools）の 2 ジョブに分離。build-test は slnx 全体で CLI を内包。
+
 ## 未対応（follow-up・非ブロッキング）
 
-- **[test-arch M4] サービス層の transport 注入シーム欠如** → Token verify(400/200)・`WebhookService.ReplayAsync` のステータス写像はネットワーク経路の自動テストが未整備（手動 e2e 済み）。`RecordingHandler` 流用で追加する余地。
 - **[code L5] Cocona パースエラーが exit 2 にならない**（必須オプション欠落等は exit 1）。仕様許容範囲として記録。
 - **[code L7] CancellationToken 未配線**（`listen` は独自 cts で対応済み、他は Ctrl+C 即死）。
 - **[security L5] .NET string の秘密メモリ滞留**（情報提供・費用対効果低）。
@@ -43,5 +47,5 @@
 ## 検証
 
 - 全ソリューションビルド 0 警告 / 0 エラー。
-- CLI テスト **36/36 合格**（24→36、reveal ゲート・終了コード・ツール網羅を追加）。
+- CLI テスト **40/40 合格**（24→36 で reveal ゲート・終了コード・ツール網羅を追加、→40 で transport 注入シーム経路を追加）。
 - 手動 e2e: `config` CRUD、`webhook verify`（署名 OK/NG・JSON）、`webhook listen`（実 POST 受信 200）、MCP `initialize`＋`tools/list`（フル 18／`--read-only` 8）。

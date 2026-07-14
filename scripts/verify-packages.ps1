@@ -89,7 +89,10 @@ New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
 $OutputDir = (Resolve-Path $OutputDir).Path
 
 Write-Host "==> dotnet pack ($Configuration) -> $OutputDir"
-dotnet pack $Solution --configuration $Configuration --output $OutputDir
+# Exclude the CLI/MCP tool package (Line.OpenApi.Tools): it is released on its own cadence
+# (tag tools-v*) with a different layout (DotnetTool, bundled deps, no lib/). This smoke test
+# guards only the six library packages and their one-way dependency ADR.
+dotnet pack $Solution --configuration $Configuration --output $OutputDir -p:ExcludeToolFromPack=true
 if ($LASTEXITCODE -ne 0) { throw "dotnet pack failed with exit code $LASTEXITCODE" }
 
 $nupkgs = @(Get-ChildItem $OutputDir -Filter '*.nupkg')

@@ -25,6 +25,13 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
+  <!-- The tool is released on its own cadence (tag tools-v*), so it is excluded from the
+       library pack/verify workflows (pack-verify smoke test and the `v*` library release)
+       via -p:ExcludeToolFromPack=true. Its own release path packs this project directly. -->
+  <PropertyGroup Condition="'$(ExcludeToolFromPack)' == 'true'">
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
   <ItemGroup>
     <!-- Tool-specific package README (tools/README.md, English). -->
     <None Include="..\README.md" Pack="true" PackagePath="\" Visible="false" />

@@ -11,6 +11,14 @@ namespace Line.OpenApi.Tools.Services;
 /// </summary>
 public sealed class WebhookService
 {
+    private readonly HttpMessageHandler? _replayHandler;
+
+    /// <summary>Creates the service. Tests may inject a handler to stub replay HTTP responses.</summary>
+    public WebhookService(HttpMessageHandler? replayHandler = null)
+    {
+        _replayHandler = replayHandler;
+    }
+
     /// <summary>
     /// Verifies a stored webhook payload's signature and deserializes it. Returns a summary of the
     /// events. Throws <see cref="WebhookSignatureException"/> / <see cref="WebhookPayloadException"/>.
@@ -35,7 +43,7 @@ public sealed class WebhookService
     /// </summary>
     public async Task<ReplayResult> ReplayAsync(byte[] body, Uri target, CancellationToken cancellationToken)
     {
-        using var http = new HttpClient();
+        using var http = _replayHandler is null ? new HttpClient() : new HttpClient(_replayHandler, disposeHandler: false);
         using var content = new ByteArrayContent(body);
         content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
 

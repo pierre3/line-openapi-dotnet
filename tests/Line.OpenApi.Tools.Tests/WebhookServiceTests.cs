@@ -38,4 +38,19 @@ public sealed class WebhookServiceTests
         await Assert.ThrowsAsync<WebhookSignatureException>(() =>
             new WebhookService().VerifyAsync(Secret, body, "not-the-right-signature", CancellationToken.None));
     }
+
+    [Fact]
+    public async Task ReplayAsync_maps_response_status_and_posts_body()
+    {
+        var handler = new StubHttpMessageHandler(System.Net.HttpStatusCode.Accepted);
+        var service = new WebhookService(handler);
+
+        var result = await service.ReplayAsync(
+            System.Text.Encoding.UTF8.GetBytes("{\"x\":1}"),
+            new Uri("http://localhost:5000/webhook"),
+            CancellationToken.None);
+
+        Assert.Equal(202, result.StatusCode);
+        Assert.Equal(HttpMethod.Post, handler.LastRequest?.Method);
+    }
 }
