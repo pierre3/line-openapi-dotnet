@@ -1,0 +1,61 @@
+# Docs: build the DocFX manual and publish it to GitHub Pages.
+# The API reference is regenerated from src/** by `dotnet docfx metadata`, so this
+# runs when either the source or the manual (conceptual articles / config) changes.
+# Enable Pages once in repo Settings → Pages → Source = "GitHub Actions".
+name: docs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'docs/manual/**'
+      - '.config/dotnet-tools.json'
+      - '.github/workflows/docs.yml'
+  workflow_dispatch:
+
+# Allow the deploy job to publish to Pages.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Serialize concurrent runs; don't cancel an in-progress deploy.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      # docfx is pinned in .config/dotnet-tools.json (metadata analyzes the csproj
+      # sources via Roslyn, so the SDK above must resolve net10.0).
+      - name: Restore tools
+        run: dotnet tool restore
+
+      - name: Build docs (metadata + site)
+        run: dotnet docfx docs/manual/docfx.json
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/manual/_site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
