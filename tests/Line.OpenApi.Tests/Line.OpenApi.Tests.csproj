@@ -3,6 +3,13 @@
     <!-- テストは net10.0（ライブラリと同一 TFM） -->
     <TargetFramework>net10.0</TargetFramework>
     <IsPackable>false</IsPackable>
+    <!-- PublicApiSnapshotTests は [CallerFilePath] でスナップショット置き場を実行時に特定する。
+         CI では Directory.Build.props が ContinuousIntegrationBuild=true にし SourceLink の
+         決定的ソースパスが有効化され、[CallerFilePath] が実パスでなく "/_/..." を返すため
+         Directory.CreateDirectory / File アクセスが Permission denied で失敗する。
+         テストは非パック（決定的ビルド不要）なので、このプロジェクトだけ remap を無効化して
+         実パスを返させる。 -->
+    <DeterministicSourcePaths>false</DeterministicSourcePaths>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
