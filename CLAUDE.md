@@ -61,8 +61,10 @@ G4（①〜⑤）は全て main 反映済み。優先利用シーン ①メッ�
 - **（消化済）パッケージ/名前空間リネーム `Line.*` → `Line.OpenApi.*` の適用完了。** プロジェクト名/ディレクトリ・`AssemblyName`/`RootNamespace`（csproj 名から既定継承）・全 `src`/`tests` の `namespace`/`using`・`generate.ps1`＋`generate.sh` の Kiota `-n`/`-o`（**再生成済**）・`LineOpenApi.slnx`・`docfx.json` パス・公開 API snapshot approved（ファイル名＋中身）・README/マニュアル/レビュアー agent md を更新。`filterConfig.yml` の正規表現 `^Line\..*\.Generated` は新名にも一致するため変更不要。テスト 92/92＋Isolation 1/1、docfx 0 warnings、監査クリーン。
 - **（消化済）NuGet パッケージング設定完了（G5）。** 共通メタデータは `Directory.Build.props`（`Authors=pierre3`、`RepositoryUrl=https://github.com/pierre3/line-openapi-dotnet`、`PackageLicenseExpression=MIT`、`PackageReadmeFile=README.md`、`Version=0.1.0-preview`、SourceLink/決定的ビルド/snupkg シンボル）。`Description` は各 src csproj。`PackageId` はプロジェクト名から既定継承（=`Line.OpenApi.*`）。ルート `LICENSE`（MIT）追加。`dotnet pack` で 5 パッケージ＋snupkg を警告なく生成、パッケージ間依存（`Line.OpenApi.Core` 等）・README・SourceLink（commit/branch）を nuspec で確認済み。CI/公開ワークフロー `.github/workflows/ci.yml`（build+test+audit）/`release.yml`（tag `v*` で pack→NuGet push、要 `NUGET_API_KEY` secret）を追加。
 - **（消化済）G5 ゲートレビュー完了。** 3 役 = code PASS / security PASS / test-arch CONCERNS（全て非ブロッキング）。共通指摘の CI 監査ゲート実効化（restore の NuGetAudit を warnings-as-errors 化）・release.yml のバージョン一致（build にも `-p:Version`）・入力の env 経由化・publish の `environment: nuget` 付与を反映済み。記録 `docs/reviews/2026-07-13-G5-rename-and-packaging-review.md`。**GO 推奨、人の go/no-go 待ち。**
-- **未実施:** 実際の NuGet.org 公開（`NUGET_API_KEY` 投入・タグ `v*` push）。follow-up: Actions の commit SHA ピン留め（正式版前）、pack スモークテスト（任意）。
-- **`Line.Bot`（任意メタパッケージ）:** 未作成。
+- **（消化済）`Line.OpenApi.Bot`（任意メタパッケージ）追加完了。** コードなし・依存束ねのみで `Line.OpenApi.Messaging` + `Line.OpenApi.Messaging.Webhook` + `Line.OpenApi.ChannelAccessToken` を束ねる（LIFF 非包含・設計 §4.2）。csproj は `IncludeBuildOutput=false`/`IncludeSymbols=false`（空アセンブリ・空 snupkg 回避）/`GenerateDocumentationFile=false`/`NoWarn NU5128`。`LineOpenApi.slnx`・README 更新。3 役ゲート = code/security/test-arch すべて PASS。`dotnet pack` で 6 パッケージ目（lib なし・snupkg なし・net10.0 依存 3 本）を確認。記録 `docs/reviews/2026-07-14-line-bot-meta-package-review.md`。**GO 済み・main マージ済み（`8ad4ad8`）。**
+- **（消化済）pack スモークテスト追加完了（旧 follow-up）。** `scripts/verify-packages.ps1`（ローカル/CI 両用・失敗時 exit 1）が `dotnet pack` 後に 6 パッケージのレイアウトを検証: 総数=6／samples・tests 非混入／全 README 同梱／**内部依存グラフ（Line.OpenApi.*）を厳密照合**（code 5 本は `Core` のみ＝一方向依存 ADR 保護、Bot は 3 依存）／code は `lib/net10.0/*.dll`＋snupkg あり・Bot は両方なし。`.github/workflows/ci.yml` に `pack-verify` ジョブ追加。negative test で退行捕捉を実証（`IncludeSymbols` を戻すと exit 1）。外部依存バージョン下限は NuGet 監査ゲートが担当・スコープ外。code/test-arch 再ゲート PASS。**main マージ済み（`8ad4ad8`）。**
+- **（消化済）README を標準的な OSS 構成へ整理（`a31501b`）。** Windows 限定記述・PoC 検証メモを削除、バッジ／インストール／必要要件／使い方／ビルド／ドキュメント／構成／ライセンスの標準節構成へ。NuGet 埋め込み README 向けにリポジトリ内リンクを絶対 URL 化。
+- **未実施:** 実際の NuGet.org 公開（`NUGET_API_KEY` 投入・タグ `v*` push）。follow-up: Actions の commit SHA ピン留め（正式版前）。
 - **将来パッケージ:** insight / manage-audience / module / shop（仕様未取得）。
 - （消化済）Webhook 受信の利用シーンヘルパ = `WebhookRequestParser` を追加（`feat-webhook-receive`。ゲート・go/no-go は当該セッション参照）。
 - （消化済）ユーザーマニュアル = DocFX で英語 API リファレンス＋概念記事 英/日 2 系統を `docs/manual/` に構築（`docs-manual-bilingual`）。あわせて**手書きコードの全コメントを英語化**（設計 §13）。公開ホスティング/CI 発行は G5 へ持ち越し。
@@ -76,6 +78,8 @@ pwsh scripts/generate.ps1
 dotnet build
 # テスト（webhook 多態含め既定で全実行。opt-in フラグ不要）
 dotnet test
+# pack スモークテスト（6 パッケージのレイアウト・内部依存グラフを検証。CI の pack-verify ジョブと同一）
+pwsh scripts/verify-packages.ps1
 # ドキュメント生成（DocFX。ローカルツール＝.config/dotnet-tools.json にピン留め）
 dotnet tool restore                        # 初回のみ
 dotnet docfx docs/manual/docfx.json        # metadata + build → docs/manual/_site/（--serve でプレビュー）
