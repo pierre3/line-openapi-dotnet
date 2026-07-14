@@ -1,10 +1,16 @@
-# LINE .NET クライアント
+# LINE .NET クライアント (Line.OpenApi.*)
 
-LINE 公開 OpenAPI 仕様から **Kiota** で生成した .NET/C# クライアントに、利用シーン単位の手書きファサード／DI／受信グルーを重ねたクライアントライブラリ群です。**TFM は `net10.0` 単一**（netstandard2.0 / .NET Framework は対象外）。
+[![CI](https://github.com/pierre3/line-openapi-dotnet/actions/workflows/ci.yml/badge.svg)](https://github.com/pierre3/line-openapi-dotnet/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/pierre3/line-openapi-dotnet/blob/main/LICENSE)
 
-> ローカル（Windows/.NET）での実行を想定しています。設計方針は `docs/LINE-dotnet-client-design.md`、開発文脈は `CLAUDE.md` を参照。
+LINE 公開 OpenAPI 仕様から [Kiota](https://learn.microsoft.com/openapi/kiota/) で生成した .NET/C# クライアントに、利用シーン単位の手書きファサード／DI／受信グルーを重ねたクライアントライブラリ群です。
 
-> 📚 **ユーザーマニュアル（DocFX）:** 概念記事（英語・日本語）＋英語 API リファレンスを `docs/manual/` に用意しています。ビルドは `dotnet docfx docs/manual/docfx.json --serve`（下記「ドキュメント生成」参照）。設計方針は `docs/LINE-dotnet-client-design.md` §13。
+- **メッセージ送受信（Bot）** と **LIFF アプリ管理** を主要ユースケースとしてサポート
+- 制御系（`api.line.me`）／データ系（`api-data.line.me`）の 2 ホストを `MessagingClient` ファサードで自動ルーティング
+- Webhook 受信（署名検証＋逆直列化）を `WebhookRequestParser` に集約
+- `IHttpClientFactory` ベースの DI 統合
+
+対象フレームワークは **`net10.0` 単一**です（netstandard2.0 / .NET Framework は対象外）。
 
 ## パッケージ
 
@@ -17,16 +23,26 @@ LINE 公開 OpenAPI 仕様から **Kiota** で生成した .NET/C# クライア�
 | `Line.OpenApi.Liff` | LIFF アプリ管理（`LiffClient` ファサード） |
 | `Line.OpenApi.Bot` | 便宜メタパッケージ（任意）＝Bot 一式を 1 参照で導入（`Messaging` + `Messaging.Webhook` + `ChannelAccessToken` を束ねる。コードなし・依存束ねのみ） |
 
-## 前提
+## インストール
 
-- .NET SDK 10 以降（`dotnet --version`）
-- （再生成する場合のみ）Kiota CLI: `dotnet tool install --global Microsoft.OpenApi.Kiota`
+> NuGet.org への公開は準備中です（現在 `0.1.0-preview`）。公開後は次のように参照できます。
 
----
+```sh
+# Bot 一式（送信＋受信＋トークン発行）をまとめて導入
+dotnet add package Line.OpenApi.Bot
 
-## 利用チュートリアル
+# または利用シーン単位で個別に導入
+dotnet add package Line.OpenApi.Messaging
+dotnet add package Line.OpenApi.Liff
+```
 
-### 1. メッセージ送信（Line.OpenApi.Messaging）
+## 必要要件
+
+- .NET SDK 10 以降（`dotnet --version` で確認）
+
+## 使い方
+
+### メッセージ送信（`Line.OpenApi.Messaging`）
 
 ```csharp
 using Line.OpenApi.Messaging;
@@ -57,13 +73,13 @@ services.AddLineMessaging(o => o.ChannelAccessToken = "CHANNEL_ACCESS_TOKEN");
 // 解決: sp.GetRequiredService<MessagingClient>()
 ```
 
-短期トークン（v2.1 JWT アサーション等）を使う場合は、更新型プロバイダを認証プロバイダ注入経路で渡す:
+短期トークン（v2.1 JWT アサーション等）を使う場合は、更新型プロバイダを認証プロバイダ注入経路で渡します:
 
 ```csharp
 services.AddLineMessaging(sp => /* IAuthenticationProvider を返す（Line.OpenApi.ChannelAccessToken の更新型プロバイダ等） */);
 ```
 
-### 2. LIFF アプリ管理（Line.OpenApi.Liff）
+### LIFF アプリ管理（`Line.OpenApi.Liff`）
 
 ```csharp
 using Line.OpenApi.Liff;
@@ -82,7 +98,7 @@ await liff.DeleteAppAsync(added.LiffId!);
 
 DI: `services.AddLineLiff(o => o.ChannelAccessToken = "…");`
 
-### 3. Webhook 受信（Line.OpenApi.Messaging.Webhook）
+### Webhook 受信（`Line.OpenApi.Messaging.Webhook`）
 
 `WebhookRequestParser` が **署名検証（`x-line-signature`）＋本文の逆直列化**を 1 呼び出しに束ねます。署名 NG は `WebhookSignatureException`、本文不正は `WebhookPayloadException`（どちらも基底 `WebhookException`）を投げます。
 
@@ -133,12 +149,10 @@ app.MapPost("/webhook", async (HttpRequest request, WebhookRequestParser parser)
 ```
 
 > マルチテナント（チャネルごとに異なるシークレット）では、静的オーバーロード
-> `WebhookRequestParser.ParseAsync(channelSecret, body, signature)` を使う。
+> `WebhookRequestParser.ParseAsync(channelSecret, body, signature)` を使います。
 >
-> 本文サイズの上限（DoS 対策）は本ヘルパの責務外。ASP.NET Core の `MaxRequestBodySize` 等、
-> 上流で生ボディのサイズ制限を設けること。
-
----
+> 本文サイズの上限（DoS 対策）は本ヘルパの責務外です。ASP.NET Core の `MaxRequestBodySize` 等、
+> 上流で生ボディのサイズ制限を設けてください。
 
 ## サンプル
 
@@ -147,59 +161,51 @@ app.MapPost("/webhook", async (HttpRequest request, WebhookRequestParser parser)
 - **`Line.OpenApi.Samples.Console`** — 送信 / LIFF 管理 / トークン発行 / Webhook パース（`dotnet run -- webhook` は資格情報不要で動作）
 - **`Line.OpenApi.Samples.Webhook`** — minimal API の Webhook 受信＋エコー返信（dev トンネルでライブデモ）
 
-実行手順・環境変数・dev トンネル設定は [`samples/README.md`](samples/README.md) を参照。
+実行手順・環境変数・dev トンネル設定は [`samples/README.md`](https://github.com/pierre3/line-openapi-dotnet/blob/main/samples/README.md) を参照してください。
 
----
-
-## 再生成・ビルド・テスト
+## ソースからのビルド
 
 リポジトリルートで:
 
-```powershell
-# 生成（specs は openapi/ に同梱。channel-access-token.yml の未引用 urn を冪等に引用符化）
-./scripts/generate.ps1        # macOS/Linux は bash scripts/generate.sh
-dotnet build                  # net10.0 単一
-dotnet test                   # webhook 多態含め既定で全実行（opt-in フラグ不要）
+```sh
+dotnet build            # net10.0 単一
+dotnet test             # webhook 多態含め既定で全実行（opt-in フラグ不要）
 ```
 
-生成コードは `src/**/Generated/`（`kiota-lock.json` はコミット対象）。`Microsoft.Kiota.Bundle` の版は `Directory.Build.props` の `KiotaBundleVersion` で一元管理（現状 2.0.0）。
+### 仕様からの再生成（任意）
 
----
+OpenAPI 仕様（`openapi/` に同梱）から Kiota クライアントを再生成する場合のみ、Kiota CLI が必要です:
 
-## ドキュメント生成（DocFX）
+```sh
+dotnet tool install --global Microsoft.OpenApi.Kiota
 
-ユーザーマニュアル（`docs/manual/`）は [DocFX](https://dotnet.github.io/docfx/) で生成します。DocFX はローカルツール（`.config/dotnet-tools.json`、現状 2.78.5）としてピン留め済み。リポジトリルートで:
+./scripts/generate.ps1        # Windows / PowerShell
+bash scripts/generate.sh      # macOS / Linux
+```
 
-```powershell
+生成コードは `src/**/Generated/`（`kiota-lock.json` はコミット対象）。`Microsoft.Kiota.Bundle` の版は `Directory.Build.props` の `KiotaBundleVersion` で一元管理しています（現状 2.0.0）。
+
+## ドキュメント
+
+- 設計方針: [`docs/LINE-dotnet-client-design.md`](https://github.com/pierre3/line-openapi-dotnet/blob/main/docs/LINE-dotnet-client-design.md)
+- ユーザーマニュアル: [DocFX](https://dotnet.github.io/docfx/) で概念記事（英語 `en/`・日本語 `ja/`）＋英語 API リファレンスを `docs/manual/` に生成します。DocFX はローカルツール（`.config/dotnet-tools.json`）としてピン留め済み。
+
+```sh
 dotnet tool restore                              # 初回のみ（DocFX を復元）
 dotnet docfx docs/manual/docfx.json              # metadata 抽出 + サイトビルド → docs/manual/_site/
 dotnet docfx docs/manual/docfx.json --serve      # ローカルプレビュー（http://localhost:8080）
 ```
 
-- **API リファレンスは英語のみ**（手書き公開表面の XML doc コメントから自動生成。`filterConfig.yml` で `Line.*.Generated` を除外）。
-- **概念記事は英語（`en/`）・日本語（`ja/`）の 2 系統**。
-- 生成物（`docs/manual/api/`・`docs/manual/_site/`）は Git 追跡外。設定・記事のみ追跡。詳細は設計 §13。
+API リファレンスは手書き公開表面の XML doc コメントから英語で自動生成します（生成物 `Line.*.Generated` は `filterConfig.yml` で除外）。生成物（`docs/manual/api/`・`docs/manual/_site/`）は Git 追跡外です。詳細は設計 §13 を参照。
 
----
-
-## 付録: PoC 検証メモ
-
-G0〜G4 で以下を実機確認済み（詳細は `docs/reviews/`）:
-
-1. **ホスト分離** — `Line.OpenApi.Messaging/Generated/Api`(制御系) と `.../Generated/Blob`(`content` 系) を 2 クライアント分離生成し、`MessagingClient` が Blob 側 BaseUrl を `api-data.line.me` に設定。回帰は `MessagingHostRoutingTests`。
-2. **form-urlencoded** — `Line.OpenApi.ChannelAccessToken` のトークン発行が型付きモデルで送出（`/oauth2/v3/token` の oneOf 合成ボディは form 非対応のため手書きヘルパで平坦化）。
-3. **webhook 多態** — `CallbackRequest` と各イベント派生型を discriminator で復元。回帰は `WebhookDeserializationTests`。
-4. **net10.0 単一ビルド** — 全ライブラリが `net10.0` でビルド。
-5. **公開 API 表面 snapshot** — 手書き表面のみ `PublicApiSnapshotTests` で回帰検知（Generated 除外＋完全性ガード）。
-
-## 構成
+## プロジェクト構成
 
 ```
 （リポジトリルート）
 ├── LineOpenApi.slnx             # ソリューション
 ├── Directory.Build.props        # 共通 TFM(net10.0)/nullable/Kiota版
 ├── openapi/                     # 仕様スナップショット
-├── scripts/generate.ps1 / .sh   # Kiota 生成コマンド
+├── scripts/                     # Kiota 生成・パッケージ検証スクリプト
 ├── src/
 │   ├── Line.OpenApi.Core/               # 認証プロバイダ・署名検証・許可ホスト（手書き）
 │   ├── Line.OpenApi.ChannelAccessToken/ # トークン発行（form-urlencoded 込み生成＋手書きヘルパ）
@@ -207,8 +213,11 @@ G0〜G4 で以下を実機確認済み（詳細は `docs/reviews/`）:
 │   ├── Line.OpenApi.Messaging.Webhook/  # webhook モデル + WebhookRequestParser（受信グルー）
 │   ├── Line.OpenApi.Liff/               # LIFF + LiffClient ファサード
 │   └── Line.OpenApi.Bot/                # 便宜メタパッケージ（依存束ねのみ・コードなし）
-├── tests/
-│   ├── Line.OpenApi.Tests/      # 手書き表面のテスト（署名/受信/ルーティング/DI/snapshot 等）
-│   └── Line.OpenApi.Messaging.Webhook.IsolationTests/  # レジストリ非依存の独立検証
+├── samples/                     # 同梱デモアプリ（コンソール / Webhook Web API）
+├── tests/                       # 手書き表面のテスト（署名/受信/ルーティング/DI/snapshot 等）
 └── docs/                        # 設計・レビュー記録・ユーザーマニュアル（manual/）
 ```
+
+## ライセンス
+
+[MIT](https://github.com/pierre3/line-openapi-dotnet/blob/main/LICENSE) © pierre3
