@@ -24,5 +24,6 @@
     <ProjectReference Include="..\..\src\Line.OpenApi.Messaging\Line.OpenApi.Messaging.csproj" />
     <ProjectReference Include="..\..\src\Line.OpenApi.Messaging.Webhook\Line.OpenApi.Messaging.Webhook.csproj" />
     <ProjectReference Include="..\..\src\Line.OpenApi.Liff\Line.OpenApi.Liff.csproj" />
+    <ProjectReference Include="..\..\src\Line.OpenApi.Login\Line.OpenApi.Login.csproj" />
   </ItemGroup>
 </Project>

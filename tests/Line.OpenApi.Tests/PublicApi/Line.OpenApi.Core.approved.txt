@@ -2,9 +2,16 @@ namespace Line.OpenApi.Core.Authentication
 {
     public static class LineHosts
     {
+        public const string AccessLine = "access.line.me";
         public const string Api = "api.line.me";
         public const string ApiData = "api-data.line.me";
         public static readonly string[] Default;
+    }
+    public sealed class StaticBearerTokenProvider : Microsoft.Kiota.Abstractions.Authentication.IAccessTokenProvider
+    {
+        public StaticBearerTokenProvider(string token, params string[] allowedHosts) { }
+        public Microsoft.Kiota.Abstractions.Authentication.AllowedHostsValidator AllowedHostsValidator { get; }
+        public System.Threading.Tasks.Task<string> GetAuthorizationTokenAsync(System.Uri uri, System.Collections.Generic.Dictionary<string, object>? additionalAuthenticationContext = null, System.Threading.CancellationToken cancellationToken = default) { }
     }
     public sealed class StaticChannelAccessTokenProvider : Microsoft.Kiota.Abstractions.Authentication.IAccessTokenProvider
     {

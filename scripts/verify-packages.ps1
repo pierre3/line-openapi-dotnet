@@ -36,6 +36,7 @@ $expectedInternalDeps = @{
     'Line.OpenApi.Messaging'           = @('Line.OpenApi.Core')
     'Line.OpenApi.Messaging.Webhook'   = @('Line.OpenApi.Core')
     'Line.OpenApi.Liff'                = @('Line.OpenApi.Core')
+    'Line.OpenApi.Login'               = @('Line.OpenApi.Core')
     # Meta-package: bundles the Bot trio (no Core direct; it flows transitively). Design section 4.2.
     'Line.OpenApi.Bot'                 = @('Line.OpenApi.ChannelAccessToken', 'Line.OpenApi.Messaging', 'Line.OpenApi.Messaging.Webhook')
 }

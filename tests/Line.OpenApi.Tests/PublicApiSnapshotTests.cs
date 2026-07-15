@@ -34,6 +34,7 @@ public class PublicApiSnapshotTests
         ("Line.OpenApi.ChannelAccessToken", typeof(Line.OpenApi.ChannelAccessToken.JwtAssertionTokenSource).Assembly),
         ("Line.OpenApi.Messaging", typeof(Line.OpenApi.Messaging.MessagingClient).Assembly),
         ("Line.OpenApi.Liff", typeof(Line.OpenApi.Liff.LiffClient).Assembly),
+        ("Line.OpenApi.Login", typeof(Line.OpenApi.Login.LoginClient).Assembly),
         ("Line.OpenApi.Messaging.Webhook", typeof(Line.OpenApi.Messaging.Webhook.WebhookRequestParser).Assembly),
     };
 

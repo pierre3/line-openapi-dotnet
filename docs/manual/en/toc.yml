@@ -8,6 +8,8 @@
   href: webhook.md
 - name: LIFF App Management
   href: liff.md
+- name: LINE Login & OpenID Connect
+  href: login.md
 - name: Dependency Injection & Hosting
   href: di-and-hosting.md
 - name: Security
