@@ -107,20 +107,57 @@ public class InsightClientHttpTests
     }
 
     [Fact]
+    public async Task GetMessageEventAsync_PutsRequestIdQuery()
+    {
+        var handler = new RecordingHandler(new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent("{}", Encoding.UTF8, "application/json"),
+        });
+        var client = NewClient(handler);
+
+        await client.GetMessageEventAsync("req-123");
+
+        Assert.Equal("/v2/bot/insight/message/event", handler.Request!.RequestUri!.AbsolutePath);
+        Assert.Contains("requestId=req-123", handler.Request.RequestUri.Query);
+    }
+
+    private static InsightClient NewAuthedClient(RecordingHandler handler)
+    {
+        var provider = new StaticChannelAccessTokenProvider("STATIC-TOKEN", LineHosts.Api);
+        return new InsightClient(new BaseBearerTokenAuthenticationProvider(provider), new HttpClient(handler));
+    }
+
+    [Fact]
     public async Task GetFriendsDemographicsAsync_OnApiLineMe_AddsBearerToken()
     {
         var handler = new RecordingHandler(new HttpResponseMessage(HttpStatusCode.OK)
         {
             Content = new StringContent("{}", Encoding.UTF8, "application/json"),
         });
-        var provider = new StaticChannelAccessTokenProvider("STATIC-TOKEN", LineHosts.Api);
-        var client = new InsightClient(
-            new BaseBearerTokenAuthenticationProvider(provider), new HttpClient(handler));
+        var client = NewAuthedClient(handler);
 
         await client.GetFriendsDemographicsAsync();
 
         Assert.Equal("Bearer", handler.Request!.Headers.Authorization!.Scheme);
         Assert.Equal("STATIC-TOKEN", handler.Request.Headers.Authorization.Parameter);
+    }
+
+    [Fact]
+    public async Task Request_ToDisallowedHost_WithholdsToken()
+    {
+        var handler = new RecordingHandler(new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent("{}", Encoding.UTF8, "application/json"),
+        });
+        // Only api.line.me is allowed by default. If a request strays to a data-plane host, no token is attached.
+        var client = NewAuthedClient(handler);
+
+        await client.Api.V2.Bot.Insight.Demographic
+            .WithUrl("https://api-data.line.me/v2/bot/insight/demographic")
+            .GetAsync();
+
+        Assert.Equal("api-data.line.me", handler.Request!.RequestUri!.Host);
+        Assert.Null(handler.Request.Headers.Authorization);
     }
 
     private sealed class RecordingHandler : HttpMessageHandler

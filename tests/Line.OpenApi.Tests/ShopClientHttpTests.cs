@@ -57,18 +57,36 @@ public class ShopClientHttpTests
         Assert.Equal((int)status, ex.ResponseStatusCode);
     }
 
+    private static ShopClient NewAuthedClient(RecordingHandler handler)
+    {
+        var provider = new StaticChannelAccessTokenProvider("STATIC-TOKEN", LineHosts.Api);
+        return new ShopClient(new BaseBearerTokenAuthenticationProvider(provider), new HttpClient(handler));
+    }
+
     [Fact]
     public async Task SendMissionStickerAsync_OnApiLineMe_AddsBearerToken()
     {
         var handler = new RecordingHandler(new HttpResponseMessage(HttpStatusCode.OK));
-        var provider = new StaticChannelAccessTokenProvider("STATIC-TOKEN", LineHosts.Api);
-        var client = new ShopClient(
-            new BaseBearerTokenAuthenticationProvider(provider), new HttpClient(handler));
+        var client = NewAuthedClient(handler);
 
         await client.SendMissionStickerAsync(new MissionStickerRequest { To = "U1" });
 
         Assert.Equal("Bearer", handler.Request!.Headers.Authorization!.Scheme);
         Assert.Equal("STATIC-TOKEN", handler.Request.Headers.Authorization.Parameter);
+    }
+
+    [Fact]
+    public async Task Request_ToDisallowedHost_WithholdsToken()
+    {
+        var handler = new RecordingHandler(new HttpResponseMessage(HttpStatusCode.OK));
+        var client = NewAuthedClient(handler);
+
+        await client.Api.Shop.V3.Mission
+            .WithUrl("https://api-data.line.me/shop/v3/mission")
+            .PostAsync(new MissionStickerRequest { To = "U1" });
+
+        Assert.Equal("api-data.line.me", handler.Request!.RequestUri!.Host);
+        Assert.Null(handler.Request.Headers.Authorization);
     }
 
     private sealed class RecordingHandler : HttpMessageHandler

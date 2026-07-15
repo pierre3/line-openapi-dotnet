@@ -59,4 +59,31 @@ public class InsightClientTests
         await Assert.ThrowsAsync<ArgumentException>(
             () => client.GetRichMenuInsightSummaryAsync("", "20260701", "20260715"));
     }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData(null)]
+    public async Task GetNumberOfMessageDeliveriesAsync_MissingDate_Throws(string? date)
+    {
+        var client = InsightClient.CreateWithStaticToken("TOKEN");
+        await Assert.ThrowsAsync<ArgumentException>(() => client.GetNumberOfMessageDeliveriesAsync(date!));
+    }
+
+    [Fact]
+    public async Task GetStatisticsPerUnitAsync_MissingArgs_Throws()
+    {
+        var client = InsightClient.CreateWithStaticToken("TOKEN");
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => client.GetStatisticsPerUnitAsync("unit", "", "20260715"));
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => client.GetStatisticsPerUnitAsync("unit", "20260701", ""));
+    }
+
+    [Fact]
+    public async Task GetRichMenuInsightDailyAsync_MissingRichMenuId_Throws()
+    {
+        var client = InsightClient.CreateWithStaticToken("TOKEN");
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => client.GetRichMenuInsightDailyAsync("", "20260701", "20260715"));
+    }
 }

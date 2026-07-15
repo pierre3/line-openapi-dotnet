@@ -67,6 +67,7 @@ public class ModuleClientHttpTests
 
         Assert.Equal(HttpMethod.Post, handler.Request!.Method);
         Assert.Equal("https://api.line.me/v2/bot/chat/chat-42/control/release", handler.Request.RequestUri!.ToString());
+        Assert.Null(handler.Request.Content); // release has no request body
     }
 
     [Fact]
@@ -98,6 +99,12 @@ public class ModuleClientHttpTests
         Assert.Equal((int)status, ex.ResponseStatusCode);
     }
 
+    private static ModuleClient NewAuthedClient(RecordingHandler handler)
+    {
+        var provider = new StaticChannelAccessTokenProvider("STATIC-TOKEN", LineHosts.Api);
+        return new ModuleClient(new BaseBearerTokenAuthenticationProvider(provider), new HttpClient(handler));
+    }
+
     [Fact]
     public async Task GetModulesAsync_OnApiLineMe_AddsBearerToken()
     {
@@ -105,14 +112,29 @@ public class ModuleClientHttpTests
         {
             Content = new StringContent("{\"bots\":[]}", Encoding.UTF8, "application/json"),
         });
-        var provider = new StaticChannelAccessTokenProvider("STATIC-TOKEN", LineHosts.Api);
-        var client = new ModuleClient(
-            new BaseBearerTokenAuthenticationProvider(provider), new HttpClient(handler));
+        var client = NewAuthedClient(handler);
 
         await client.GetModulesAsync();
 
         Assert.Equal("Bearer", handler.Request!.Headers.Authorization!.Scheme);
         Assert.Equal("STATIC-TOKEN", handler.Request.Headers.Authorization.Parameter);
+    }
+
+    [Fact]
+    public async Task Request_ToDisallowedHost_WithholdsToken()
+    {
+        var handler = new RecordingHandler(new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent("{\"bots\":[]}", Encoding.UTF8, "application/json"),
+        });
+        var client = NewAuthedClient(handler);
+
+        await client.Api.V2.Bot.List
+            .WithUrl("https://api-data.line.me/v2/bot/list")
+            .GetAsync();
+
+        Assert.Equal("api-data.line.me", handler.Request!.RequestUri!.Host);
+        Assert.Null(handler.Request.Headers.Authorization);
     }
 
     private sealed class RecordingHandler : HttpMessageHandler
