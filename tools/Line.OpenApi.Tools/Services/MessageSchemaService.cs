@@ -37,6 +37,9 @@ public sealed class MessageSchemaService
         ["imagemap"] = "ImagemapMessage",
         ["quickReply"] = "QuickReply",
         ["action"] = "Action",
+        // Rich menu roots (same spec), surfaced via line_richmenu_schema.
+        ["richmenu"] = "RichMenuRequest",
+        ["richMenuAlias"] = "CreateRichMenuAliasRequest",
     };
 
     // Relaxed escaping keeps the output readable for the model (backticks, quotes, angle brackets

@@ -22,4 +22,26 @@ namespace Line.OpenApi.Messaging
         public Line.OpenApi.Messaging.Generated.Blob.MessagingBlobApiClient Blob { get; }
         public static Line.OpenApi.Messaging.MessagingClient CreateWithStaticToken(string channelAccessToken) { }
     }
+    public sealed class RichMenuClient
+    {
+        public RichMenuClient(Line.OpenApi.Messaging.MessagingClient messaging) { }
+        public RichMenuClient(Microsoft.Kiota.Abstractions.Authentication.IAuthenticationProvider authProvider, System.Net.Http.HttpClient? httpClient = null) { }
+        public Line.OpenApi.Messaging.MessagingClient Messaging { get; }
+        public System.Threading.Tasks.Task CancelDefaultAsync(System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task<string?> CreateAsync(Line.OpenApi.Messaging.Generated.Api.Models.RichMenuRequest request, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task DeleteAsync(string richMenuId, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task<Line.OpenApi.Messaging.Generated.Api.Models.RichMenuResponse?> GetAsync(string richMenuId, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task<string?> GetDefaultIdAsync(System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task<string?> GetIdOfUserAsync(string userId, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task<System.IO.Stream?> GetImageAsync(string richMenuId, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task LinkToUserAsync(string userId, string richMenuId, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task<Line.OpenApi.Messaging.Generated.Api.Models.RichMenuListResponse?> ListAsync(System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task SetDefaultAsync(string richMenuId, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task SetImageAsync(string richMenuId, System.IO.Stream image, string contentType, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task SetImageFromFileAsync(string richMenuId, string filePath, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task UnlinkFromUserAsync(string userId, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task ValidateAsync(Line.OpenApi.Messaging.Generated.Api.Models.RichMenuRequest request, System.Threading.CancellationToken cancellationToken = default) { }
+        public static Line.OpenApi.Messaging.RichMenuClient CreateWithStaticToken(string channelAccessToken) { }
+        public static string InferImageContentType(string filePath) { }
+    }
 }
