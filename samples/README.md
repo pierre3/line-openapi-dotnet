@@ -8,6 +8,7 @@ Demo apps that show how to use the `Line.OpenApi.*` packages. **They run offline
 |---|---|---|
 | `Line.OpenApi.Samples.Console` | Console | Send / LIFF management / token issuance / webhook parsing (offline) |
 | `Line.OpenApi.Samples.Webhook` | minimal web api | Real webhook receiving → echo reply (live demo via a dev tunnel) |
+| `Line.OpenApi.Samples.Login` | minimal web api | LINE Login + OpenID Connect: authorization-code flow (PKCE) → profile / friendship |
 
 > These samples are `IsPackable=false` and are not included in the NuGet packages. They reference `src/` as project references.
 
@@ -21,6 +22,8 @@ Demo apps that show how to use the `Line.OpenApi.*` packages. **They run offline
 | `LINE_CHANNEL_ID` | Channel ID (iss/sub for token issuance) | Console (token) |
 | `LINE_KID` | kid of the assertion signing key | Console (token) |
 | `LINE_PRIVATE_KEY` / `LINE_PRIVATE_KEY_PATH` | RSA private key (PEM body / file path. **File path recommended**) | Console (token) |
+| `LINE_LOGIN_CHANNEL_ID` / `LINE_LOGIN_CHANNEL_SECRET` | LINE Login channel ID / secret | Login |
+| `LINE_LOGIN_REDIRECT_URI` | Callback URL registered in the console (default `http://localhost:5000/callback`) | Login |
 
 > Injecting a private key inline via an environment variable can leak it through the process list or crash dumps, so `LINE_PRIVATE_KEY_PATH` (a file reference) is recommended.
 
@@ -100,7 +103,58 @@ Append `/webhook` to the displayed HTTPS forwarding URL (e.g. `https://xxxx.devt
 
 ---
 
+## 3. LINE Login web app (`Line.OpenApi.Samples.Login`)
+
+A minimal API that runs the LINE Login **authorization-code flow with PKCE** and, on the
+callback, verifies the ID token (server-side, via LINE), then shows the user's profile and
+friendship status. Unlike the webhook sample, LINE Login allows **localhost callbacks**, so no
+dev tunnel is needed.
+
+### 3-1. Register the redirect URI and set credentials
+
+1. In the [LINE Developers Console](https://developers.line.biz/console/), open your **LINE Login** channel
+2. Under **LINE Login settings**, add the callback URL `http://localhost:5000/callback`
+3. Start the app:
+
+```powershell
+cd samples/Line.OpenApi.Samples.Login
+$env:LINE_LOGIN_CHANNEL_ID     = "<login channel id>"
+$env:LINE_LOGIN_CHANNEL_SECRET = "<login channel secret>"
+# Optional: enables the deauthorize demo on /logout (Messaging channel access token)
+$env:LINE_CHANNEL_ACCESS_TOKEN = "<messaging channel access token>"
+dotnet run
+```
+
+- `GET /` … Home; shows whether Login is configured and a "Sign in with LINE" link
+- `GET /login` … Builds the authorization URL (state + PKCE stored in the session) and redirects to LINE
+- `GET /callback` … Verifies `state`, exchanges the code (`ExchangeCodeAsync`), verifies the ID token (`VerifyIdTokenAsync`), and shows the profile + friendship status
+- `GET /logout` … Revokes the access token (and calls `DeauthorizeAsync` when a Messaging channel token is set)
+
+> The app starts even without credentials (`GET /` reports "disabled"). It listens on the origin
+> of `LINE_LOGIN_REDIRECT_URI` (default `http://localhost:5000`).
+
+### 3-2. Try it
+
+Open `http://localhost:5000/` and click **Sign in with LINE**. After consenting on LINE, you are
+redirected back to `/callback`, which displays your userId, display name, picture, ID-token
+claims, and whether you are a friend of the Official Account linked to the Login channel.
+
+> Unlike the console sample, LINE Login cannot run offline: without credentials the app only
+> shows a "disabled" page (the flow is a live browser round-trip). The sample uses
+> `AddLineLogin` (DI). Beyond what it shows, the same `LoginClient` also offers
+> `RefreshTokenAsync`, `VerifyAccessTokenAsync`, and `GetUserInfoAsync` (OIDC userinfo).
+
+---
+
 ## Troubleshooting
+
+### LINE Login sample
+
+- **`400 invalid_request` / redirect error:** `LINE_LOGIN_REDIRECT_URI` does not exactly match a callback URL registered on the Login channel. They must be identical (scheme, host, port, path).
+- **`state mismatch` on `/callback`:** the session cookie was lost (expired, or the browser did not send it). Retry from `/login`.
+- **`friend of the linked OA` is always false:** the Login channel must have an Official Account linked to it for friendship status to be meaningful.
+
+### Webhook sample
 
 - **No reply arrives:** `LINE_CHANNEL_ACCESS_TOKEN` is unset, or the reply token expired (about 1 minute after issuance). Check that `reply` is `enabled` in `GET /`.
 - **401 returned:** `LINE_CHANNEL_SECRET` does not match the channel's.

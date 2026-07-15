@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <RootNamespace>Line.OpenApi.Samples.Login</RootNamespace>
+    <AssemblyName>Line.OpenApi.Samples.Login</AssemblyName>
+    <!-- Samples are never packed or published. This also suppresses the packaging
+         metadata / README include inherited from the root Directory.Build.props. -->
+    <IsPackable>false</IsPackable>
+    <!-- Samples are demo code, not public API surface: no XML doc file needed. -->
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Line.OpenApi.Login\Line.OpenApi.Login.csproj" />
+  </ItemGroup>
+
+</Project>

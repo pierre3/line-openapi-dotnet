@@ -8,6 +8,7 @@
 |---|---|---|
 | `Line.OpenApi.Samples.Console` | コンソール | 送信 / LIFF 管理 / トークン発行 / Webhook パース（オフライン） |
 | `Line.OpenApi.Samples.Webhook` | minimal web api | 実 Webhook 受信 → エコー返信（dev トンネルでライブデモ） |
+| `Line.OpenApi.Samples.Login` | minimal web api | LINE Login + OpenID Connect：認可コードフロー（PKCE）→ プロフィール / 友だち関係 |
 
 > これらのサンプルは `IsPackable=false` で、NuGet パッケージには含まれません。`src/` をプロジェクト参照します。
 
@@ -21,6 +22,8 @@
 | `LINE_CHANNEL_ID` | チャネル ID（トークン発行の iss/sub） | Console（トークン） |
 | `LINE_KID` | アサーション署名鍵の kid | Console（トークン） |
 | `LINE_PRIVATE_KEY` / `LINE_PRIVATE_KEY_PATH` | RSA 秘密鍵（PEM 本体 / ファイルパス。**ファイルパス推奨**） | Console（トークン） |
+| `LINE_LOGIN_CHANNEL_ID` / `LINE_LOGIN_CHANNEL_SECRET` | LINE Login チャネル ID / シークレット | Login |
+| `LINE_LOGIN_REDIRECT_URI` | コンソール登録のコールバック URL（既定 `http://localhost:5000/callback`） | Login |
 
 > 秘密鍵は環境変数へインライン投入するとプロセス一覧やクラッシュダンプ経由で漏れうるため、`LINE_PRIVATE_KEY_PATH`（ファイル参照）を推奨します。
 
@@ -100,7 +103,49 @@ devtunnel host -p 5000 --allow-anonymous
 
 ---
 
+## 3. LINE Login Web アプリ (`Line.OpenApi.Samples.Login`)
+
+LINE Login の**認可コードフロー（PKCE 付き）**を実行し、コールバックで ID トークンを（LINE 側に委譲して）検証してから、ユーザーのプロフィールと友だち関係を表示する minimal API です。Webhook サンプルと違い LINE Login は **localhost コールバックを許可**するため、dev トンネルは不要です。
+
+### 3-1. リダイレクト URI を登録して資格情報を設定
+
+1. [LINE Developers Console](https://developers.line.biz/console/) で **LINE Login** チャネルを開く
+2. **LINE Login 設定**でコールバック URL `http://localhost:5000/callback` を追加
+3. 起動:
+
+```powershell
+cd samples/Line.OpenApi.Samples.Login
+$env:LINE_LOGIN_CHANNEL_ID     = "<login channel id>"
+$env:LINE_LOGIN_CHANNEL_SECRET = "<login channel secret>"
+# 任意: /logout での deauthorize デモを有効化（Messaging チャネルアクセストークン）
+$env:LINE_CHANNEL_ACCESS_TOKEN = "<messaging channel access token>"
+dotnet run
+```
+
+- `GET /` … ホーム。Login の設定状況と「Sign in with LINE」リンクを表示
+- `GET /login` … 認可 URL を生成（state + PKCE をセッション保存）し LINE へリダイレクト
+- `GET /callback` … `state` を照合 → コード交換（`ExchangeCodeAsync`）→ ID トークン検証（`VerifyIdTokenAsync`）→ プロフィール＋友だち関係を表示
+- `GET /logout` … アクセストークンを失効（Messaging チャネルトークン設定時は `DeauthorizeAsync` も実行）
+
+> 資格情報が無くても起動します（`GET /` が "disabled" を表示）。待ち受けは `LINE_LOGIN_REDIRECT_URI` のオリジン（既定 `http://localhost:5000`）です。
+
+### 3-2. 試す
+
+`http://localhost:5000/` を開き **Sign in with LINE** をクリック。LINE で同意すると `/callback` に戻り、userId・表示名・画像・ID トークンの claim・Login チャネルに紐づく公式アカウントの友だち状態が表示されます。
+
+> コンソールサンプルと違い、LINE Login はオフラインでは動きません（資格情報が無いと "disabled" ページのみ。フローは実ブラウザ往復のため）。本サンプルは `AddLineLogin`（DI）を使います。表示内容以外にも、同じ `LoginClient` で `RefreshTokenAsync`・`VerifyAccessTokenAsync`・`GetUserInfoAsync`（OIDC userinfo）が利用できます。
+
+---
+
 ## トラブルシュート
+
+### LINE Login サンプル
+
+- **`400 invalid_request` / リダイレクトエラー:** `LINE_LOGIN_REDIRECT_URI` が Login チャネルに登録したコールバック URL と完全一致していない（スキーム・ホスト・ポート・パスまで一致が必要）。
+- **`/callback` で `state mismatch`:** セッション Cookie が失われた（期限切れ、またはブラウザが送出していない）。`/login` からやり直す。
+- **`friend of the linked OA` が常に false:** Login チャネルに公式アカウントを連携していないと友だち状態は意味を持たない。
+
+### Webhook サンプル
 
 - **返信が来ない:** `LINE_CHANNEL_ACCESS_TOKEN` 未設定、または reply token の期限切れ（発行から約 1 分）。`GET /` の `reply` が `enabled` か確認。
 - **401 が返る:** `LINE_CHANNEL_SECRET` がチャネルのものと不一致。
