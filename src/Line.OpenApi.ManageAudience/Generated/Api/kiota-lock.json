@@ -1,0 +1,34 @@
+{
+  "descriptionHash": "947BF0EFD748077196283A2476C972CE87F1EFF862D1840CCC0AB72DC512F296D1AC3DB14B844CCF0586E6834BE4D361368804D6B6105DCB121FA0A7D54E4848",
+  "descriptionLocation": "../../../../openapi/manage-audience.yml",
+  "lockFileVersion": "1.0.0",
+  "kiotaVersion": "1.34.1",
+  "clientClassName": "ManageAudienceApiClient",
+  "typeAccessModifier": "Public",
+  "clientNamespaceName": "Line.OpenApi.ManageAudience.Generated.Api",
+  "language": "CSharp",
+  "usesBackingStore": false,
+  "excludeBackwardCompatible": true,
+  "includeAdditionalData": true,
+  "disableSSLValidation": false,
+  "serializers": [
+    "Microsoft.Kiota.Serialization.Json.JsonSerializationWriterFactory",
+    "Microsoft.Kiota.Serialization.Text.TextSerializationWriterFactory",
+    "Microsoft.Kiota.Serialization.Form.FormSerializationWriterFactory",
+    "Microsoft.Kiota.Serialization.Multipart.MultipartSerializationWriterFactory"
+  ],
+  "deserializers": [
+    "Microsoft.Kiota.Serialization.Json.JsonParseNodeFactory",
+    "Microsoft.Kiota.Serialization.Text.TextParseNodeFactory",
+    "Microsoft.Kiota.Serialization.Form.FormParseNodeFactory"
+  ],
+  "structuredMimeTypes": [
+    "application/json"
+  ],
+  "includePatterns": [],
+  "excludePatterns": [
+    "**/upload/byFile"
+  ],
+  "disabledValidationRules": [],
+  "allowedExternalOrigins": []
+}

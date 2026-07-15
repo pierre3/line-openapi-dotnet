@@ -14,7 +14,8 @@
             "src/Line.OpenApi.Login/Line.OpenApi.Login.csproj",
             "src/Line.OpenApi.Insight/Line.OpenApi.Insight.csproj",
             "src/Line.OpenApi.Module/Line.OpenApi.Module.csproj",
-            "src/Line.OpenApi.Shop/Line.OpenApi.Shop.csproj"
+            "src/Line.OpenApi.Shop/Line.OpenApi.Shop.csproj",
+            "src/Line.OpenApi.ManageAudience/Line.OpenApi.ManageAudience.csproj"
           ]
         }
       ],

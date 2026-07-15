@@ -26,6 +26,7 @@ The target framework is **`net10.0` only** (netstandard2.0 / .NET Framework are 
 | `Line.OpenApi.Liff` | LIFF app management (`LiffClient` facade) |
 | `Line.OpenApi.Login` | LINE Login v2.1 + OpenID Connect (`LoginClient` facade = authorization URL / token exchange / ID-token & access-token verification / profile / friendship) |
 | `Line.OpenApi.Insight` | Insight / statistics (`InsightClient` facade = friend demographics, deliveries, followers, message events, rich menu insights) |
+| `Line.OpenApi.ManageAudience` | Audience management (`ManageAudienceClient` facade = create/get/list/delete audience groups, click/imp retargeting, by-file user-ID upload on the data plane) |
 | `Line.OpenApi.Module` | Module channels for partner/agency operation (`ModuleClient` facade = detach, chat control, list attached modules) |
 | `Line.OpenApi.Shop` | Mission sticker sending (`ShopClient` facade) |
 | `Line.OpenApi.Bot` | Convenience meta-package (optional) = the full Bot set in a single reference (bundles `Messaging` + `Messaging.Webhook` + `ChannelAccessToken`; no code, dependencies only) |
@@ -43,6 +44,7 @@ dotnet add package Line.OpenApi.Messaging
 dotnet add package Line.OpenApi.Liff
 dotnet add package Line.OpenApi.Login
 dotnet add package Line.OpenApi.Insight
+dotnet add package Line.OpenApi.ManageAudience
 dotnet add package Line.OpenApi.Module
 dotnet add package Line.OpenApi.Shop
 ```
@@ -154,6 +156,21 @@ var summary = await insight.GetRichMenuInsightSummaryAsync("RICH_MENU_ID", "2026
 ```
 
 DI: `services.AddLineInsight(o => o.ChannelAccessToken = "…");`
+
+### Manage Audience (`Line.OpenApi.ManageAudience`)
+
+Control plane (`api.line.me`) + data plane (`api-data.line.me`). The by-file upload is wrapped so you don't build the multipart body yourself.
+
+```csharp
+using Line.OpenApi.ManageAudience;
+
+var ma = ManageAudienceClient.CreateWithStaticToken("CHANNEL_ACCESS_TOKEN");
+using var file = File.OpenRead("user-ids.txt");   // one user ID / IFA per line
+var created = await ma.UploadUserIdsByFileAsync(file, description: "my audience");
+await ma.AddUserIdsByFileAsync(created!.AudienceGroupId!.Value, File.OpenRead("more-ids.txt"));
+```
+
+DI: `services.AddLineManageAudience(o => o.ChannelAccessToken = "…");`
 
 ### Module channels (`Line.OpenApi.Module`)
 
@@ -312,6 +329,7 @@ The API reference is auto-generated in English from the XML doc comments on the 
 │   ├── Line.OpenApi.Liff/               # LIFF + LiffClient facade
 │   ├── Line.OpenApi.Login/              # LINE Login v2.1 + OIDC (hand-written, no spec) + LoginClient facade
 │   ├── Line.OpenApi.Insight/            # Insight / statistics + InsightClient facade
+│   ├── Line.OpenApi.ManageAudience/     # audience management (control + data plane) + ManageAudienceClient facade
 │   ├── Line.OpenApi.Module/             # Module channels + ModuleClient facade
 │   ├── Line.OpenApi.Shop/               # Mission stickers + ShopClient facade
 │   └── Line.OpenApi.Bot/                # convenience meta-package (dependencies only, no code)

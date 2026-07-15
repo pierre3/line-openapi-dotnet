@@ -26,6 +26,7 @@ LINE 公開 OpenAPI 仕様から [Kiota](https://learn.microsoft.com/openapi/kio
 | `Line.OpenApi.Liff` | LIFF アプリ管理（`LiffClient` ファサード） |
 | `Line.OpenApi.Login` | LINE Login v2.1 + OpenID Connect（`LoginClient` ファサード＝認可 URL／トークン交換／ID トークン・アクセストークン検証／プロフィール／友だち関係） |
 | `Line.OpenApi.Insight` | インサイト／統計（`InsightClient` ファサード＝友だち属性・配信数・フォロワー数・メッセージイベント・リッチメニュー統計） |
+| `Line.OpenApi.ManageAudience` | オーディエンス管理（`ManageAudienceClient` ファサード＝オーディエンスグループ作成/取得/一覧/削除・click/imp リターゲ・データ系でのファイルによるユーザー ID アップロード） |
 | `Line.OpenApi.Module` | パートナー／代理店運用向けモジュールチャネル（`ModuleClient` ファサード＝detach・chat control・attach 済みモジュール一覧） |
 | `Line.OpenApi.Shop` | ミッションスタンプ送信（`ShopClient` ファサード） |
 | `Line.OpenApi.Bot` | 便宜メタパッケージ（任意）＝Bot 一式を 1 参照で導入（`Messaging` + `Messaging.Webhook` + `ChannelAccessToken` を束ねる。コードなし・依存束ねのみ） |
@@ -43,6 +44,7 @@ dotnet add package Line.OpenApi.Messaging
 dotnet add package Line.OpenApi.Liff
 dotnet add package Line.OpenApi.Login
 dotnet add package Line.OpenApi.Insight
+dotnet add package Line.OpenApi.ManageAudience
 dotnet add package Line.OpenApi.Module
 dotnet add package Line.OpenApi.Shop
 ```
@@ -154,6 +156,21 @@ var summary = await insight.GetRichMenuInsightSummaryAsync("RICH_MENU_ID", "2026
 ```
 
 DI: `services.AddLineInsight(o => o.ChannelAccessToken = "…");`
+
+### オーディエンス管理（`Line.OpenApi.ManageAudience`）
+
+制御系（`api.line.me`）＋データ系（`api-data.line.me`）。ファイルアップロードはラップ済みで multipart ボディを自分で組む必要はありません。
+
+```csharp
+using Line.OpenApi.ManageAudience;
+
+var ma = ManageAudienceClient.CreateWithStaticToken("CHANNEL_ACCESS_TOKEN");
+using var file = File.OpenRead("user-ids.txt");   // 1 行 1 ユーザー ID / IFA
+var created = await ma.UploadUserIdsByFileAsync(file, description: "my audience");
+await ma.AddUserIdsByFileAsync(created!.AudienceGroupId!.Value, File.OpenRead("more-ids.txt"));
+```
+
+DI: `services.AddLineManageAudience(o => o.ChannelAccessToken = "…");`
 
 ### モジュールチャネル（`Line.OpenApi.Module`）
 
@@ -312,6 +329,7 @@ API リファレンスは手書き公開表面の XML doc コメントから英�
 │   ├── Line.OpenApi.Liff/               # LIFF + LiffClient ファサード
 │   ├── Line.OpenApi.Login/              # LINE Login v2.1 + OIDC（spec 非存在の手書き）+ LoginClient ファサード
 │   ├── Line.OpenApi.Insight/            # インサイト／統計 + InsightClient ファサード
+│   ├── Line.OpenApi.ManageAudience/     # オーディエンス管理（制御系＋データ系）+ ManageAudienceClient ファサード
 │   ├── Line.OpenApi.Module/             # モジュールチャネル + ModuleClient ファサード
 │   ├── Line.OpenApi.Shop/               # ミッションスタンプ + ShopClient ファサード
 │   └── Line.OpenApi.Bot/                # 便宜メタパッケージ（依存束ねのみ・コードなし）

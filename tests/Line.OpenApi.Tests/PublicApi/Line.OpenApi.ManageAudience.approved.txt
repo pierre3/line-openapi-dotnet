@@ -1,0 +1,31 @@
+namespace Line.OpenApi.ManageAudience.DependencyInjection
+{
+    public sealed class LineManageAudienceOptions
+    {
+        public LineManageAudienceOptions() { }
+        public string[]? AllowedHosts { get; set; }
+        public string ChannelAccessToken { get; set; }
+    }
+    public static class ServiceCollectionExtensions
+    {
+        public const string HttpClientName = "Line.OpenApi.ManageAudience";
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddLineManageAudience(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, System.Action<Line.OpenApi.ManageAudience.DependencyInjection.LineManageAudienceOptions> configure) { }
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddLineManageAudience(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, System.Func<System.IServiceProvider, Microsoft.Kiota.Abstractions.Authentication.IAuthenticationProvider> authProviderFactory) { }
+    }
+}
+namespace Line.OpenApi.ManageAudience
+{
+    public sealed class ManageAudienceClient
+    {
+        public ManageAudienceClient(Microsoft.Kiota.Abstractions.Authentication.IAuthenticationProvider authProvider, System.Net.Http.HttpClient? httpClient = null) { }
+        public Line.OpenApi.ManageAudience.Generated.Api.ManageAudienceApiClient Api { get; }
+        public Line.OpenApi.ManageAudience.Generated.Blob.ManageAudienceBlobApiClient Blob { get; }
+        public System.Threading.Tasks.Task AddUserIdsAsync(Line.OpenApi.ManageAudience.Generated.Api.Models.AddAudienceToAudienceGroupRequest request, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task AddUserIdsByFileAsync(long audienceGroupId, System.IO.Stream fileContent, string? uploadDescription = null, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task<Line.OpenApi.ManageAudience.Generated.Api.Models.CreateAudienceGroupResponse?> CreateForUploadingUserIdsAsync(Line.OpenApi.ManageAudience.Generated.Api.Models.CreateAudienceGroupRequest request, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task DeleteAudienceGroupAsync(long audienceGroupId, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task<Line.OpenApi.ManageAudience.Generated.Api.Models.GetAudienceDataResponse?> GetAudienceDataAsync(long audienceGroupId, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task<Line.OpenApi.ManageAudience.Generated.Blob.Models.CreateAudienceGroupResponse?> UploadUserIdsByFileAsync(System.IO.Stream fileContent, string? description = null, bool? isIfaAudience = default, string? uploadDescription = null, System.Threading.CancellationToken cancellationToken = default) { }
+        public static Line.OpenApi.ManageAudience.ManageAudienceClient CreateWithStaticToken(string channelAccessToken) { }
+    }
+}
