@@ -10,7 +10,8 @@
             "src/Line.OpenApi.ChannelAccessToken/Line.OpenApi.ChannelAccessToken.csproj",
             "src/Line.OpenApi.Messaging/Line.OpenApi.Messaging.csproj",
             "src/Line.OpenApi.Messaging.Webhook/Line.OpenApi.Messaging.Webhook.csproj",
-            "src/Line.OpenApi.Liff/Line.OpenApi.Liff.csproj"
+            "src/Line.OpenApi.Liff/Line.OpenApi.Liff.csproj",
+            "src/Line.OpenApi.Login/Line.OpenApi.Login.csproj"
           ]
         }
       ],

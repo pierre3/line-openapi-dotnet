@@ -8,6 +8,8 @@
   href: webhook.md
 - name: LIFF アプリ管理
   href: liff.md
+- name: LINE Login と OpenID Connect
+  href: login.md
 - name: DI とホスティング
   href: di-and-hosting.md
 - name: セキュリティ

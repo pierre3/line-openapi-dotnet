@@ -24,6 +24,7 @@ The target framework is **`net10.0` only** (netstandard2.0 / .NET Framework are 
 | `Line.OpenApi.Messaging` | Messaging (`MessagingClient` facade = control-plane + data-plane clients unified) |
 | `Line.OpenApi.Messaging.Webhook` | Webhook models + receive glue (`WebhookRequestParser` = signature verification + deserialization) |
 | `Line.OpenApi.Liff` | LIFF app management (`LiffClient` facade) |
+| `Line.OpenApi.Login` | LINE Login v2.1 + OpenID Connect (`LoginClient` facade = authorization URL / token exchange / ID-token & access-token verification / profile / friendship) |
 | `Line.OpenApi.Bot` | Convenience meta-package (optional) = the full Bot set in a single reference (bundles `Messaging` + `Messaging.Webhook` + `ChannelAccessToken`; no code, dependencies only) |
 
 ## Installation
@@ -100,6 +101,40 @@ await liff.DeleteAppAsync(added.LiffId!);
 ```
 
 DI: `services.AddLineLiff(o => o.ChannelAccessToken = "…");`
+
+### LINE Login + OpenID Connect (`Line.OpenApi.Login`)
+
+`LoginClient` covers the browser authorization-code flow (with optional PKCE) and its follow-ups. Unlike Messaging, LINE Login authenticates with a **user access token** (a different credential system from the Messaging channel access token); token issuance uses the LINE Login **channel ID + channel secret**.
+
+```csharp
+using Line.OpenApi.Login;
+
+var login = new LoginClient("LOGIN_CHANNEL_ID", "LOGIN_CHANNEL_SECRET");
+
+// 1) Redirect the browser to the authorization URL (build only; no HTTP call).
+var pkce  = LineLoginSecurity.CreatePkceChallenge();
+var state = LineLoginSecurity.GenerateState();          // store state + pkce.CodeVerifier in the session
+var url   = login.BuildAuthorizationUrl(new AuthorizationUrlParameters
+{
+    RedirectUri   = "https://app.example.com/callback",
+    Scopes        = new[] { "openid", "profile" },
+    State         = state,
+    Nonce         = "server-generated-nonce",
+    CodeChallenge = pkce.CodeChallenge,
+});
+
+// 2) On the callback (after verifying state), exchange the code for tokens.
+var token = await login.ExchangeCodeAsync("<code>", "https://app.example.com/callback", pkce.CodeVerifier);
+
+// 3) Verify the ID token (delegated to LINE) and read the profile with the user access token.
+var claims  = await login.VerifyIdTokenAsync(token!.IdToken!, nonce: "server-generated-nonce");
+var profile = await login.GetProfileAsync(token.AccessToken!);
+var friend  = await login.GetFriendshipStatusAsync(token.AccessToken!);   // friend.FriendFlag
+```
+
+DI: `services.AddLineLogin(o => { o.ChannelId = "…"; o.ChannelSecret = "…"; });`
+
+> Local ID-token verification (HS256 for web / ES256 + JWKS for native/LIFF) is not included in this release; use `VerifyIdTokenAsync` (server-side delegation) for now.
 
 ### Receiving webhooks (`Line.OpenApi.Messaging.Webhook`)
 
@@ -228,6 +263,7 @@ The API reference is auto-generated in English from the XML doc comments on the 
 │   ├── Line.OpenApi.Messaging/          # control-plane + data-plane clients + MessagingClient facade
 │   ├── Line.OpenApi.Messaging.Webhook/  # webhook models + WebhookRequestParser (receive glue)
 │   ├── Line.OpenApi.Liff/               # LIFF + LiffClient facade
+│   ├── Line.OpenApi.Login/              # LINE Login v2.1 + OIDC (hand-written, no spec) + LoginClient facade
 │   └── Line.OpenApi.Bot/                # convenience meta-package (dependencies only, no code)
 ├── tools/                       # CLI / MCP tool (Line.OpenApi.Tools, command name `line`)
 ├── samples/                     # bundled demo apps (console / webhook Web API)

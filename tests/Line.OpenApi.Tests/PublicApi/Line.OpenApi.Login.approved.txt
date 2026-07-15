@@ -1,0 +1,140 @@
+namespace Line.OpenApi.Login
+{
+    public sealed class AuthorizationUrlParameters
+    {
+        public AuthorizationUrlParameters() { }
+        public string? BotPrompt { get; set; }
+        public string? CodeChallenge { get; set; }
+        public string CodeChallengeMethod { get; set; }
+        public string? Nonce { get; set; }
+        public string? Prompt { get; set; }
+        public required string RedirectUri { get; set; }
+        public string? ResponseMode { get; set; }
+        public required System.Collections.Generic.IReadOnlyCollection<string> Scopes { get; set; }
+        public required string State { get; set; }
+        public string? UiLocales { get; set; }
+    }
+    public static class LineLoginSecurity
+    {
+        public static Line.OpenApi.Login.PkceChallenge CreatePkceChallenge() { }
+        public static string GenerateState(int byteLength = 32) { }
+    }
+    public sealed class LoginClient
+    {
+        public LoginClient(string channelId, string channelSecret, System.Net.Http.HttpClient? httpClient = null, string[]? allowedHosts = null) { }
+        public string BuildAuthorizationUrl(Line.OpenApi.Login.AuthorizationUrlParameters parameters) { }
+        public System.Threading.Tasks.Task DeauthorizeAsync(string channelAccessToken, string userAccessToken, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task<Line.OpenApi.Login.Models.LineLoginTokenResponse?> ExchangeCodeAsync(string code, string redirectUri, string? codeVerifier = null, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task<Line.OpenApi.Login.Models.FriendshipStatus?> GetFriendshipStatusAsync(string userAccessToken, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task<Line.OpenApi.Login.Models.LineUserProfile?> GetProfileAsync(string userAccessToken, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task<Line.OpenApi.Login.Models.UserInfo?> GetUserInfoAsync(string userAccessToken, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task<Line.OpenApi.Login.Models.LineLoginTokenResponse?> RefreshTokenAsync(string refreshToken, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task RevokeTokenAsync(string accessToken, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task<Line.OpenApi.Login.Models.VerifyAccessTokenResponse?> VerifyAccessTokenAsync(string accessToken, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task<Line.OpenApi.Login.Models.VerifiedIdToken?> VerifyIdTokenAsync(string idToken, string? nonce = null, string? expectedUserId = null, System.Threading.CancellationToken cancellationToken = default) { }
+    }
+    public sealed class PkceChallenge
+    {
+        public string CodeChallenge { get; }
+        public string CodeChallengeMethod { get; }
+        public string CodeVerifier { get; }
+    }
+}
+namespace Line.OpenApi.Login.DependencyInjection
+{
+    public sealed class LineLoginOptions
+    {
+        public LineLoginOptions() { }
+        public string[]? AllowedHosts { get; set; }
+        public string ChannelId { get; set; }
+        public string ChannelSecret { get; set; }
+    }
+    public static class ServiceCollectionExtensions
+    {
+        public const string HttpClientName = "Line.OpenApi.Login";
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddLineLogin(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, System.Action<Line.OpenApi.Login.DependencyInjection.LineLoginOptions> configure) { }
+    }
+}
+namespace Line.OpenApi.Login.Models
+{
+    public sealed class FriendshipStatus : Microsoft.Kiota.Abstractions.Serialization.IParsable
+    {
+        public FriendshipStatus() { }
+        public bool? FriendFlag { get; set; }
+        public System.Collections.Generic.IDictionary<string, System.Action<Microsoft.Kiota.Abstractions.Serialization.IParseNode>> GetFieldDeserializers() { }
+        public void Serialize(Microsoft.Kiota.Abstractions.Serialization.ISerializationWriter writer) { }
+        public static Line.OpenApi.Login.Models.FriendshipStatus CreateFromDiscriminatorValue(Microsoft.Kiota.Abstractions.Serialization.IParseNode parseNode) { }
+    }
+    public sealed class LineLoginTokenResponse : Microsoft.Kiota.Abstractions.Serialization.IParsable
+    {
+        public LineLoginTokenResponse() { }
+        public string? AccessToken { get; set; }
+        public long? ExpiresIn { get; set; }
+        public string? IdToken { get; set; }
+        public string? RefreshToken { get; set; }
+        public string? Scope { get; set; }
+        public string? TokenType { get; set; }
+        public System.Collections.Generic.IDictionary<string, System.Action<Microsoft.Kiota.Abstractions.Serialization.IParseNode>> GetFieldDeserializers() { }
+        public void Serialize(Microsoft.Kiota.Abstractions.Serialization.ISerializationWriter writer) { }
+        public static Line.OpenApi.Login.Models.LineLoginTokenResponse CreateFromDiscriminatorValue(Microsoft.Kiota.Abstractions.Serialization.IParseNode parseNode) { }
+    }
+    public sealed class LineUserProfile : Microsoft.Kiota.Abstractions.Serialization.IParsable
+    {
+        public LineUserProfile() { }
+        public string? DisplayName { get; set; }
+        public string? PictureUrl { get; set; }
+        public string? StatusMessage { get; set; }
+        public string? UserId { get; set; }
+        public System.Collections.Generic.IDictionary<string, System.Action<Microsoft.Kiota.Abstractions.Serialization.IParseNode>> GetFieldDeserializers() { }
+        public void Serialize(Microsoft.Kiota.Abstractions.Serialization.ISerializationWriter writer) { }
+        public static Line.OpenApi.Login.Models.LineUserProfile CreateFromDiscriminatorValue(Microsoft.Kiota.Abstractions.Serialization.IParseNode parseNode) { }
+    }
+    public sealed class LoginErrorResponse : Microsoft.Kiota.Abstractions.ApiException, Microsoft.Kiota.Abstractions.Serialization.IParsable
+    {
+        public LoginErrorResponse() { }
+        public string? Error { get; set; }
+        public string? ErrorDescription { get; set; }
+        public override string Message { get; }
+        public System.Collections.Generic.IDictionary<string, System.Action<Microsoft.Kiota.Abstractions.Serialization.IParseNode>> GetFieldDeserializers() { }
+        public void Serialize(Microsoft.Kiota.Abstractions.Serialization.ISerializationWriter writer) { }
+        public static Line.OpenApi.Login.Models.LoginErrorResponse CreateFromDiscriminatorValue(Microsoft.Kiota.Abstractions.Serialization.IParseNode parseNode) { }
+    }
+    public sealed class UserInfo : Microsoft.Kiota.Abstractions.Serialization.IParsable
+    {
+        public UserInfo() { }
+        public string? Name { get; set; }
+        public string? Picture { get; set; }
+        public string? Sub { get; set; }
+        public System.Collections.Generic.IDictionary<string, System.Action<Microsoft.Kiota.Abstractions.Serialization.IParseNode>> GetFieldDeserializers() { }
+        public void Serialize(Microsoft.Kiota.Abstractions.Serialization.ISerializationWriter writer) { }
+        public static Line.OpenApi.Login.Models.UserInfo CreateFromDiscriminatorValue(Microsoft.Kiota.Abstractions.Serialization.IParseNode parseNode) { }
+    }
+    public sealed class VerifiedIdToken : Microsoft.Kiota.Abstractions.Serialization.IParsable
+    {
+        public VerifiedIdToken() { }
+        public System.Collections.Generic.List<string>? Amr { get; set; }
+        public string? Aud { get; set; }
+        public long? AuthTime { get; set; }
+        public string? Email { get; set; }
+        public long? Exp { get; set; }
+        public long? Iat { get; set; }
+        public string? Iss { get; set; }
+        public string? Name { get; set; }
+        public string? Nonce { get; set; }
+        public string? Picture { get; set; }
+        public string? Sub { get; set; }
+        public System.Collections.Generic.IDictionary<string, System.Action<Microsoft.Kiota.Abstractions.Serialization.IParseNode>> GetFieldDeserializers() { }
+        public void Serialize(Microsoft.Kiota.Abstractions.Serialization.ISerializationWriter writer) { }
+        public static Line.OpenApi.Login.Models.VerifiedIdToken CreateFromDiscriminatorValue(Microsoft.Kiota.Abstractions.Serialization.IParseNode parseNode) { }
+    }
+    public sealed class VerifyAccessTokenResponse : Microsoft.Kiota.Abstractions.Serialization.IParsable
+    {
+        public VerifyAccessTokenResponse() { }
+        public string? ClientId { get; set; }
+        public long? ExpiresIn { get; set; }
+        public string? Scope { get; set; }
+        public System.Collections.Generic.IDictionary<string, System.Action<Microsoft.Kiota.Abstractions.Serialization.IParseNode>> GetFieldDeserializers() { }
+        public void Serialize(Microsoft.Kiota.Abstractions.Serialization.ISerializationWriter writer) { }
+        public static Line.OpenApi.Login.Models.VerifyAccessTokenResponse CreateFromDiscriminatorValue(Microsoft.Kiota.Abstractions.Serialization.IParseNode parseNode) { }
+    }
+}

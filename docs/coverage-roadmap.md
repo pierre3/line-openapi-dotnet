@@ -37,6 +37,8 @@ line-openapi リポジトリの OpenAPI spec は **9 本**。うち **4 本を�
 
 ## 第2部: OpenAPI spec が存在しない主要機能（手書きが必要）
 
+> **更新（2026-07-15）:** LINE Login v2.1 + OIDC は **`Line.OpenApi.Login` として取り込み済み**（手書きパッケージ・`Line.Core` 依存）。実装＝認可 URL 生成（PKCE/state）・トークン交換/リフレッシュ/失効・アクセストークン検証・**ID Token 検証はサーバ委譲 `POST /oauth2/v2.1/verify`**・userinfo・`/v2/profile`・friendship・deauthorize。**ローカル ID Token 検証（Web=HS256／ネイティブ・LIFF=ES256+JWKS）は次サイクルへ持ち越し**（本表の該当行は capability として実現済み、ローカル検証のみ残）。`Line.Core` に汎用 `StaticBearerTokenProvider` を追加（user access token のホスト制限付き付与）。
+
 | 機能 | 難易度 | 需要 | 一次情報 |
 |---|---|---|---|
 | **LINE Login v2.1 トークン系**（issue/refresh/revoke token, verify access token） | 中（`api.line.me/oauth2/v2.1/*`、form-urlencoded、認可コード/refresh フロー。ChannelAccessToken の form 送出を流用可） | **高** | [reference/line-login](https://developers.line.biz/en/reference/line-login/) |
@@ -50,7 +52,7 @@ line-openapi リポジトリの OpenAPI spec は **9 本**。うち **4 本を�
 
 ## 推奨優先順位（Rich Menu 便利層は別途着手前提）
 
-1. **LINE Login + OIDC ID Token 検証**（新規手書きパッケージ、例 `Line.OpenApi.Login`）— 需要最大。Bot 送信に次ぐ第二の主要シーン。spec が無く他所で生成できないため差別化価値が最も高い。OIDC 検証（ES256/HS256 二系統、JWKS）は自作リスクが大きくライブラリ化の恩恵が明確。既存 form-urlencoded 基盤を流用でき、ホストも `api.line.me` 中心。難所は user access token の抽象化と JWT 検証。
+1. ~~**LINE Login + OIDC ID Token 検証**~~ **→ 実装済み（`Line.OpenApi.Login`）。** 需要最大の第二の主要シーンを取り込み完了。残タスク＝**ローカル ID Token 検証（ES256+JWKS / HS256）**を次サイクルで追加（サーバ委譲 `/verify` は実装済み）。自作リスクの大きい JWT 署名検証部分なのでライブラリ化の恩恵が大きい。
 2. **Social API 友だち関係**（`friendship/v1/status`）— 1 とセットで相乗効果（bot_prompt→友だち判定の定番導線）。単純 GET で軽く、1 の user access token 基盤に相乗り。単独では小粒なので 1 に同梱推奨。
 3. **insight 取り込み**（`Line.OpenApi.Insight`）— 5 spec 中で最も「生成即完了」かつ需要中。Messaging と同一の Bearer/単一ホストで R1 非該当、手書きグルー最小。低コスト高カバレッジ。
 4. **manage-audience 取り込み**（`Line.OpenApi.ManageAudience`）— 需要中。Messaging で確立済みの control/data 2 クライアント分離＋multipart パターンを再利用でき実装コストが読める。

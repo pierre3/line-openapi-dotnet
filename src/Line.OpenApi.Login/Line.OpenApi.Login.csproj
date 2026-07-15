@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- LINE Login v2.1 + OpenID Connect. No OpenAPI spec is published for LINE Login, so this
+       package is entirely hand-written on top of the Kiota runtime (no Generated/ code).
+       Single REST host (api.line.me); the authorization page (access.line.me) is a browser
+       redirect target for which only a URL is built. -->
+  <PropertyGroup>
+    <Description>LINE Login v2.1 and OpenID Connect client for .NET (LoginClient facade: authorization URL, token exchange/refresh/revoke, access-token and ID-token verification, user profile, friendship status, deauthorize). Part of the Line.OpenApi client libraries.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Kiota.Bundle" Version="$(KiotaBundleVersion)" />
+    <!-- DI 統合: IHttpClientFactory / 名前付き HttpClient / Options -->
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.0" />
+    <ProjectReference Include="..\Line.OpenApi.Core\Line.OpenApi.Core.csproj" />
+  </ItemGroup>
+</Project>

@@ -24,6 +24,7 @@ LINE 公開 OpenAPI 仕様から [Kiota](https://learn.microsoft.com/openapi/kio
 | `Line.OpenApi.Messaging` | メッセージ送受信（`MessagingClient` ファサード＝制御系＋データ系 2 クライアント統合） |
 | `Line.OpenApi.Messaging.Webhook` | Webhook モデル＋受信グルー（`WebhookRequestParser`＝署名検証＋逆直列化） |
 | `Line.OpenApi.Liff` | LIFF アプリ管理（`LiffClient` ファサード） |
+| `Line.OpenApi.Login` | LINE Login v2.1 + OpenID Connect（`LoginClient` ファサード＝認可 URL／トークン交換／ID トークン・アクセストークン検証／プロフィール／友だち関係） |
 | `Line.OpenApi.Bot` | 便宜メタパッケージ（任意）＝Bot 一式を 1 参照で導入（`Messaging` + `Messaging.Webhook` + `ChannelAccessToken` を束ねる。コードなし・依存束ねのみ） |
 
 ## インストール
@@ -100,6 +101,40 @@ await liff.DeleteAppAsync(added.LiffId!);
 ```
 
 DI: `services.AddLineLiff(o => o.ChannelAccessToken = "…");`
+
+### LINE Login + OpenID Connect（`Line.OpenApi.Login`）
+
+`LoginClient` はブラウザの認可コードフロー（PKCE 任意）とその後続処理をカバーします。Messaging と異なり、LINE Login は **user access token**（Messaging の channel access token とは別系統の資格情報）で認証し、トークン発行には LINE Login の **チャネル ID＋チャネルシークレット**を使います。
+
+```csharp
+using Line.OpenApi.Login;
+
+var login = new LoginClient("LOGIN_CHANNEL_ID", "LOGIN_CHANNEL_SECRET");
+
+// 1) ブラウザを認可 URL へリダイレクト（組立のみ・HTTP は呼ばない）。
+var pkce  = LineLoginSecurity.CreatePkceChallenge();
+var state = LineLoginSecurity.GenerateState();          // state と pkce.CodeVerifier はセッションに保存
+var url   = login.BuildAuthorizationUrl(new AuthorizationUrlParameters
+{
+    RedirectUri   = "https://app.example.com/callback",
+    Scopes        = new[] { "openid", "profile" },
+    State         = state,
+    Nonce         = "server-generated-nonce",
+    CodeChallenge = pkce.CodeChallenge,
+});
+
+// 2) コールバックで（state 検証後）認可コードをトークンに交換。
+var token = await login.ExchangeCodeAsync("<code>", "https://app.example.com/callback", pkce.CodeVerifier);
+
+// 3) ID トークンを検証（LINE へ委譲）し、user access token でプロフィールを取得。
+var claims  = await login.VerifyIdTokenAsync(token!.IdToken!, nonce: "server-generated-nonce");
+var profile = await login.GetProfileAsync(token.AccessToken!);
+var friend  = await login.GetFriendshipStatusAsync(token.AccessToken!);   // friend.FriendFlag
+```
+
+DI: `services.AddLineLogin(o => { o.ChannelId = "…"; o.ChannelSecret = "…"; });`
+
+> ローカルでの ID トークン検証（Web=HS256／ネイティブ・LIFF=ES256+JWKS）は本リリースには含みません。当面は `VerifyIdTokenAsync`（LINE へのサーバ委譲）を使ってください。
 
 ### Webhook 受信（`Line.OpenApi.Messaging.Webhook`）
 
@@ -228,6 +263,7 @@ API リファレンスは手書き公開表面の XML doc コメントから英�
 │   ├── Line.OpenApi.Messaging/          # 制御系+データ系2クライアント + MessagingClient ファサード
 │   ├── Line.OpenApi.Messaging.Webhook/  # webhook モデル + WebhookRequestParser（受信グルー）
 │   ├── Line.OpenApi.Liff/               # LIFF + LiffClient ファサード
+│   ├── Line.OpenApi.Login/              # LINE Login v2.1 + OIDC（spec 非存在の手書き）+ LoginClient ファサード
 │   └── Line.OpenApi.Bot/                # 便宜メタパッケージ（依存束ねのみ・コードなし）
 ├── tools/                       # CLI / MCP ツール（Line.OpenApi.Tools, コマンド名 line）
 ├── samples/                     # 同梱デモアプリ（コンソール / Webhook Web API）
