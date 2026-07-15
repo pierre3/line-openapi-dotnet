@@ -1,0 +1,28 @@
+namespace Line.OpenApi.Module.DependencyInjection
+{
+    public sealed class LineModuleOptions
+    {
+        public LineModuleOptions() { }
+        public string[]? AllowedHosts { get; set; }
+        public string ChannelAccessToken { get; set; }
+    }
+    public static class ServiceCollectionExtensions
+    {
+        public const string HttpClientName = "Line.OpenApi.Module";
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddLineModule(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, System.Action<Line.OpenApi.Module.DependencyInjection.LineModuleOptions> configure) { }
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddLineModule(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, System.Func<System.IServiceProvider, Microsoft.Kiota.Abstractions.Authentication.IAuthenticationProvider> authProviderFactory) { }
+    }
+}
+namespace Line.OpenApi.Module
+{
+    public sealed class ModuleClient
+    {
+        public ModuleClient(Microsoft.Kiota.Abstractions.Authentication.IAuthenticationProvider authProvider, System.Net.Http.HttpClient? httpClient = null) { }
+        public Line.OpenApi.Module.Generated.ModuleApiClient Api { get; }
+        public System.Threading.Tasks.Task AcquireChatControlAsync(string chatId, Line.OpenApi.Module.Generated.Models.AcquireChatControlRequest request, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task DetachAsync(Line.OpenApi.Module.Generated.Models.DetachModuleRequest request, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task<Line.OpenApi.Module.Generated.Models.GetModulesResponse?> GetModulesAsync(string? start = null, int? limit = default, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task ReleaseChatControlAsync(string chatId, System.Threading.CancellationToken cancellationToken = default) { }
+        public static Line.OpenApi.Module.ModuleClient CreateWithStaticToken(string channelAccessToken) { }
+    }
+}

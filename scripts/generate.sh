@@ -11,6 +11,9 @@ declare -A SPECS=(
   [channel-access-token.yml]="https://raw.githubusercontent.com/line/line-openapi/master/channel-access-token.yml"
   [webhook.yml]="https://raw.githubusercontent.com/line/line-openapi/master/webhook.yml"
   [liff.yml]="https://raw.githubusercontent.com/line/line-openapi/master/liff.yml"
+  [insight.yml]="https://raw.githubusercontent.com/line/line-openapi/master/insight.yml"
+  [module.yml]="https://raw.githubusercontent.com/line/line-openapi/master/module.yml"
+  [shop.yml]="https://raw.githubusercontent.com/line/line-openapi/master/shop.yml"
 )
 for name in "${!SPECS[@]}"; do
   [ -f "openapi/$name" ] || { echo "downloading $name"; curl -fsSL "${SPECS[$name]}" -o "openapi/$name"; }
@@ -51,6 +54,25 @@ kg generate -l CSharp -d ./openapi/webhook.yml \
 kg generate -l CSharp -d ./openapi/liff.yml \
   -c LiffApiClient -n Line.OpenApi.Liff.Generated \
   -o ./src/Line.OpenApi.Liff/Generated \
+  --exclude-backward-compatible --structured-mime-types application/json
+
+# 6) Insight — 統計・分析。api.line.me 単一ホスト、全 GET・JSON。
+kg generate -l CSharp -d ./openapi/insight.yml \
+  -c InsightApiClient -n Line.OpenApi.Insight.Generated \
+  -o ./src/Line.OpenApi.Insight/Generated \
+  --exclude-backward-compatible --structured-mime-types application/json
+
+# 7) Module — モジュールチャネル（LOA 代理運用）。api.line.me 単一ホスト、JSON。
+#    注意: module-attach.yml（manager.line.biz / Basic 認証 / form+PKCE）は今回未取り込み。
+kg generate -l CSharp -d ./openapi/module.yml \
+  -c ModuleApiClient -n Line.OpenApi.Module.Generated \
+  -o ./src/Line.OpenApi.Module/Generated \
+  --exclude-backward-compatible --structured-mime-types application/json
+
+# 8) Shop — ミッションスタンプ送信。api.line.me 単一ホスト、JSON。
+kg generate -l CSharp -d ./openapi/shop.yml \
+  -c ShopApiClient -n Line.OpenApi.Shop.Generated \
+  -o ./src/Line.OpenApi.Shop/Generated \
   --exclude-backward-compatible --structured-mime-types application/json
 
 echo "生成完了。次: dotnet build / dotnet test"

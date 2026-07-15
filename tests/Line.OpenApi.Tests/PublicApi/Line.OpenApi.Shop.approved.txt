@@ -1,0 +1,25 @@
+namespace Line.OpenApi.Shop.DependencyInjection
+{
+    public sealed class LineShopOptions
+    {
+        public LineShopOptions() { }
+        public string[]? AllowedHosts { get; set; }
+        public string ChannelAccessToken { get; set; }
+    }
+    public static class ServiceCollectionExtensions
+    {
+        public const string HttpClientName = "Line.OpenApi.Shop";
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddLineShop(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, System.Action<Line.OpenApi.Shop.DependencyInjection.LineShopOptions> configure) { }
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddLineShop(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, System.Func<System.IServiceProvider, Microsoft.Kiota.Abstractions.Authentication.IAuthenticationProvider> authProviderFactory) { }
+    }
+}
+namespace Line.OpenApi.Shop
+{
+    public sealed class ShopClient
+    {
+        public ShopClient(Microsoft.Kiota.Abstractions.Authentication.IAuthenticationProvider authProvider, System.Net.Http.HttpClient? httpClient = null) { }
+        public Line.OpenApi.Shop.Generated.ShopApiClient Api { get; }
+        public System.Threading.Tasks.Task SendMissionStickerAsync(Line.OpenApi.Shop.Generated.Models.MissionStickerRequest request, System.Threading.CancellationToken cancellationToken = default) { }
+        public static Line.OpenApi.Shop.ShopClient CreateWithStaticToken(string channelAccessToken) { }
+    }
+}

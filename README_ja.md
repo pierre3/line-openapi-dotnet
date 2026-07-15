@@ -25,6 +25,9 @@ LINE 公開 OpenAPI 仕様から [Kiota](https://learn.microsoft.com/openapi/kio
 | `Line.OpenApi.Messaging.Webhook` | Webhook モデル＋受信グルー（`WebhookRequestParser`＝署名検証＋逆直列化） |
 | `Line.OpenApi.Liff` | LIFF アプリ管理（`LiffClient` ファサード） |
 | `Line.OpenApi.Login` | LINE Login v2.1 + OpenID Connect（`LoginClient` ファサード＝認可 URL／トークン交換／ID トークン・アクセストークン検証／プロフィール／友だち関係） |
+| `Line.OpenApi.Insight` | インサイト／統計（`InsightClient` ファサード＝友だち属性・配信数・フォロワー数・メッセージイベント・リッチメニュー統計） |
+| `Line.OpenApi.Module` | パートナー／代理店運用向けモジュールチャネル（`ModuleClient` ファサード＝detach・chat control・attach 済みモジュール一覧） |
+| `Line.OpenApi.Shop` | ミッションスタンプ送信（`ShopClient` ファサード） |
 | `Line.OpenApi.Bot` | 便宜メタパッケージ（任意）＝Bot 一式を 1 参照で導入（`Messaging` + `Messaging.Webhook` + `ChannelAccessToken` を束ねる。コードなし・依存束ねのみ） |
 
 ## インストール
@@ -38,6 +41,10 @@ dotnet add package Line.OpenApi.Bot
 # または利用シーン単位で個別に導入
 dotnet add package Line.OpenApi.Messaging
 dotnet add package Line.OpenApi.Liff
+dotnet add package Line.OpenApi.Login
+dotnet add package Line.OpenApi.Insight
+dotnet add package Line.OpenApi.Module
+dotnet add package Line.OpenApi.Shop
 ```
 
 ## 必要要件
@@ -135,6 +142,46 @@ var friend  = await login.GetFriendshipStatusAsync(token.AccessToken!);   // fri
 DI: `services.AddLineLogin(o => { o.ChannelId = "…"; o.ChannelSecret = "…"; });`
 
 > ローカルでの ID トークン検証（Web=HS256／ネイティブ・LIFF=ES256+JWKS）は本リリースには含みません。当面は `VerifyIdTokenAsync`（LINE へのサーバ委譲）を使ってください。
+
+### インサイト／統計（`Line.OpenApi.Insight`）
+
+```csharp
+using Line.OpenApi.Insight;
+
+var insight = InsightClient.CreateWithStaticToken("CHANNEL_ACCESS_TOKEN");
+var followers = await insight.GetNumberOfFollowersAsync("20260715");   // yyyyMMdd
+var summary = await insight.GetRichMenuInsightSummaryAsync("RICH_MENU_ID", "20260701", "20260715");
+```
+
+DI: `services.AddLineInsight(o => o.ChannelAccessToken = "…");`
+
+### モジュールチャネル（`Line.OpenApi.Module`）
+
+```csharp
+using Line.OpenApi.Module;
+
+var module = ModuleClient.CreateWithStaticToken("CHANNEL_ACCESS_TOKEN");
+var modules = await module.GetModulesAsync(limit: 100);
+await module.ReleaseChatControlAsync("CHAT_ID");
+```
+
+DI: `services.AddLineModule(o => o.ChannelAccessToken = "…");`
+モジュールの attach（`module-attach`。`manager.line.biz` 上で Basic 認証 + PKCE）は本パッケージのスコープ外です。
+
+### ミッションスタンプ（`Line.OpenApi.Shop`）
+
+```csharp
+using Line.OpenApi.Shop;
+using Line.OpenApi.Shop.Generated.Models;
+
+var shop = ShopClient.CreateWithStaticToken("CHANNEL_ACCESS_TOKEN");
+await shop.SendMissionStickerAsync(new MissionStickerRequest
+{
+    To = "USER_ID", ProductType = "STICKER", ProductId = "PRODUCT_ID",
+});
+```
+
+DI: `services.AddLineShop(o => o.ChannelAccessToken = "…");`
 
 ### Webhook 受信（`Line.OpenApi.Messaging.Webhook`）
 
@@ -264,6 +311,9 @@ API リファレンスは手書き公開表面の XML doc コメントから英�
 │   ├── Line.OpenApi.Messaging.Webhook/  # webhook モデル + WebhookRequestParser（受信グルー）
 │   ├── Line.OpenApi.Liff/               # LIFF + LiffClient ファサード
 │   ├── Line.OpenApi.Login/              # LINE Login v2.1 + OIDC（spec 非存在の手書き）+ LoginClient ファサード
+│   ├── Line.OpenApi.Insight/            # インサイト／統計 + InsightClient ファサード
+│   ├── Line.OpenApi.Module/             # モジュールチャネル + ModuleClient ファサード
+│   ├── Line.OpenApi.Shop/               # ミッションスタンプ + ShopClient ファサード
 │   └── Line.OpenApi.Bot/                # 便宜メタパッケージ（依存束ねのみ・コードなし）
 ├── tools/                       # CLI / MCP ツール（Line.OpenApi.Tools, コマンド名 line）
 ├── samples/                     # 同梱デモアプリ（コンソール / Webhook Web API）
