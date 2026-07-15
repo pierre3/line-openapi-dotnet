@@ -197,10 +197,20 @@ line mcp --allow-remote-replay # webhook replay の非ループバック宛先�
 
 CLI コマンドを `line_<area>_<verb>` の名前で公開します（`webhook listen` を除く）。
 
-- 読み取り系（`--read-only` でもこれらは有効）: `line_bot_info` / `line_bot_quota` / `line_bot_quota_consumption` / `line_bot_profile` / `line_liff_list` / `line_token_verify` / `line_webhook_verify` / `line_ping`
+- 読み取り系（`--read-only` でもこれらは有効）: `line_message_schema` / `line_bot_info` / `line_bot_quota` / `line_bot_quota_consumption` / `line_bot_profile` / `line_liff_list` / `line_token_verify` / `line_webhook_verify` / `line_ping`
 - 変更系（`--read-only` では除外）: `line_message_push` / `line_message_multicast` / `line_message_broadcast` / `line_message_reply` / `line_liff_add` / `line_liff_update` / `line_liff_delete` / `line_token_issue` / `line_token_revoke` / `line_webhook_replay`
 
 各ツールは任意で `profile` 引数を受け取り、資格情報はプロファイルから解決します。
+
+### AI エージェントによるメッセージ組立（flex / template）
+
+MCP の主要ユースケースの一つが「**組み立てる → 検証する → 送って実機で確認**」のループです。エージェントにリッチメッセージを組ませ、型検証し、自分の端末に push して見た目を確認し、直す——これを確実にする 2 つの補助があります。
+
+- **`line_message_schema(type)`** は LINE メッセージオブジェクトの JSON Schema を返し、エージェントが**形として妥当な** `messagesJson` を組めるようにします。`type` は `all` / `flex` / `template` / `imagemap` / `quickReply` / `action` のいずれか（既定 `flex`）。読み取り系ツール（`--read-only` でも有効）でシークレットは返しません。スキーマは Kiota が生成に使う OpenAPI 仕様と同一物から抽出するためモデルとドリフトせず、`FlexBox` が自己再帰のため参照はインライン展開せず `$ref` + `$defs` で保持します。
+  - 単純メッセージ（text / image / video / audio / location / sticker）は軽量で、送信ツールの説明文に例が載っています。スキーマが必要なのは主に **flex** / **template** です。
+- **送信ツールの `dryRun: true`**（`line_message_push` / `multicast` / `broadcast` / `reply`）は、メッセージをパース・形状チェックして種別を返すだけで**送信しません**（API 呼び出しなし・資格情報不要）。実送信前の安全チェックに使います。
+
+典型的な流れ: `line_message_schema type=flex` → Flex JSON を組む → `line_message_push ... dryRun=true`（検証）→ `line_message_push ...`（自分の userId へ送信）→ 実機で確認。
 
 ### セキュリティ設計（MCP）
 

@@ -197,10 +197,20 @@ line mcp --allow-remote-replay # allow non-loopback destinations for webhook rep
 
 CLI commands are exposed as `line_<area>_<verb>` (except `webhook listen`).
 
-- Read-only (available even under `--read-only`): `line_bot_info` / `line_bot_quota` / `line_bot_quota_consumption` / `line_bot_profile` / `line_liff_list` / `line_token_verify` / `line_webhook_verify` / `line_ping`
+- Read-only (available even under `--read-only`): `line_message_schema` / `line_bot_info` / `line_bot_quota` / `line_bot_quota_consumption` / `line_bot_profile` / `line_liff_list` / `line_token_verify` / `line_webhook_verify` / `line_ping`
 - Mutating (excluded under `--read-only`): `line_message_push` / `line_message_multicast` / `line_message_broadcast` / `line_message_reply` / `line_liff_add` / `line_liff_update` / `line_liff_delete` / `line_token_issue` / `line_token_revoke` / `line_webhook_replay`
 
 Each tool accepts an optional `profile` argument; credentials are resolved from the profile.
+
+### Building messages with an AI agent (flex / template)
+
+A primary MCP use case is a **build → validate → send-and-see** loop: have the agent assemble a rich message, type-check it, then push it to your own device to check the appearance, and iterate. Two aids make this reliable:
+
+- **`line_message_schema(type)`** returns the JSON Schema for LINE message objects so the agent can build a *shape-valid* `messagesJson`. `type` is one of `all` / `flex` / `template` / `imagemap` / `quickReply` / `action` (default `flex`). It is a read-only tool (available under `--read-only`) and returns no secrets. The schema is extracted from the same OpenAPI spec Kiota generates from, so it never drifts from the models; references are kept (`$ref` + `$defs`) rather than inlined because `FlexBox` is self-recursive.
+  - Simple messages (text / image / video / audio / location / sticker) are trivial and shown inline in the send-tool descriptions — you usually only need the schema for **flex** or **template**.
+- **`dryRun: true`** on the send tools (`line_message_push` / `multicast` / `broadcast` / `reply`) parses and shape-checks the messages and returns their parsed types **without sending** (no API call, no credentials required). Use it as a safety check before an actual send.
+
+Typical flow: `line_message_schema type=flex` → build the Flex JSON → `line_message_push ... dryRun=true` (validate) → `line_message_push ...` (send to your own userId) → check on your device.
 
 ### Security design (MCP)
 
