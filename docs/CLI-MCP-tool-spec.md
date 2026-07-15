@@ -175,6 +175,23 @@ CLI コマンドのうち **`webhook listen` を除く**すべてを MCP ツー�
 - **画像 MCP 非公開の根拠:** バイナリ入出力は MCP のテキスト/JSON 前提と相容れず、モデル文脈にバイナリを載せる意味もないため CLI 専用とし、`line_richmenu_create` の description から CLI 手順へ誘導する。
 - サービス層 `RichMenuService` は `RichMenuClient` をトークン単位でメモ化（MCP 常駐の HttpClient 累積回避、既存 Message/Liff と同方針）。
 
+### 4.8 F. カバレッジパッケージ（`line insight` / `line audience` / `line shop`）
+
+**背景:** 2026-07-15 のカバレッジ拡充で追加した `Line.OpenApi.Insight` / `.ManageAudience` / `.Shop` をツールへ露出する（`.Module` はパートナー限定・概念難でローカル開発ツールに不適のため見送り）。各ファサードの薄ラップで、既存サービス層（トークン単位メモ化）と同型。
+
+| 面 | 操作 |
+|---|---|
+| CLI `line insight` | `demographic`/`deliveries <date>`/`followers <date>`/`events <requestId>`/`per-unit <unit> --from --to`/`richmenu-summary <id> --from --to`/`richmenu-daily <id> --from --to`（日付は yyyyMMdd） |
+| CLI `line audience` | `list [--page --size]`/`get <id>`/`create --file`/`add-users --file`/`delete <id>`/`upload-file --file [--description --ifa --upload-description]`/`add-file <id> --file [--upload-description]` |
+| CLI `line shop` | `mission --file` |
+| MCP 読み取り | `line_insight_*`（7 本・全 read-only＝`--read-only` でも有効）/`line_audience_list`/`line_audience_get` |
+| MCP 変更 | `line_audience_create`/`line_audience_add_users`/`line_audience_delete`/`line_shop_mission` |
+
+- **Insight は全 GET＝全 read-only。** MCP でも `--read-only` に含める（分析ナレーション用途と好相性）。生成レスポンスモデルは素のデータのため DTO 化せず JSON 直列化（rich menu の `get` と同方針）。
+- **by-file アップロードは CLI 専用。** `audience upload-file`/`add-file` は multipart のファイル入力で、バイナリ/ファイルは MCP のテキスト/JSON 前提と相容れないため MCP 非公開（rich menu 画像と同方針）。MCP の `line_audience_create` description から CLI 手順へ誘導。ManageAudience は control/data 2 ホストだがファサードが R1 分離を解決済み。
+- **入力 JSON の解析ガード:** `audience create`/`add-users`・`shop mission` は生成リクエストモデルへ解析し、不正 JSON は `MessageInputException`（exit 2）に写像（`RichMenuService.ParseAsync` と同型）。
+- **⚠️ 実機確認（GA 前）:** ManageAudience の multipart `file` パートに `filename` 属性が付かない（Kiota 仕様）ため、by-file アップロードの実 LINE 受理は要スモーク（ライブラリ側の既知事項を踏襲）。
+
 ---
 
 ## 5. 設定ファイル

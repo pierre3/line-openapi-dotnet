@@ -36,6 +36,15 @@ public sealed class McpToolRegistrationTests
             "line_richmenu_get_default", "line_richmenu_id_of_user",
             "line_richmenu_create", "line_richmenu_delete", "line_richmenu_set_default",
             "line_richmenu_cancel_default", "line_richmenu_link", "line_richmenu_unlink",
+            // Insight (all read-only)
+            "line_insight_demographic", "line_insight_deliveries", "line_insight_followers",
+            "line_insight_events", "line_insight_per_unit", "line_insight_richmenu_summary",
+            "line_insight_richmenu_daily",
+            // Manage Audience (list/get read-only; create/add_users/delete mutating; by-file is CLI-only)
+            "line_audience_list", "line_audience_get",
+            "line_audience_create", "line_audience_add_users", "line_audience_delete",
+            // Shop
+            "line_shop_mission",
         }.OrderBy(n => n).ToArray();
 
         var actual = ToolNames(typeof(ReadTools)).Concat(ToolNames(typeof(WriteTools))).OrderBy(n => n).ToArray();
@@ -71,6 +80,19 @@ public sealed class McpToolRegistrationTests
         Assert.Contains("line_token_verify", readOnly);
         Assert.Contains("line_webhook_verify", readOnly);
         Assert.Contains("line_message_schema", readOnly);
+        // Insight is entirely read-only. Assert ALL seven so misclassifying one into WriteTools —
+        // which is a hidden availability regression under --read-only, not a safety one, and so is
+        // caught by neither the exact-set nor the disjoint test — fails here.
+        string[] insightTools =
+        {
+            "line_insight_demographic", "line_insight_deliveries", "line_insight_followers",
+            "line_insight_events", "line_insight_per_unit", "line_insight_richmenu_summary",
+            "line_insight_richmenu_daily",
+        };
+        Assert.All(insightTools, name => Assert.Contains(name, readOnly));
+        // Audience list/get are safe reads.
+        Assert.Contains("line_audience_list", readOnly);
+        Assert.Contains("line_audience_get", readOnly);
 
         // Mutating operations must never appear in the read-only set.
         Assert.DoesNotContain("line_message_push", readOnly);
@@ -84,6 +106,11 @@ public sealed class McpToolRegistrationTests
         Assert.DoesNotContain("line_richmenu_set_default", readOnly);
         Assert.DoesNotContain("line_richmenu_link", readOnly);
         Assert.DoesNotContain("line_richmenu_unlink", readOnly);
+        // Audience/shop mutations must stay out of read-only.
+        Assert.DoesNotContain("line_audience_create", readOnly);
+        Assert.DoesNotContain("line_audience_add_users", readOnly);
+        Assert.DoesNotContain("line_audience_delete", readOnly);
+        Assert.DoesNotContain("line_shop_mission", readOnly);
     }
 
     [Fact]

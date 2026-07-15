@@ -23,6 +23,9 @@ internal static class ServiceRegistration
         services.AddSingleton<WebhookService>();
         services.AddSingleton<LiffService>();
         services.AddSingleton<RichMenuService>();
+        services.AddSingleton<InsightService>();
+        services.AddSingleton<AudienceService>();
+        services.AddSingleton<ShopService>();
 
         // Singleton so the embedded ~190 KB spec is parsed once and the schema map is cached.
         services.AddSingleton<MessageSchemaService>();

@@ -7,8 +7,9 @@ using ModelContextProtocol.Server;
 namespace Line.OpenApi.Tools.Mcp;
 
 /// <summary>
-/// Read-only MCP tools (safe under <c>--read-only</c>): bot lookup, LIFF listing, token verify,
-/// webhook verify. Results are returned as JSON text and contain no secrets. Tool names follow
+/// Read-only MCP tools (safe under <c>--read-only</c>): bot lookup, LIFF listing, rich menu
+/// reads, insight statistics, audience listing/get, token verify, webhook verify. Results are
+/// returned as JSON text and contain no secrets. Tool names follow
 /// <c>line_&lt;area&gt;_&lt;verb&gt;</c> (spec §4.5).
 /// </summary>
 [McpServerToolType]
@@ -124,6 +125,75 @@ internal class ReadTools
         var apps = await liff.ListAsync(Resolve(resolver, profile), CancellationToken.None);
         return Json.Serialize(apps);
     }
+
+    [McpServerTool(Name = "line_insight_demographic"), Description("Get the demographic attributes (gender/age/area/etc.) of the bot's friends.")]
+    public static async Task<string> InsightDemographic(
+        InsightService insight, CredentialResolver resolver,
+        [Description("Optional credential profile name.")] string? profile = null)
+        => Json.Serialize(await insight.GetDemographicsAsync(Resolve(resolver, profile), CancellationToken.None));
+
+    [McpServerTool(Name = "line_insight_deliveries"), Description("Get the number of messages sent on a date (date is yyyyMMdd).")]
+    public static async Task<string> InsightDeliveries(
+        InsightService insight, CredentialResolver resolver,
+        [Description("Date in yyyyMMdd format.")] string date,
+        [Description("Optional credential profile name.")] string? profile = null)
+        => Json.Serialize(await insight.GetDeliveriesAsync(Resolve(resolver, profile), date, CancellationToken.None));
+
+    [McpServerTool(Name = "line_insight_followers"), Description("Get the number of followers as of a date (date is yyyyMMdd).")]
+    public static async Task<string> InsightFollowers(
+        InsightService insight, CredentialResolver resolver,
+        [Description("Date in yyyyMMdd format.")] string date,
+        [Description("Optional credential profile name.")] string? profile = null)
+        => Json.Serialize(await insight.GetFollowersAsync(Resolve(resolver, profile), date, CancellationToken.None));
+
+    [McpServerTool(Name = "line_insight_events"), Description("Get the open/click statistics of a narrowcast/broadcast message by its request id.")]
+    public static async Task<string> InsightEvents(
+        InsightService insight, CredentialResolver resolver,
+        [Description("Request id returned when the message was sent.")] string requestId,
+        [Description("Optional credential profile name.")] string? profile = null)
+        => Json.Serialize(await insight.GetEventsAsync(Resolve(resolver, profile), requestId, CancellationToken.None));
+
+    [McpServerTool(Name = "line_insight_per_unit"), Description("Get aggregated statistics for a custom aggregation unit over a period (dates are yyyyMMdd).")]
+    public static async Task<string> InsightPerUnit(
+        InsightService insight, CredentialResolver resolver,
+        [Description("Custom aggregation unit name.")] string unit,
+        [Description("Start date in yyyyMMdd format.")] string from,
+        [Description("End date in yyyyMMdd format.")] string to,
+        [Description("Optional credential profile name.")] string? profile = null)
+        => Json.Serialize(await insight.GetPerUnitAsync(Resolve(resolver, profile), unit, from, to, CancellationToken.None));
+
+    [McpServerTool(Name = "line_insight_richmenu_summary"), Description("Get the aggregate display/click statistics of a rich menu over a period (dates are yyyyMMdd).")]
+    public static async Task<string> InsightRichMenuSummary(
+        InsightService insight, CredentialResolver resolver,
+        [Description("Rich menu id.")] string richMenuId,
+        [Description("Start date in yyyyMMdd format.")] string from,
+        [Description("End date in yyyyMMdd format.")] string to,
+        [Description("Optional credential profile name.")] string? profile = null)
+        => Json.Serialize(await insight.GetRichMenuSummaryAsync(Resolve(resolver, profile), richMenuId, from, to, CancellationToken.None));
+
+    [McpServerTool(Name = "line_insight_richmenu_daily"), Description("Get the daily display/click statistics of a rich menu over a period (dates are yyyyMMdd).")]
+    public static async Task<string> InsightRichMenuDaily(
+        InsightService insight, CredentialResolver resolver,
+        [Description("Rich menu id.")] string richMenuId,
+        [Description("Start date in yyyyMMdd format.")] string from,
+        [Description("End date in yyyyMMdd format.")] string to,
+        [Description("Optional credential profile name.")] string? profile = null)
+        => Json.Serialize(await insight.GetRichMenuDailyAsync(Resolve(resolver, profile), richMenuId, from, to, CancellationToken.None));
+
+    [McpServerTool(Name = "line_audience_list"), Description("List audience groups (paginated). page is 1 or higher; size defaults to 20 (max 40).")]
+    public static async Task<string> AudienceList(
+        AudienceService audience, CredentialResolver resolver,
+        [Description("Page to return (1 or higher).")] long page = 1,
+        [Description("Audiences per page (default 20, max 40).")] long size = 20,
+        [Description("Optional credential profile name.")] string? profile = null)
+        => Json.Serialize(await audience.ListAsync(Resolve(resolver, profile), page, size, CancellationToken.None));
+
+    [McpServerTool(Name = "line_audience_get"), Description("Get an audience group and its jobs by id.")]
+    public static async Task<string> AudienceGet(
+        AudienceService audience, CredentialResolver resolver,
+        [Description("Audience group id.")] long audienceGroupId,
+        [Description("Optional credential profile name.")] string? profile = null)
+        => Json.Serialize(await audience.GetAsync(Resolve(resolver, profile), audienceGroupId, CancellationToken.None));
 
     [McpServerTool(Name = "line_token_verify"), Description("Verify a channel access token's validity and remaining lifetime. Does not return the token.")]
     public static async Task<string> TokenVerify(

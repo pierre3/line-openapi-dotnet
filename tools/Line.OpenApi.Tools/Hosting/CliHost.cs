@@ -33,6 +33,12 @@ internal static class CliHost
             .WithDescription("Manage LIFF apps.");
         app.AddSubCommand("richmenu", x => x.AddCommands<RichMenuCommands>())
             .WithDescription("Manage rich menus (incl. image upload/download).");
+        app.AddSubCommand("insight", x => x.AddCommands<InsightCommands>())
+            .WithDescription("Statistics (friend demographics, deliveries, followers, events, rich menu).");
+        app.AddSubCommand("audience", x => x.AddCommands<AudienceCommands>())
+            .WithDescription("Manage audience groups (incl. by-file user-id upload).");
+        app.AddSubCommand("shop", x => x.AddCommands<ShopCommands>())
+            .WithDescription("Shop operations (mission sticker send).");
 
         app.Run();
         return Task.FromResult(Environment.ExitCode);

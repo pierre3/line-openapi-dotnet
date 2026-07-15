@@ -18,6 +18,7 @@ LINE Platform をローカル PC から操作する **`dotnet` グローバル�
 | **C. Webhook 開発支援** | ローカル受信サーバ（署名検証付き）・保存ペイロードの署名検証・ローカルアプリへの再送 |
 | **D. LIFF 管理** | LIFF アプリの一覧・追加・更新・削除 |
 | **E. リッチメニュー** | 作成・検証・一覧・取得・削除、画像アップロード/ダウンロード、既定設定/解除、ユーザー単位のリンク/解除 |
+| **F. Insight / Audience / Shop** | 統計（属性・配信数・フォロワー・開封/クリック・リッチメニュー）、オーディエンス管理（ファイルからの userId アップロード含む）、ミッションスタンプ送信 |
 
 対象フレームワークは **`net10.0`** です。
 
@@ -192,6 +193,33 @@ line richmenu id-of-user <userId>
 - 典型的な開発サイクル: `create` → `image` → `set-default`（または自分の userId へ `link`）→ 実機で確認 → 繰り返し。
 - 画像は PNG / JPEG のみ。content-type はファイル拡張子から推論します。
 
+### F. Insight / Audience / Shop `line insight` / `line audience` / `line shop`
+
+```sh
+# Insight（統計。全て読み取り系。日付は yyyyMMdd）
+line insight demographic
+line insight deliveries 20260715
+line insight followers 20260715
+line insight events <requestId>
+line insight per-unit <unit> --from 20260701 --to 20260715
+line insight richmenu-summary <richMenuId> --from 20260701 --to 20260715
+line insight richmenu-daily <richMenuId> --from 20260701 --to 20260715
+
+# オーディエンス管理
+line audience list --page 1 --size 20
+line audience get <audienceGroupId>
+line audience create --file ./create-audience.json         # 初期 userId 付きで作成
+line audience add-users --file ./add-audience.json          # 本文に audienceGroupId を含む
+line audience delete <audienceGroupId>
+line audience upload-file --file ./user-ids.txt --description "my audience"   # 1 行 1 ID/IFA
+line audience add-file <audienceGroupId> --file ./more-ids.txt
+
+# Shop
+line shop mission --file ./mission.json
+```
+
+- `audience upload-file` / `add-file` は userId（または IFA）を 1 行 1 件で並べたテキストファイルを受け取り、**CLI 専用**です（バイナリ/ファイル入力は MCP で扱いにくいため）。
+
 ### 終了コード
 
 | コード | 意味 |
@@ -219,8 +247,10 @@ line mcp --allow-remote-replay # webhook replay の非ループバック宛先�
 
 CLI コマンドを `line_<area>_<verb>` の名前で公開します（`webhook listen` を除く）。
 
-- 読み取り系（`--read-only` でもこれらは有効）: `line_message_schema` / `line_richmenu_schema` / `line_richmenu_list` / `line_richmenu_get` / `line_richmenu_get_default` / `line_richmenu_id_of_user` / `line_bot_info` / `line_bot_quota` / `line_bot_quota_consumption` / `line_bot_profile` / `line_liff_list` / `line_token_verify` / `line_webhook_verify` / `line_ping`
-- 変更系（`--read-only` では除外）: `line_message_push` / `line_message_multicast` / `line_message_broadcast` / `line_message_reply` / `line_richmenu_create` / `line_richmenu_delete` / `line_richmenu_set_default` / `line_richmenu_cancel_default` / `line_richmenu_link` / `line_richmenu_unlink` / `line_liff_add` / `line_liff_update` / `line_liff_delete` / `line_token_issue` / `line_token_revoke` / `line_webhook_replay`
+- 読み取り系（`--read-only` でもこれらは有効）: `line_message_schema` / `line_richmenu_schema` / `line_richmenu_list` / `line_richmenu_get` / `line_richmenu_get_default` / `line_richmenu_id_of_user` / `line_insight_demographic` / `line_insight_deliveries` / `line_insight_followers` / `line_insight_events` / `line_insight_per_unit` / `line_insight_richmenu_summary` / `line_insight_richmenu_daily` / `line_audience_list` / `line_audience_get` / `line_bot_info` / `line_bot_quota` / `line_bot_quota_consumption` / `line_bot_profile` / `line_liff_list` / `line_token_verify` / `line_webhook_verify` / `line_ping`
+- 変更系（`--read-only` では除外）: `line_message_push` / `line_message_multicast` / `line_message_broadcast` / `line_message_reply` / `line_richmenu_create` / `line_richmenu_delete` / `line_richmenu_set_default` / `line_richmenu_cancel_default` / `line_richmenu_link` / `line_richmenu_unlink` / `line_audience_create` / `line_audience_add_users` / `line_audience_delete` / `line_shop_mission` / `line_liff_add` / `line_liff_update` / `line_liff_delete` / `line_token_issue` / `line_token_revoke` / `line_webhook_replay`
+
+> オーディエンスのファイルアップロード（`upload-file` / `add-file`）は **CLI 専用**です（バイナリ/ファイルは MCP で扱いにくいため）。`line_audience_create` の説明からファイルアップロードは CLI へ誘導します。
 
 > **MCP + CLI をまたぐリッチメニュー開発サイクル:** エージェントで組み立て（`line_richmenu_schema` → JSON 生成 → `line_richmenu_create` に `dryRun=true` で検証してから作成）、画像は **CLI** でアップロード（`line richmenu image <id> --file menu.png`。バイナリは MCP で扱いにくいため意図的に CLI 専用）、最後に `line_richmenu_set_default` / `line_richmenu_link` して実機で確認。
 
