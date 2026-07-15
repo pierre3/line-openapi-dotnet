@@ -42,6 +42,10 @@
          Liff is referenced separately (not part of the Bot meta-package). -->
     <ProjectReference Include="..\..\src\Line.OpenApi.Bot\Line.OpenApi.Bot.csproj" />
     <ProjectReference Include="..\..\src\Line.OpenApi.Liff\Line.OpenApi.Liff.csproj" />
+    <!-- Coverage packages surfaced by the insight / audience / shop command groups. -->
+    <ProjectReference Include="..\..\src\Line.OpenApi.Insight\Line.OpenApi.Insight.csproj" />
+    <ProjectReference Include="..\..\src\Line.OpenApi.ManageAudience\Line.OpenApi.ManageAudience.csproj" />
+    <ProjectReference Include="..\..\src\Line.OpenApi.Shop\Line.OpenApi.Shop.csproj" />
   </ItemGroup>
 
   <ItemGroup>

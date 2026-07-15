@@ -18,6 +18,7 @@ Both share the same service layer, so behavior is identical.
 | **C. Webhook development** | Local receiver (with signature verification), offline signature verification of a stored payload, replay to a local app |
 | **D. LIFF management** | List / add / update / delete LIFF apps |
 | **E. Rich menu** | Create / validate / list / get / delete, image upload & download, set / cancel default, link / unlink per user |
+| **F. Insight / Audience / Shop** | Statistics (demographics, deliveries, followers, events, rich menu); audience group manage (incl. by-file user-id upload); mission sticker send |
 
 Target framework: **`net10.0`**.
 
@@ -192,6 +193,33 @@ line richmenu id-of-user <userId>
 - A typical dev cycle: `create` → `image` → `set-default` (or `link` to your own userId) → check on your device → iterate.
 - Image upload requires PNG or JPEG; the content type is inferred from the file extension.
 
+### F. Insight / Audience / Shop — `line insight` / `line audience` / `line shop`
+
+```sh
+# Insight (statistics; all read-only; dates are yyyyMMdd)
+line insight demographic
+line insight deliveries 20260715
+line insight followers 20260715
+line insight events <requestId>
+line insight per-unit <unit> --from 20260701 --to 20260715
+line insight richmenu-summary <richMenuId> --from 20260701 --to 20260715
+line insight richmenu-daily <richMenuId> --from 20260701 --to 20260715
+
+# Manage Audience
+line audience list --page 1 --size 20
+line audience get <audienceGroupId>
+line audience create --file ./create-audience.json        # with initial user IDs
+line audience add-users --file ./add-audience.json         # carries audienceGroupId
+line audience delete <audienceGroupId>
+line audience upload-file --file ./user-ids.txt --description "my audience"   # one ID/IFA per line
+line audience add-file <audienceGroupId> --file ./more-ids.txt
+
+# Shop
+line shop mission --file ./mission.json
+```
+
+- `audience upload-file` / `add-file` take a text file (one user ID or IFA per line) and are **CLI-only** — binary/file input is impractical over MCP.
+
 ### Exit codes
 
 | Code | Meaning |
@@ -219,8 +247,10 @@ line mcp --allow-remote-replay # allow non-loopback destinations for webhook rep
 
 CLI commands are exposed as `line_<area>_<verb>` (except `webhook listen`).
 
-- Read-only (available even under `--read-only`): `line_message_schema` / `line_richmenu_schema` / `line_richmenu_list` / `line_richmenu_get` / `line_richmenu_get_default` / `line_richmenu_id_of_user` / `line_bot_info` / `line_bot_quota` / `line_bot_quota_consumption` / `line_bot_profile` / `line_liff_list` / `line_token_verify` / `line_webhook_verify` / `line_ping`
-- Mutating (excluded under `--read-only`): `line_message_push` / `line_message_multicast` / `line_message_broadcast` / `line_message_reply` / `line_richmenu_create` / `line_richmenu_delete` / `line_richmenu_set_default` / `line_richmenu_cancel_default` / `line_richmenu_link` / `line_richmenu_unlink` / `line_liff_add` / `line_liff_update` / `line_liff_delete` / `line_token_issue` / `line_token_revoke` / `line_webhook_replay`
+- Read-only (available even under `--read-only`): `line_message_schema` / `line_richmenu_schema` / `line_richmenu_list` / `line_richmenu_get` / `line_richmenu_get_default` / `line_richmenu_id_of_user` / `line_insight_demographic` / `line_insight_deliveries` / `line_insight_followers` / `line_insight_events` / `line_insight_per_unit` / `line_insight_richmenu_summary` / `line_insight_richmenu_daily` / `line_audience_list` / `line_audience_get` / `line_bot_info` / `line_bot_quota` / `line_bot_quota_consumption` / `line_bot_profile` / `line_liff_list` / `line_token_verify` / `line_webhook_verify` / `line_ping`
+- Mutating (excluded under `--read-only`): `line_message_push` / `line_message_multicast` / `line_message_broadcast` / `line_message_reply` / `line_richmenu_create` / `line_richmenu_delete` / `line_richmenu_set_default` / `line_richmenu_cancel_default` / `line_richmenu_link` / `line_richmenu_unlink` / `line_audience_create` / `line_audience_add_users` / `line_audience_delete` / `line_shop_mission` / `line_liff_add` / `line_liff_update` / `line_liff_delete` / `line_token_issue` / `line_token_revoke` / `line_webhook_replay`
+
+> Audience by-file uploads (`upload-file` / `add-file`) are **CLI-only** — binary/file input is impractical over MCP, so `line_audience_create` directs you to the CLI for file uploads.
 
 > **Rich menu dev cycle across MCP + CLI:** assemble the menu with the agent (`line_richmenu_schema` → build JSON → `line_richmenu_create` with `dryRun=true` to validate, then create), then upload the image with the **CLI** (`line richmenu image <id> --file menu.png`) — binary upload is impractical over MCP, so it is intentionally CLI-only — and finally `line_richmenu_set_default` / `line_richmenu_link` and check on your device.
 

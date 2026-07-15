@@ -65,7 +65,7 @@ OpenAPI spec の取り込みは module-attach を除き完了。残る候補:
 2. ~~**insight / manage-audience / module / shop 取り込み**~~ **→ 実装済み（2026-07-15）。** `Line.OpenApi.Insight` / `.ManageAudience`（control/data＋multipart）/ `.Module` / `.Shop`。
 3. **Social API 友だち関係**（`friendship/v1/status`）— Login と相乗効果。既に `Line.OpenApi.Login` の `GetFriendshipStatusAsync` として実装済み（Login パッケージ内）。
 4. **module-attach**（`Line.OpenApi.Module` へ後付け）— パートナー限定 1 op。異ホスト `manager.line.biz`＋Basic＋PKCE で難所突出。明確な要望が出てから（Core に Basic 認証プロバイダ＋ホスト定数＋form/PKCE 手書きヘルパを追加）。
-5. **CLI/MCP の新パッケージ対応**（insight/manage-audience/module/shop を `line` ツールへ露出）— 需要に応じて。
+5. ~~**CLI/MCP の新パッケージ対応**~~ **→ 実装済み（2026-07-15）。** insight / manage-audience / shop を `line` ツールへ露出（CLI `line insight·audience·shop`／MCP `line_insight_*`〔全 read-only〕・`line_audience_*`・`line_shop_mission`。by-file アップロードは CLI 専用）。**module は見送り**（パートナー限定・概念難でローカル開発ツールに不適）。3 役ゲート PASS（記録 `docs/reviews/2026-07-15-coverage-tools-review.md`）。spec §4.8 参照。
 
 ---
 

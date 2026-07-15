@@ -193,6 +193,55 @@ internal class WriteTools
         return Json.Serialize(new { liffId, deleted = true });
     }
 
+    [McpServerTool(Name = "line_audience_create"), Description(
+        "CREATES an audience group and adds the initial user IDs from a JSON request body "
+        + "(CreateAudienceGroupRequest: description, isIfaAudience, audiences[]). Side effect: creates an "
+        + "audience group and returns its id. To upload IDs from a file instead, use the CLI "
+        + "(`line audience upload-file --file ids.txt`).")]
+    public static async Task<string> AudienceCreate(
+        AudienceService audience, CredentialResolver resolver,
+        [Description("CreateAudienceGroupRequest JSON.")] string requestJson,
+        [Description("Optional credential profile name.")] string? profile = null)
+    {
+        var audienceGroupId = await audience.CreateAsync(ReadTools.Resolve(resolver, profile), requestJson, CancellationToken.None);
+        return Json.Serialize(new { audienceGroupId });
+    }
+
+    [McpServerTool(Name = "line_audience_add_users"), Description(
+        "ADDS user IDs to an existing upload audience group from a JSON request body "
+        + "(AddAudienceToAudienceGroupRequest: audienceGroupId, audiences[]). Side effect: modifies an "
+        + "audience group. To add IDs from a file instead, use the CLI (`line audience add-file <id> --file ids.txt`).")]
+    public static async Task<string> AudienceAddUsers(
+        AudienceService audience, CredentialResolver resolver,
+        [Description("AddAudienceToAudienceGroupRequest JSON (carries audienceGroupId).")] string requestJson,
+        [Description("Optional credential profile name.")] string? profile = null)
+    {
+        await audience.AddUsersAsync(ReadTools.Resolve(resolver, profile), requestJson, CancellationToken.None);
+        return Json.Serialize(new { added = true });
+    }
+
+    [McpServerTool(Name = "line_audience_delete"), Description("DELETES an audience group. Side effect: permanently removes an audience group.")]
+    public static async Task<string> AudienceDelete(
+        AudienceService audience, CredentialResolver resolver,
+        [Description("Audience group id.")] long audienceGroupId,
+        [Description("Optional credential profile name.")] string? profile = null)
+    {
+        await audience.DeleteAsync(ReadTools.Resolve(resolver, profile), audienceGroupId, CancellationToken.None);
+        return Json.Serialize(new { audienceGroupId, deleted = true });
+    }
+
+    [McpServerTool(Name = "line_shop_mission"), Description(
+        "SENDS a mission sticker to a user from a JSON request body (MissionStickerRequest: to, productId, "
+        + "productType='STICKER', sendPresentMessage). Side effect: sends a present to the user.")]
+    public static async Task<string> ShopMission(
+        ShopService shop, CredentialResolver resolver,
+        [Description("MissionStickerRequest JSON.")] string requestJson,
+        [Description("Optional credential profile name.")] string? profile = null)
+    {
+        await shop.SendMissionAsync(ReadTools.Resolve(resolver, profile), requestJson, CancellationToken.None);
+        return Json.Serialize(new { sent = true });
+    }
+
     [McpServerTool(Name = "line_token_issue"), Description(
         "Issues a channel access token and STORES it into the local profile. By default the raw token is NOT returned "
         + "(only metadata + a masked value); subsequent tools use the stored profile. Set reveal=true to return the raw "
