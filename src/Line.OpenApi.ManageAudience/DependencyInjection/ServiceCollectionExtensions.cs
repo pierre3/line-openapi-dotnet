@@ -44,7 +44,7 @@ public static class ServiceCollectionExtensions
         {
             var opts = sp.GetRequiredService<IOptions<LineManageAudienceOptions>>().Value;
             var tokenProvider = new StaticChannelAccessTokenProvider(
-                opts.ChannelAccessToken, opts.AllowedHosts ?? new[] { LineHosts.Api, LineHosts.ApiData });
+                opts.ChannelAccessToken, opts.AllowedHosts ?? LineHosts.Default);
             return new BaseBearerTokenAuthenticationProvider(tokenProvider);
         });
     }

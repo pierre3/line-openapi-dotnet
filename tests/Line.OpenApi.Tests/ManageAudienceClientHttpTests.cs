@@ -50,8 +50,51 @@ public class ManageAudienceClientHttpTests
         Assert.Contains("name=\"description\"", handler.RequestBody);
         Assert.Contains("my audience", handler.RequestBody);
         Assert.Contains("name=\"isIfaAudience\"", handler.RequestBody);
+        // LINE requires the file part be sent as text/plain; lock that in.
+        Assert.Contains("text/plain", handler.RequestBody);
         // (c) response deserialized.
         Assert.Equal(1234567890123L, res!.AudienceGroupId);
+    }
+
+    [Fact]
+    public async Task UploadUserIdsByFileAsync_OmitsOptionalParts_WhenNull()
+    {
+        var handler = new RecordingHandler(new HttpResponseMessage(HttpStatusCode.Accepted)
+        {
+            Content = new StringContent("{\"audienceGroupId\":1}", Encoding.UTF8, "application/json"),
+        });
+        var client = NewClient(handler);
+
+        // Only the file is supplied; the optional scalar parts must be absent from the body.
+        await client.UploadUserIdsByFileAsync(TextFile("U1"));
+
+        Assert.Contains("name=\"file\"", handler.RequestBody);
+        Assert.DoesNotContain("name=\"description\"", handler.RequestBody);
+        Assert.DoesNotContain("name=\"isIfaAudience\"", handler.RequestBody);
+        Assert.DoesNotContain("name=\"uploadDescription\"", handler.RequestBody);
+    }
+
+    [Fact]
+    public async Task CreateForUploadingUserIdsAsync_PostsJson_ToControlPlane()
+    {
+        var handler = new RecordingHandler(new HttpResponseMessage(HttpStatusCode.Accepted)
+        {
+            Content = new StringContent("{\"audienceGroupId\":99}", Encoding.UTF8, "application/json"),
+        });
+        var client = NewClient(handler);
+
+        var res = await client.CreateForUploadingUserIdsAsync(
+            new Line.OpenApi.ManageAudience.Generated.Api.Models.CreateAudienceGroupRequest
+            {
+                Description = "aud",
+                Audiences = new() { new Line.OpenApi.ManageAudience.Generated.Api.Models.Audience { Id = "U1" } },
+            });
+
+        Assert.Equal(HttpMethod.Post, handler.Request!.Method);
+        Assert.Equal("https://api.line.me/v2/bot/audienceGroup/upload", handler.Request.RequestUri!.ToString());
+        Assert.Equal("application/json", handler.Request.Content!.Headers.ContentType!.MediaType);
+        Assert.Contains("aud", handler.RequestBody);
+        Assert.Equal(99L, res!.AudienceGroupId);
     }
 
     [Fact]
