@@ -25,7 +25,7 @@ public sealed class McpToolRegistrationTests
         // Surface snapshot: adding/renaming/removing a tool must update this set intentionally.
         var expected = new[]
         {
-            "line_ping",
+            "line_ping", "line_message_schema",
             "line_bot_info", "line_bot_profile", "line_bot_quota", "line_bot_quota_consumption",
             "line_liff_list", "line_token_verify", "line_webhook_verify",
             "line_message_push", "line_message_multicast", "line_message_broadcast", "line_message_reply",
@@ -65,6 +65,7 @@ public sealed class McpToolRegistrationTests
         Assert.Contains("line_liff_list", readOnly);
         Assert.Contains("line_token_verify", readOnly);
         Assert.Contains("line_webhook_verify", readOnly);
+        Assert.Contains("line_message_schema", readOnly);
 
         // Mutating operations must never appear in the read-only set.
         Assert.DoesNotContain("line_message_push", readOnly);
