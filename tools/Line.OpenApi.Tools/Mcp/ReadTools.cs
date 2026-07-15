@@ -17,6 +17,19 @@ internal class ReadTools
     [McpServerTool(Name = "line_ping"), Description("Health check that returns \"pong\".")]
     public static string Ping() => "pong";
 
+    [McpServerTool(Name = "line_message_schema"), Description(
+        "Returns the JSON Schema for LINE message objects so you can build a valid messagesJson array. "
+        + "Call this BEFORE constructing flex or template messages — they are large and self-recursive. "
+        + "Simple messages (text/image/video/audio/location/sticker) have trivial shapes already shown in "
+        + "the send-tool descriptions and usually do not need this. Tip: after building a message, call a "
+        + "send tool with dryRun=true to parse and shape-check it (not full schema validation) before "
+        + "actually sending.")]
+    public static string MessageSchema(
+        MessageSchemaService schema,
+        [Description("Which subtree to return: all | flex | template | imagemap | quickReply | action. Default: flex.")]
+        string type = "flex")
+        => schema.GetSchema(type);
+
     [McpServerTool(Name = "line_bot_info"), Description("Get LINE bot information (userId, basicId, displayName, chat mode).")]
     public static async Task<string> BotInfo(
         MessageService messages, CredentialResolver resolver,

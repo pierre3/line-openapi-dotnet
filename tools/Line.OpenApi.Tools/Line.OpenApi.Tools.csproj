@@ -52,6 +52,18 @@
     <PackageReference Include="Cocona" Version="2.2.0" />
     <PackageReference Include="ModelContextProtocol" Version="1.4.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
+    <!-- Reads the embedded messaging-api.yml at runtime (MessageSchemaService / line_message_schema). -->
+    <PackageReference Include="SharpYaml" Version="2.1.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Embed the repository's canonical messaging-api.yml (the same spec Kiota generates from,
+         so the extracted JSON Schema never drifts from the models). Single source of truth: it is
+         refreshed by scripts/generate.ps1 / generate.sh. LogicalName is fixed because the file
+         lives outside the project cone. Consumed by Services/MessageSchemaService.cs. -->
+    <EmbeddedResource Include="..\..\openapi\messaging-api.yml">
+      <LogicalName>Line.OpenApi.Tools.messaging-api.yml</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
 
 </Project>

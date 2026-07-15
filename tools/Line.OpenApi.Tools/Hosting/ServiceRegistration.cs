@@ -23,6 +23,9 @@ internal static class ServiceRegistration
         services.AddSingleton<WebhookService>();
         services.AddSingleton<LiffService>();
 
+        // Singleton so the embedded ~190 KB spec is parsed once and the schema map is cached.
+        services.AddSingleton<MessageSchemaService>();
+
         // CLI adapter helper (credential resolution + exit-code mapping).
         services.AddSingleton<CliRuntime>();
 

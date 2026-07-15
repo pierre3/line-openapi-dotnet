@@ -14,45 +14,79 @@ namespace Line.OpenApi.Tools.Mcp;
 [McpServerToolType]
 internal class WriteTools
 {
-    [McpServerTool(Name = "line_message_push"), Description("SENDS a push message. Provide messages as a JSON array of LINE message objects. Side effect: delivers a message.")]
+    // Minimal shapes for the simple message types, shared across the send-tool descriptions so the
+    // model can build them without calling line_message_schema. Flex/template are large and
+    // self-recursive — fetch those from line_message_schema instead.
+    private const string SimpleMessageExamples =
+        "Simple examples: {\"type\":\"text\",\"text\":\"hi\"}; "
+        + "{\"type\":\"sticker\",\"packageId\":\"446\",\"stickerId\":\"1988\"}; "
+        + "{\"type\":\"image\",\"originalContentUrl\":\"https://.../a.jpg\",\"previewImageUrl\":\"https://.../p.jpg\"}. "
+        + "For flex or template, call line_message_schema first. Use dryRun=true to type-check without sending.";
+
+    [McpServerTool(Name = "line_message_push"), Description(
+        "SENDS a push message. Provide messages as a JSON array of LINE message objects. "
+        + "Side effect: delivers a message (unless dryRun=true). " + SimpleMessageExamples)]
     public static async Task<string> MessagePush(
         MessageService messages, CredentialResolver resolver,
         [Description("Destination id (userId/groupId/roomId).")] string to,
         [Description("JSON array of message objects, e.g. [{\"type\":\"text\",\"text\":\"hi\"}].")] string messagesJson,
+        [Description("If true, validate the messages and return their parsed types WITHOUT sending (no API call).")] bool dryRun = false,
         [Description("Optional credential profile name.")] string? profile = null)
     {
+        if (dryRun)
+        {
+            return Json.Serialize(await messages.ValidateMessagesAsync(messagesJson, CancellationToken.None));
+        }
         var result = await messages.PushRawAsync(ReadTools.Resolve(resolver, profile), to, messagesJson, CancellationToken.None);
         return Json.Serialize(result);
     }
 
-    [McpServerTool(Name = "line_message_multicast"), Description("SENDS a message to multiple users. Side effect: delivers messages.")]
+    [McpServerTool(Name = "line_message_multicast"), Description(
+        "SENDS a message to multiple users. Side effect: delivers messages (unless dryRun=true). " + SimpleMessageExamples)]
     public static async Task<string> MessageMulticast(
         MessageService messages, CredentialResolver resolver,
         [Description("Destination user ids.")] string[] to,
-        [Description("JSON array of message objects.")] string messagesJson,
+        [Description("JSON array of message objects, e.g. [{\"type\":\"text\",\"text\":\"hi\"}].")] string messagesJson,
+        [Description("If true, validate the messages and return their parsed types WITHOUT sending (no API call).")] bool dryRun = false,
         [Description("Optional credential profile name.")] string? profile = null)
     {
+        if (dryRun)
+        {
+            return Json.Serialize(await messages.ValidateMessagesAsync(messagesJson, CancellationToken.None));
+        }
         var result = await messages.MulticastAsync(ReadTools.Resolve(resolver, profile), to, messagesJson, CancellationToken.None);
         return Json.Serialize(result);
     }
 
-    [McpServerTool(Name = "line_message_broadcast"), Description("SENDS a message to ALL friends of the bot. Side effect: broadcasts to everyone.")]
+    [McpServerTool(Name = "line_message_broadcast"), Description(
+        "SENDS a message to ALL friends of the bot. Side effect: broadcasts to everyone (unless dryRun=true). " + SimpleMessageExamples)]
     public static async Task<string> MessageBroadcast(
         MessageService messages, CredentialResolver resolver,
-        [Description("JSON array of message objects.")] string messagesJson,
+        [Description("JSON array of message objects, e.g. [{\"type\":\"text\",\"text\":\"hi\"}].")] string messagesJson,
+        [Description("If true, validate the messages and return their parsed types WITHOUT sending (no API call).")] bool dryRun = false,
         [Description("Optional credential profile name.")] string? profile = null)
     {
+        if (dryRun)
+        {
+            return Json.Serialize(await messages.ValidateMessagesAsync(messagesJson, CancellationToken.None));
+        }
         var result = await messages.BroadcastAsync(ReadTools.Resolve(resolver, profile), messagesJson, CancellationToken.None);
         return Json.Serialize(result);
     }
 
-    [McpServerTool(Name = "line_message_reply"), Description("SENDS a reply message using a reply token. Side effect: delivers a message.")]
+    [McpServerTool(Name = "line_message_reply"), Description(
+        "SENDS a reply message using a reply token. Side effect: delivers a message (unless dryRun=true). " + SimpleMessageExamples)]
     public static async Task<string> MessageReply(
         MessageService messages, CredentialResolver resolver,
         [Description("Reply token from a webhook event.")] string replyToken,
-        [Description("JSON array of message objects.")] string messagesJson,
+        [Description("JSON array of message objects, e.g. [{\"type\":\"text\",\"text\":\"hi\"}].")] string messagesJson,
+        [Description("If true, validate the messages and return their parsed types WITHOUT sending (no API call).")] bool dryRun = false,
         [Description("Optional credential profile name.")] string? profile = null)
     {
+        if (dryRun)
+        {
+            return Json.Serialize(await messages.ValidateMessagesAsync(messagesJson, CancellationToken.None));
+        }
         var result = await messages.ReplyAsync(ReadTools.Resolve(resolver, profile), replyToken, messagesJson, CancellationToken.None);
         return Json.Serialize(result);
     }

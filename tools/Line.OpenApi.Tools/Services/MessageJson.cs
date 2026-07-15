@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json;
 using Line.OpenApi.Messaging.Generated.Api.Models;
 using Microsoft.Kiota.Abstractions.Serialization;
 using Microsoft.Kiota.Serialization.Json;
@@ -15,14 +16,34 @@ internal static class MessageJson
     /// <summary>Parses a JSON array of message objects into generated <see cref="Message"/> instances.</summary>
     public static async Task<List<Message>> ParseMessagesAsync(string messagesJson, CancellationToken cancellationToken)
     {
-        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(messagesJson));
-        var node = await new JsonParseNodeFactory()
-            .GetRootParseNodeAsync("application/json", stream, cancellationToken)
-            .ConfigureAwait(false);
+        List<Message> messages;
+        try
+        {
+            using var stream = new MemoryStream(Encoding.UTF8.GetBytes(messagesJson));
+            var node = await new JsonParseNodeFactory()
+                .GetRootParseNodeAsync("application/json", stream, cancellationToken)
+                .ConfigureAwait(false);
 
-        var messages = node.GetCollectionOfObjectValues(Message.CreateFromDiscriminatorValue);
-        return messages?.Where(m => m is not null).Select(m => m!).ToList()
-            ?? throw new MessageInputException("No messages could be parsed from the input JSON.");
+            var parsed = node?.GetCollectionOfObjectValues(Message.CreateFromDiscriminatorValue);
+            messages = parsed?.Where(m => m is not null).Select(m => m!).ToList() ?? new List<Message>();
+        }
+        catch (Exception ex) when (ex is JsonException or FormatException)
+        {
+            // Surface malformed input as the tool's own input error (exit code 2) instead of
+            // leaking a raw serializer exception to the caller / MCP client.
+            throw new MessageInputException($"Message JSON could not be parsed: {ex.Message}", ex);
+        }
+
+        // Kiota returns an empty (non-null) collection — not an exception — for a non-array root
+        // (a single object, [], null, or a scalar). So this guard, not the parse step, is what
+        // rejects "valid JSON but not a message array". LINE requires 1..5 messages; catching it
+        // here makes dryRun meaningful and avoids a 400 on send.
+        if (messages.Count == 0)
+        {
+            throw new MessageInputException(
+                "Expected a non-empty JSON array of message objects, e.g. [{\"type\":\"text\",\"text\":\"hi\"}].");
+        }
+        return messages;
     }
 
     /// <summary>Builds a single-element messages array containing one text message.</summary>

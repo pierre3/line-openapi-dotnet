@@ -99,6 +99,7 @@ src/Line.OpenApi.Tools/                 (PackAsTool, ToolCommandName = line, Pac
 | `bot profile <userId>` | ユーザープロフィール |
 
 - 実体は `MessagingClient.Api` / `.Blob`。メッセージ本文は共通ビルダ（text / flex / raw json）で `Message` 配列を組み立てる。
+- **MCP の送信 4 ツールには `dryRun` 引数＋メッセージ組立支援ツール `line_message_schema` を追加**（旗艦ユースケース A）。詳細は §4.6。
 - **CLI トップレベル別名（任意）:** 高頻度の `message push` は `line push` としても打てるトップレベル別名を許容する。ただし **MCP ツール名は例外なく `line_<area>_<verb>` に統一**（別名を作らない）＝ `line_message_push` / `line_bot_info` 等。
 - **⚠️ 実装差分（本実装で確定）:** ①messages 配列ファイルのオプションは `--json <file>` ではなく **`--messages <file>`**（グローバル出力オプション `--json` との衝突回避）。②`message content` の出力先は **`-o`/`--output`**。③CLI トップレベル別名 `line push` は MVP では未実装（`line message push` のみ。任意項目のため）。
 
@@ -131,12 +132,32 @@ src/Line.OpenApi.Tools/                 (PackAsTool, ToolCommandName = line, Pac
 CLI コマンドのうち **`webhook listen` を除く**すべてを MCP ツールとして公開する。命名は例外なく `line_<area>_<verb>`（例: `line_message_push`、`line_bot_info`、`line_token_issue`、`line_liff_list`、`line_webhook_verify`）。CLI のトップレベル別名（`line push` 等）は MCP には持ち込まない。各ツールに `[Description]` で LLM 可読な説明と引数説明を付す。
 
 - **破壊的/送信系**（push/multicast/broadcast/reply/liff add・update・delete/token revoke/webhook replay）は description に副作用を明記し、可能なら MCP のツール注釈（destructive/idempotent 等）を付与。
-- **既定は全ツール有効**。安全側運用のため `line mcp --read-only` で読み取り系（`bot info`/`bot quota`/`bot profile`/`liff list`/`token verify`/`webhook verify`）のみに絞れるフラグを設ける。
+- **既定は全ツール有効**。安全側運用のため `line mcp --read-only` で読み取り系（`bot info`/`bot quota`/`bot profile`/`liff list`/`token verify`/`webhook verify`/`message schema`）のみに絞れるフラグを設ける。
 - **`token issue` のシークレット非露出（確定・§8-1）:** MCP のツール戻り値はモデル文脈（プロバイダ送信・会話履歴・ログ）へ載るため、**生のチャネルアクセストークンを MCP 経由で返さない**。
   - **既定（C）:** `line_token_issue` は発行したトークンを**ローカルのプロファイルへ保存**し、戻り値はメタのみ = `tokenType`（v2.1 / stateless）/ `expiresIn` / `keyId` / `maskedToken`（末尾数桁のみ、例 `…AbCd`）/ `storedProfile`。以後の送信系ツール（`line_message_push` 等）はこの `storedProfile` を参照して動作するため、エージェントは秘密値に触れず「送信できる能力（capability handle）」だけを得る。
   - **明示的な逃げ道（B）:** サーバ起動フラグ `line mcp --allow-secret-output`（既定 off）を立てたときのみ、`reveal: true` 付き呼び出しで生トークンを返す。人が値を別アプリ設定へ貼るケース向け。ツール description に露出リスクを明記する。
   - `--read-only` とは別軸: `token issue` は資格情報を作る書き込み系のため `--read-only` では元々無効。秘密出力の是非（C/B）は read-only の有無と独立に評価する。
   - `token verify` / `revoke` は**トークンが入力**で出力自体は秘密でない（有効期限・成否）ため本ポリシー対象外。ただし入力トークンをログ/verbose に出さないマスキングは共通で必要。
+
+### 4.6 メッセージ組立支援（旗艦ユースケース A）
+
+**背景（ローカル MCP の需要判断）:** ローカル PC で動く MCP から LINE を操作するユースケースを検討した結果、旗艦は **A: Bot 開発者が Flex/Template を対話で試作 → 自端末に push → 実機で見た目確認 → 直す ループ**と結論。本番の自動応答（Webhook 受信起点）は**サーバー常駐が本質で MCP 不適**（受信 HTTP を待ち受ける MCP は構造的に相容れない）ため対象外とする。
+
+このループの核心は「AI が**型として妥当な** LINE メッセージ JSON を組めること」。型の非対称性が設計を決める:
+- **単純 6 種**（text/image/video/audio/location/sticker）＝各 2〜4 プロパティで軽い → send ツールの `[Description]` に最小例を埋め込めば足りる（往復ゼロ）。
+- **Flex** ＝ 44 型・`FlexBox` 約 40 プロパティ・**自己再帰ネスト**で桁違いに重い → 説明文埋込は非現実的、**取得ツールが必要**。
+
+→ **非対称ハイブリッド**を採用。単純型は説明文、Flex/Template は on-demand のスキーマ取得ツール、送信前は `dryRun` 型検証で「組む→検証→実機送信」を安全に閉じる。
+
+| ツール / 引数 | 種別 | 説明 |
+|---|---|---|
+| `line_message_schema(type)` | 読み取り（`--read-only` でも有効） | 指定ルート（`all`/`flex`/`template`/`imagemap`/`quickReply`/`action`、既定 `flex`）の JSON Schema を返す。副作用なし |
+| `line_message_{push,multicast,broadcast,reply}` に `dryRun: bool`（既定 false） | — | true のとき **API を呼ばず型検証のみ**。件数＋各要素の CLR 型を返す。誤送信の安全弁 |
+
+- **スキーマ源＝埋込 `openapi/messaging-api.yml`**（Kiota 生成と同一 spec ＝ドリフトしない）。実装 `Services/MessageSchemaService.cs` が `SharpYaml` で読み込み、指定ルートから **`$ref` 推移閉包を 1 つの JSON Schema ドキュメント**（root `$ref` ＋ `$defs`）として返す。**インライン展開しない**（`FlexBox` 自己再帰のため必須。visited set で停止）。`#/components/schemas/X` は `#/$defs/X` に書き換え、`discriminator`/`mapping` と `externalDocs.url`（LINE 公式ドキュメントへのリンク）は保持。同梱 yml はリポジトリ正本を単一の情報源として `EmbeddedResource` 参照（`scripts/generate.*` の再生成で更新）。
+- **dryRun の検証本体＝共通サービス層** `MessageService.ValidateMessagesAsync`。既存 `MessageJson.ParseMessagesAsync` を再利用し、不正 JSON は `MessageInputException`（exit 2）へ写像（本改修で生 `JsonReaderException` を包む修正を併せて実施）。send ツールは `dryRun` 分岐を**資格情報の解決前**に置き、送信経路（`MessagingClient` 構築・HTTP）に到達しないことをテストで保証。
+- **回帰テスト:** `MessageSchemaServiceTests`（閉包の完結＝dangling ref なし／ref 書き換え／`discriminator` 保持／`FlexBox` 自己再帰終端／不正 type 例外）、`MessageDryRunTests`（検証本体＋ツール層で資格情報未解決＝非送信を実証）。CLI テスト計 60。
+- **非対象・follow-up:** CLI への `message schema` サブコマンド（サービス層は共有済みで容易・別途）／スキーマの LLM 向け要約・例示併記（Flex 生成品質が不足した場合の増強策として保留）。
 
 ---
 

@@ -24,6 +24,19 @@ public sealed class MessageService
     public Task<SendResult> PushTextAsync(ResolvedCredentials credentials, string to, string text, CancellationToken cancellationToken) =>
         PushAsync(credentials, to, new List<Message> { new TextMessage { Text = text } }, cancellationToken);
 
+    /// <summary>
+    /// Validates a JSON array of message objects without sending anything (dry run). Parses the
+    /// input into the generated polymorphic model and reports how many messages were built and
+    /// their concrete types. Never contacts the API, so it needs no credentials. Throws
+    /// <see cref="MessageInputException"/> when the JSON is missing or malformed.
+    /// </summary>
+    public async Task<MessageValidationResult> ValidateMessagesAsync(string messagesJson, CancellationToken cancellationToken)
+    {
+        var messages = await MessageJson.ParseMessagesAsync(messagesJson, cancellationToken).ConfigureAwait(false);
+        var types = messages.Select(m => m.GetType().Name).ToList();
+        return new MessageValidationResult(DryRun: true, Valid: true, Count: messages.Count, MessageTypes: types);
+    }
+
     /// <summary>Sends a push message built from a JSON array of message objects.</summary>
     public async Task<SendResult> PushRawAsync(ResolvedCredentials credentials, string to, string messagesJson, CancellationToken cancellationToken)
     {
@@ -134,6 +147,9 @@ public sealed record SendResult(IReadOnlyList<string> SentMessageIds)
     internal static SendResult From(List<SentMessage>? sent) =>
         new(sent?.Where(s => s.Id is not null).Select(s => s.Id!).ToList() ?? new List<string>());
 }
+
+/// <summary>Outcome of a dry-run message validation: the input parsed to <c>Count</c> messages of the listed types.</summary>
+public sealed record MessageValidationResult(bool DryRun, bool Valid, int Count, IReadOnlyList<string> MessageTypes);
 
 /// <summary>Bot information (non-secret).</summary>
 public sealed record BotInfo(
