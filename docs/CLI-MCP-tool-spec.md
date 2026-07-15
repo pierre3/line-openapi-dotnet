@@ -159,6 +159,22 @@ CLI コマンドのうち **`webhook listen` を除く**すべてを MCP ツー�
 - **回帰テスト:** `MessageSchemaServiceTests`（閉包の完結＝dangling ref なし／ref 書き換え／`discriminator` 保持／`FlexBox` 自己再帰終端／不正 type 例外）、`MessageDryRunTests`（検証本体＋ツール層で資格情報未解決＝非送信を実証）。CLI テスト計 60。
 - **非対象・follow-up:** CLI への `message schema` サブコマンド（サービス層は共有済みで容易・別途）／スキーマの LLM 向け要約・例示併記（Flex 生成品質が不足した場合の増強策として保留）。
 
+### 4.7 E. リッチメニュー（`line richmenu ...` / `line_richmenu_*`）
+
+**背景:** Rich Menu は `messaging-api.yml` に全操作が含まれ Kiota 生成済み（制御系＝`api.line.me`、画像＝`api-data.line.me` の `/content`）。ギャップは使い勝手で、ライブラリに便利ファサード `RichMenuClient`（`Line.OpenApi.Messaging`）を追加（CRUD/default/link＋画像ヘルパ `SetImageFromFileAsync`＝拡張子から `image/png`/`jpeg` を推論）。詳細は `docs/coverage-roadmap.md`。
+
+**開発サイクル（MCP + CLI 連携）:** ①MCP `line_richmenu_schema` でスキーマ取得→AI が定義 JSON を組む ②MCP `line_richmenu_create`（`dryRun=true` で `validateRichMenuObject` により検証、false で作成し id 取得）③**CLI `line richmenu image <id> --file menu.png` で画像アップロード**（バイナリは MCP 非対応＝意図的に CLI 専用）④MCP `line_richmenu_set_default` / `line_richmenu_link` ⑤実機確認。
+
+| 面 | 操作 |
+|---|---|
+| CLI `line richmenu` | `create`（--file）/`validate`/`list`/`get`/`delete`/`image`（--file, アップロード）/`image-download`（-o）/`set-default`/`get-default`/`cancel-default`/`link`/`unlink`/`id-of-user` |
+| MCP 読み取り | `line_richmenu_schema`（richmenu\|richMenuAlias）/`list`/`get`/`get_default`/`id_of_user` |
+| MCP 変更 | `line_richmenu_create`（`dryRun` 対応）/`delete`/`set_default`/`cancel_default`/`link`/`unlink` |
+
+- スキーマ源は `MessageSchemaService` を共用（root に `RichMenuRequest`/`CreateRichMenuAliasRequest` を追加）。dryRun 検証は `RichMenuService.ValidateAsync`（オンライン `validateRichMenuObject`。message の dryRun がオフライン形状チェックなのと非対称＝rich menu は area 座標等の意味検証を LINE 側に委ねるのが妥当）。
+- **画像 MCP 非公開の根拠:** バイナリ入出力は MCP のテキスト/JSON 前提と相容れず、モデル文脈にバイナリを載せる意味もないため CLI 専用とし、`line_richmenu_create` の description から CLI 手順へ誘導する。
+- サービス層 `RichMenuService` は `RichMenuClient` をトークン単位でメモ化（MCP 常駐の HttpClient 累積回避、既存 Message/Liff と同方針）。
+
 ---
 
 ## 5. 設定ファイル

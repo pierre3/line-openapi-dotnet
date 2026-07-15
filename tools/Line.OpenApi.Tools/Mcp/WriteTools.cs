@@ -91,6 +91,77 @@ internal class WriteTools
         return Json.Serialize(result);
     }
 
+    [McpServerTool(Name = "line_richmenu_create"), Description(
+        "CREATES a rich menu from a JSON definition (see line_richmenu_schema). Side effect: creates a "
+        + "rich menu and returns its id. Set dryRun=true to validate the definition via the LINE "
+        + "validation endpoint WITHOUT creating it. After creating, upload the image with the CLI "
+        + "(`line richmenu image <id> --file menu.png`) then set it as default (line_richmenu_set_default) "
+        + "or link it to a user (line_richmenu_link).")]
+    public static async Task<string> RichMenuCreate(
+        RichMenuService richMenu, CredentialResolver resolver,
+        [Description("Rich menu definition JSON (matches line_richmenu_schema).")] string richMenuJson,
+        [Description("If true, validate the definition via the LINE validation endpoint WITHOUT creating it. Note: unlike message dryRun, this still requires credentials and makes an API call.")] bool dryRun = false,
+        [Description("Optional credential profile name.")] string? profile = null)
+    {
+        var credentials = ReadTools.Resolve(resolver, profile);
+        if (dryRun)
+        {
+            return Json.Serialize(await richMenu.ValidateAsync(credentials, richMenuJson, CancellationToken.None));
+        }
+        var richMenuId = await richMenu.CreateAsync(credentials, richMenuJson, CancellationToken.None);
+        return Json.Serialize(new { richMenuId });
+    }
+
+    [McpServerTool(Name = "line_richmenu_delete"), Description("DELETES a rich menu. Side effect: permanently removes a rich menu.")]
+    public static async Task<string> RichMenuDelete(
+        RichMenuService richMenu, CredentialResolver resolver,
+        [Description("Rich menu id.")] string richMenuId,
+        [Description("Optional credential profile name.")] string? profile = null)
+    {
+        await richMenu.DeleteAsync(ReadTools.Resolve(resolver, profile), richMenuId, CancellationToken.None);
+        return Json.Serialize(new { richMenuId, deleted = true });
+    }
+
+    [McpServerTool(Name = "line_richmenu_set_default"), Description("SETS the default rich menu for ALL users. Side effect: changes what every user sees.")]
+    public static async Task<string> RichMenuSetDefault(
+        RichMenuService richMenu, CredentialResolver resolver,
+        [Description("Rich menu id.")] string richMenuId,
+        [Description("Optional credential profile name.")] string? profile = null)
+    {
+        await richMenu.SetDefaultAsync(ReadTools.Resolve(resolver, profile), richMenuId, CancellationToken.None);
+        return Json.Serialize(new { richMenuId, isDefault = true });
+    }
+
+    [McpServerTool(Name = "line_richmenu_cancel_default"), Description("CANCELS the default rich menu. Side effect: removes the default for all users.")]
+    public static async Task<string> RichMenuCancelDefault(
+        RichMenuService richMenu, CredentialResolver resolver,
+        [Description("Optional credential profile name.")] string? profile = null)
+    {
+        await richMenu.CancelDefaultAsync(ReadTools.Resolve(resolver, profile), CancellationToken.None);
+        return Json.Serialize(new { cancelled = true });
+    }
+
+    [McpServerTool(Name = "line_richmenu_link"), Description("LINKS a rich menu to a specific user. Side effect: changes what that user sees.")]
+    public static async Task<string> RichMenuLink(
+        RichMenuService richMenu, CredentialResolver resolver,
+        [Description("Target user id.")] string userId,
+        [Description("Rich menu id.")] string richMenuId,
+        [Description("Optional credential profile name.")] string? profile = null)
+    {
+        await richMenu.LinkToUserAsync(ReadTools.Resolve(resolver, profile), userId, richMenuId, CancellationToken.None);
+        return Json.Serialize(new { userId, richMenuId, linked = true });
+    }
+
+    [McpServerTool(Name = "line_richmenu_unlink"), Description("UNLINKS the rich menu from a specific user. Side effect: removes that user's rich menu.")]
+    public static async Task<string> RichMenuUnlink(
+        RichMenuService richMenu, CredentialResolver resolver,
+        [Description("Target user id.")] string userId,
+        [Description("Optional credential profile name.")] string? profile = null)
+    {
+        await richMenu.UnlinkFromUserAsync(ReadTools.Resolve(resolver, profile), userId, CancellationToken.None);
+        return Json.Serialize(new { userId, unlinked = true });
+    }
+
     [McpServerTool(Name = "line_liff_add"), Description("ADDS a LIFF app from a JSON definition. Side effect: creates a LIFF app.")]
     public static async Task<string> LiffAdd(
         LiffService liff, CredentialResolver resolver,

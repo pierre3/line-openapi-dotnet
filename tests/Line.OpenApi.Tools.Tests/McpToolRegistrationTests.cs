@@ -31,6 +31,11 @@ public sealed class McpToolRegistrationTests
             "line_message_push", "line_message_multicast", "line_message_broadcast", "line_message_reply",
             "line_liff_add", "line_liff_update", "line_liff_delete",
             "line_token_issue", "line_token_revoke", "line_webhook_replay",
+            // Rich menu
+            "line_richmenu_schema", "line_richmenu_list", "line_richmenu_get",
+            "line_richmenu_get_default", "line_richmenu_id_of_user",
+            "line_richmenu_create", "line_richmenu_delete", "line_richmenu_set_default",
+            "line_richmenu_cancel_default", "line_richmenu_link", "line_richmenu_unlink",
         }.OrderBy(n => n).ToArray();
 
         var actual = ToolNames(typeof(ReadTools)).Concat(ToolNames(typeof(WriteTools))).OrderBy(n => n).ToArray();
@@ -73,6 +78,12 @@ public sealed class McpToolRegistrationTests
         Assert.DoesNotContain("line_token_issue", readOnly);
         Assert.DoesNotContain("line_token_revoke", readOnly);
         Assert.DoesNotContain("line_webhook_replay", readOnly);
+        // Rich menu mutations (set_default changes what every user sees) must stay out of read-only.
+        Assert.DoesNotContain("line_richmenu_create", readOnly);
+        Assert.DoesNotContain("line_richmenu_delete", readOnly);
+        Assert.DoesNotContain("line_richmenu_set_default", readOnly);
+        Assert.DoesNotContain("line_richmenu_link", readOnly);
+        Assert.DoesNotContain("line_richmenu_unlink", readOnly);
     }
 
     [Fact]

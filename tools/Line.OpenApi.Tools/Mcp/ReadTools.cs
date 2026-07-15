@@ -30,6 +30,55 @@ internal class ReadTools
         string type = "flex")
         => schema.GetSchema(type);
 
+    [McpServerTool(Name = "line_richmenu_schema"), Description(
+        "Returns the JSON Schema for a LINE rich menu object, so you can build a valid rich menu "
+        + "definition for line_richmenu_create. type is 'richmenu' (the RichMenuRequest, default) or "
+        + "'richMenuAlias'. Read-only, returns no secrets. Note: after creating a rich menu you must "
+        + "upload its image with the CLI (`line richmenu image <id> --file menu.png`) — image upload is "
+        + "not available over MCP.")]
+    public static string RichMenuSchema(
+        MessageSchemaService schema,
+        [Description("Which subtree: richmenu | richMenuAlias. Default: richmenu.")] string type = "richmenu")
+        => schema.GetSchema(type);
+
+    [McpServerTool(Name = "line_richmenu_list"), Description("List the channel's rich menus (id, name, chat bar text, area count, default flag).")]
+    public static async Task<string> RichMenuList(
+        RichMenuService richMenu, CredentialResolver resolver,
+        [Description("Optional credential profile name.")] string? profile = null)
+    {
+        var menus = await richMenu.ListAsync(Resolve(resolver, profile), CancellationToken.None);
+        return Json.Serialize(menus);
+    }
+
+    [McpServerTool(Name = "line_richmenu_get"), Description("Get a rich menu by id.")]
+    public static async Task<string> RichMenuGet(
+        RichMenuService richMenu, CredentialResolver resolver,
+        [Description("Rich menu id.")] string richMenuId,
+        [Description("Optional credential profile name.")] string? profile = null)
+    {
+        var menu = await richMenu.GetAsync(Resolve(resolver, profile), richMenuId, CancellationToken.None);
+        return menu is null ? Json.Serialize(new { richMenuId, found = false }) : Json.Serialize(menu);
+    }
+
+    [McpServerTool(Name = "line_richmenu_get_default"), Description("Get the default rich menu id (null if none is set).")]
+    public static async Task<string> RichMenuGetDefault(
+        RichMenuService richMenu, CredentialResolver resolver,
+        [Description("Optional credential profile name.")] string? profile = null)
+    {
+        var id = await richMenu.GetDefaultIdAsync(Resolve(resolver, profile), CancellationToken.None);
+        return Json.Serialize(new { richMenuId = id });
+    }
+
+    [McpServerTool(Name = "line_richmenu_id_of_user"), Description("Get the rich menu id linked to a user (null if none).")]
+    public static async Task<string> RichMenuIdOfUser(
+        RichMenuService richMenu, CredentialResolver resolver,
+        [Description("Target user id.")] string userId,
+        [Description("Optional credential profile name.")] string? profile = null)
+    {
+        var id = await richMenu.GetIdOfUserAsync(Resolve(resolver, profile), userId, CancellationToken.None);
+        return Json.Serialize(new { richMenuId = id });
+    }
+
     [McpServerTool(Name = "line_bot_info"), Description("Get LINE bot information (userId, basicId, displayName, chat mode).")]
     public static async Task<string> BotInfo(
         MessageService messages, CredentialResolver resolver,

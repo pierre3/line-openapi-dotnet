@@ -17,6 +17,7 @@ Both share the same service layer, so behavior is identical.
 | **B. Message send & bot lookup** | push / multicast / broadcast / reply, bot info / quota / consumption, user profile, message content download |
 | **C. Webhook development** | Local receiver (with signature verification), offline signature verification of a stored payload, replay to a local app |
 | **D. LIFF management** | List / add / update / delete LIFF apps |
+| **E. Rich menu** | Create / validate / list / get / delete, image upload & download, set / cancel default, link / unlink per user |
 
 Target framework: **`net10.0`**.
 
@@ -170,6 +171,27 @@ line liff update <liffId> --file ./app.json
 line liff delete <liffId>
 ```
 
+### E. Rich menu — `line richmenu`
+
+```sh
+line richmenu create --file ./richmenu.json    # create from a JSON definition; prints the new id
+line richmenu validate --file ./richmenu.json   # validate a definition without creating it
+line richmenu image <richMenuId> --file ./menu.png   # upload the image (PNG/JPEG; content type inferred)
+line richmenu image-download <richMenuId> -o ./menu.png
+line richmenu list
+line richmenu get <richMenuId>
+line richmenu delete <richMenuId>
+line richmenu set-default <richMenuId>          # default for all users
+line richmenu get-default
+line richmenu cancel-default
+line richmenu link <userId> <richMenuId>        # per-user link
+line richmenu unlink <userId>
+line richmenu id-of-user <userId>
+```
+
+- A typical dev cycle: `create` → `image` → `set-default` (or `link` to your own userId) → check on your device → iterate.
+- Image upload requires PNG or JPEG; the content type is inferred from the file extension.
+
 ### Exit codes
 
 | Code | Meaning |
@@ -197,8 +219,10 @@ line mcp --allow-remote-replay # allow non-loopback destinations for webhook rep
 
 CLI commands are exposed as `line_<area>_<verb>` (except `webhook listen`).
 
-- Read-only (available even under `--read-only`): `line_message_schema` / `line_bot_info` / `line_bot_quota` / `line_bot_quota_consumption` / `line_bot_profile` / `line_liff_list` / `line_token_verify` / `line_webhook_verify` / `line_ping`
-- Mutating (excluded under `--read-only`): `line_message_push` / `line_message_multicast` / `line_message_broadcast` / `line_message_reply` / `line_liff_add` / `line_liff_update` / `line_liff_delete` / `line_token_issue` / `line_token_revoke` / `line_webhook_replay`
+- Read-only (available even under `--read-only`): `line_message_schema` / `line_richmenu_schema` / `line_richmenu_list` / `line_richmenu_get` / `line_richmenu_get_default` / `line_richmenu_id_of_user` / `line_bot_info` / `line_bot_quota` / `line_bot_quota_consumption` / `line_bot_profile` / `line_liff_list` / `line_token_verify` / `line_webhook_verify` / `line_ping`
+- Mutating (excluded under `--read-only`): `line_message_push` / `line_message_multicast` / `line_message_broadcast` / `line_message_reply` / `line_richmenu_create` / `line_richmenu_delete` / `line_richmenu_set_default` / `line_richmenu_cancel_default` / `line_richmenu_link` / `line_richmenu_unlink` / `line_liff_add` / `line_liff_update` / `line_liff_delete` / `line_token_issue` / `line_token_revoke` / `line_webhook_replay`
+
+> **Rich menu dev cycle across MCP + CLI:** assemble the menu with the agent (`line_richmenu_schema` → build JSON → `line_richmenu_create` with `dryRun=true` to validate, then create), then upload the image with the **CLI** (`line richmenu image <id> --file menu.png`) — binary upload is impractical over MCP, so it is intentionally CLI-only — and finally `line_richmenu_set_default` / `line_richmenu_link` and check on your device.
 
 Each tool accepts an optional `profile` argument; credentials are resolved from the profile.
 

@@ -72,6 +72,33 @@ var buttons = new TemplateMessage
 };
 ```
 
+## Rich menus
+
+Rich menu operations are part of the Messaging spec (control operations on `api.line.me`, image
+upload/download on `api-data.line.me`), so they are available through `MessagingClient` directly.
+For convenience, `RichMenuClient` wraps a `MessagingClient` and adds the common create → image →
+set-default flow, plus an image helper that infers the required `image/png` / `image/jpeg` content
+type from the file extension.
+
+```csharp
+var rich = RichMenuClient.CreateWithStaticToken("CHANNEL_ACCESS_TOKEN");
+
+var id = await rich.CreateAsync(new RichMenuRequest
+{
+    Size = new RichMenuSize { Width = 2500, Height = 843 },
+    Selected = false,
+    Name = "Main menu",
+    ChatBarText = "Menu",
+    Areas = new List<RichMenuArea> { /* ... */ },
+});
+
+await rich.SetImageFromFileAsync(id!, "menu.png");  // content type inferred from ".png"
+await rich.SetDefaultAsync(id!);                    // show it to all users
+```
+
+Less common operations (alias CRUD, bulk link/unlink, batch) remain available via the low-level
+`rich.Messaging.Api` / `rich.Messaging.Blob` builders.
+
 ## Why a facade instead of one generated client?
 
 The Messaging spec mixes two base URLs: control operations on `api.line.me` and blob content on

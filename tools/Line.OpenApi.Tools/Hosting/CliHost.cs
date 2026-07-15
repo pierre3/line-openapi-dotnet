@@ -31,6 +31,8 @@ internal static class CliHost
             .WithDescription("Webhook development helpers.");
         app.AddSubCommand("liff", x => x.AddCommands<LiffCommands>())
             .WithDescription("Manage LIFF apps.");
+        app.AddSubCommand("richmenu", x => x.AddCommands<RichMenuCommands>())
+            .WithDescription("Manage rich menus (incl. image upload/download).");
 
         app.Run();
         return Task.FromResult(Environment.ExitCode);

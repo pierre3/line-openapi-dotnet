@@ -17,6 +17,7 @@ LINE Platform をローカル PC から操作する **`dotnet` グローバル�
 | **B. メッセージ送信・Bot 照会** | push / multicast / broadcast / reply、bot 情報・送信上限・消費数、ユーザープロフィール、メッセージ内容ダウンロード |
 | **C. Webhook 開発支援** | ローカル受信サーバ（署名検証付き）・保存ペイロードの署名検証・ローカルアプリへの再送 |
 | **D. LIFF 管理** | LIFF アプリの一覧・追加・更新・削除 |
+| **E. リッチメニュー** | 作成・検証・一覧・取得・削除、画像アップロード/ダウンロード、既定設定/解除、ユーザー単位のリンク/解除 |
 
 対象フレームワークは **`net10.0`** です。
 
@@ -170,6 +171,27 @@ line liff update <liffId> --file ./app.json
 line liff delete <liffId>
 ```
 
+### E. リッチメニュー `line richmenu`
+
+```sh
+line richmenu create --file ./richmenu.json    # JSON 定義から作成し、新しい id を表示
+line richmenu validate --file ./richmenu.json   # 作成せず定義を検証
+line richmenu image <richMenuId> --file ./menu.png   # 画像アップロード（PNG/JPEG、content-type は拡張子から推論）
+line richmenu image-download <richMenuId> -o ./menu.png
+line richmenu list
+line richmenu get <richMenuId>
+line richmenu delete <richMenuId>
+line richmenu set-default <richMenuId>          # 全ユーザーの既定
+line richmenu get-default
+line richmenu cancel-default
+line richmenu link <userId> <richMenuId>        # ユーザー単位のリンク
+line richmenu unlink <userId>
+line richmenu id-of-user <userId>
+```
+
+- 典型的な開発サイクル: `create` → `image` → `set-default`（または自分の userId へ `link`）→ 実機で確認 → 繰り返し。
+- 画像は PNG / JPEG のみ。content-type はファイル拡張子から推論します。
+
 ### 終了コード
 
 | コード | 意味 |
@@ -197,8 +219,10 @@ line mcp --allow-remote-replay # webhook replay の非ループバック宛先�
 
 CLI コマンドを `line_<area>_<verb>` の名前で公開します（`webhook listen` を除く）。
 
-- 読み取り系（`--read-only` でもこれらは有効）: `line_message_schema` / `line_bot_info` / `line_bot_quota` / `line_bot_quota_consumption` / `line_bot_profile` / `line_liff_list` / `line_token_verify` / `line_webhook_verify` / `line_ping`
-- 変更系（`--read-only` では除外）: `line_message_push` / `line_message_multicast` / `line_message_broadcast` / `line_message_reply` / `line_liff_add` / `line_liff_update` / `line_liff_delete` / `line_token_issue` / `line_token_revoke` / `line_webhook_replay`
+- 読み取り系（`--read-only` でもこれらは有効）: `line_message_schema` / `line_richmenu_schema` / `line_richmenu_list` / `line_richmenu_get` / `line_richmenu_get_default` / `line_richmenu_id_of_user` / `line_bot_info` / `line_bot_quota` / `line_bot_quota_consumption` / `line_bot_profile` / `line_liff_list` / `line_token_verify` / `line_webhook_verify` / `line_ping`
+- 変更系（`--read-only` では除外）: `line_message_push` / `line_message_multicast` / `line_message_broadcast` / `line_message_reply` / `line_richmenu_create` / `line_richmenu_delete` / `line_richmenu_set_default` / `line_richmenu_cancel_default` / `line_richmenu_link` / `line_richmenu_unlink` / `line_liff_add` / `line_liff_update` / `line_liff_delete` / `line_token_issue` / `line_token_revoke` / `line_webhook_replay`
+
+> **MCP + CLI をまたぐリッチメニュー開発サイクル:** エージェントで組み立て（`line_richmenu_schema` → JSON 生成 → `line_richmenu_create` に `dryRun=true` で検証してから作成）、画像は **CLI** でアップロード（`line richmenu image <id> --file menu.png`。バイナリは MCP で扱いにくいため意図的に CLI 専用）、最後に `line_richmenu_set_default` / `line_richmenu_link` して実機で確認。
 
 各ツールは任意で `profile` 引数を受け取り、資格情報はプロファイルから解決します。
 

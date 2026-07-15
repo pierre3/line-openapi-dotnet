@@ -71,6 +71,32 @@ var buttons = new TemplateMessage
 };
 ```
 
+## リッチメニュー
+
+リッチメニュー操作は Messaging 仕様の一部（制御系は `api.line.me`、画像アップロード/ダウンロードは
+`api-data.line.me`）で、`MessagingClient` から直接利用できます。利便のため `RichMenuClient` が
+`MessagingClient` をラップし、作成 → 画像 → 既定設定という定番フローと、ファイル拡張子から必須の
+`image/png` / `image/jpeg` content-type を推論する画像ヘルパを提供します。
+
+```csharp
+var rich = RichMenuClient.CreateWithStaticToken("CHANNEL_ACCESS_TOKEN");
+
+var id = await rich.CreateAsync(new RichMenuRequest
+{
+    Size = new RichMenuSize { Width = 2500, Height = 843 },
+    Selected = false,
+    Name = "メインメニュー",
+    ChatBarText = "メニュー",
+    Areas = new List<RichMenuArea> { /* ... */ },
+});
+
+await rich.SetImageFromFileAsync(id!, "menu.png");  // ".png" から content-type を推論
+await rich.SetDefaultAsync(id!);                    // 全ユーザーに表示
+```
+
+あまり使わない操作（エイリアス CRUD、一括リンク/解除、バッチ）は低レベルの
+`rich.Messaging.Api` / `rich.Messaging.Blob` ビルダーから引き続き利用できます。
+
 ## なぜ単一の生成クライアントではなくファサードなのか
 
 Messaging 仕様は 2 つの base URL を混在させます: 制御操作は `api.line.me`、blob コンテンツは

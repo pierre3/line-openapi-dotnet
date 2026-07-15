@@ -54,6 +54,8 @@ public sealed class MessageSchemaServiceTests
     [InlineData("imagemap", "ImagemapMessage")]
     [InlineData("quickReply", "QuickReply")]
     [InlineData("action", "Action")]
+    [InlineData("richmenu", "RichMenuRequest")]
+    [InlineData("richMenuAlias", "CreateRichMenuAliasRequest")]
     public void GetSchema_returns_document_rooted_at_the_expected_schema(string type, string root)
     {
         var doc = Parse(type);
@@ -74,6 +76,7 @@ public sealed class MessageSchemaServiceTests
     [InlineData("flex")]
     [InlineData("template")]
     [InlineData("all")]
+    [InlineData("richmenu")]
     public void GetSchema_closure_is_complete_with_no_dangling_refs(string type)
     {
         var doc = Parse(type);
