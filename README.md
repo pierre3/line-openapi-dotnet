@@ -25,6 +25,9 @@ The target framework is **`net10.0` only** (netstandard2.0 / .NET Framework are 
 | `Line.OpenApi.Messaging.Webhook` | Webhook models + receive glue (`WebhookRequestParser` = signature verification + deserialization) |
 | `Line.OpenApi.Liff` | LIFF app management (`LiffClient` facade) |
 | `Line.OpenApi.Login` | LINE Login v2.1 + OpenID Connect (`LoginClient` facade = authorization URL / token exchange / ID-token & access-token verification / profile / friendship) |
+| `Line.OpenApi.Insight` | Insight / statistics (`InsightClient` facade = friend demographics, deliveries, followers, message events, rich menu insights) |
+| `Line.OpenApi.Module` | Module channels for partner/agency operation (`ModuleClient` facade = detach, chat control, list attached modules) |
+| `Line.OpenApi.Shop` | Mission sticker sending (`ShopClient` facade) |
 | `Line.OpenApi.Bot` | Convenience meta-package (optional) = the full Bot set in a single reference (bundles `Messaging` + `Messaging.Webhook` + `ChannelAccessToken`; no code, dependencies only) |
 
 ## Installation
@@ -38,6 +41,10 @@ dotnet add package Line.OpenApi.Bot
 # Or install per usage scenario
 dotnet add package Line.OpenApi.Messaging
 dotnet add package Line.OpenApi.Liff
+dotnet add package Line.OpenApi.Login
+dotnet add package Line.OpenApi.Insight
+dotnet add package Line.OpenApi.Module
+dotnet add package Line.OpenApi.Shop
 ```
 
 ## Requirements
@@ -135,6 +142,46 @@ var friend  = await login.GetFriendshipStatusAsync(token.AccessToken!);   // fri
 DI: `services.AddLineLogin(o => { o.ChannelId = "…"; o.ChannelSecret = "…"; });`
 
 > Local ID-token verification (HS256 for web / ES256 + JWKS for native/LIFF) is not included in this release; use `VerifyIdTokenAsync` (server-side delegation) for now.
+
+### Insight / statistics (`Line.OpenApi.Insight`)
+
+```csharp
+using Line.OpenApi.Insight;
+
+var insight = InsightClient.CreateWithStaticToken("CHANNEL_ACCESS_TOKEN");
+var followers = await insight.GetNumberOfFollowersAsync("20260715");   // yyyyMMdd
+var summary = await insight.GetRichMenuInsightSummaryAsync("RICH_MENU_ID", "20260701", "20260715");
+```
+
+DI: `services.AddLineInsight(o => o.ChannelAccessToken = "…");`
+
+### Module channels (`Line.OpenApi.Module`)
+
+```csharp
+using Line.OpenApi.Module;
+
+var module = ModuleClient.CreateWithStaticToken("CHANNEL_ACCESS_TOKEN");
+var modules = await module.GetModulesAsync(limit: 100);
+await module.ReleaseChatControlAsync("CHAT_ID");
+```
+
+DI: `services.AddLineModule(o => o.ChannelAccessToken = "…");`
+Module attachment (`module-attach`, on `manager.line.biz` with Basic auth + PKCE) is out of scope for this package.
+
+### Mission stickers (`Line.OpenApi.Shop`)
+
+```csharp
+using Line.OpenApi.Shop;
+using Line.OpenApi.Shop.Generated.Models;
+
+var shop = ShopClient.CreateWithStaticToken("CHANNEL_ACCESS_TOKEN");
+await shop.SendMissionStickerAsync(new MissionStickerRequest
+{
+    To = "USER_ID", ProductType = "STICKER", ProductId = "PRODUCT_ID",
+});
+```
+
+DI: `services.AddLineShop(o => o.ChannelAccessToken = "…");`
 
 ### Receiving webhooks (`Line.OpenApi.Messaging.Webhook`)
 
@@ -264,6 +311,9 @@ The API reference is auto-generated in English from the XML doc comments on the 
 │   ├── Line.OpenApi.Messaging.Webhook/  # webhook models + WebhookRequestParser (receive glue)
 │   ├── Line.OpenApi.Liff/               # LIFF + LiffClient facade
 │   ├── Line.OpenApi.Login/              # LINE Login v2.1 + OIDC (hand-written, no spec) + LoginClient facade
+│   ├── Line.OpenApi.Insight/            # Insight / statistics + InsightClient facade
+│   ├── Line.OpenApi.Module/             # Module channels + ModuleClient facade
+│   ├── Line.OpenApi.Shop/               # Mission stickers + ShopClient facade
 │   └── Line.OpenApi.Bot/                # convenience meta-package (dependencies only, no code)
 ├── tools/                       # CLI / MCP tool (Line.OpenApi.Tools, command name `line`)
 ├── samples/                     # bundled demo apps (console / webhook Web API)

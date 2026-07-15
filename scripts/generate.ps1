@@ -41,6 +41,9 @@ $specs = @{
   "channel-access-token.yml" = "https://raw.githubusercontent.com/line/line-openapi/master/channel-access-token.yml"
   "webhook.yml"              = "https://raw.githubusercontent.com/line/line-openapi/master/webhook.yml"
   "liff.yml"                 = "https://raw.githubusercontent.com/line/line-openapi/master/liff.yml"
+  "insight.yml"              = "https://raw.githubusercontent.com/line/line-openapi/master/insight.yml"
+  "module.yml"               = "https://raw.githubusercontent.com/line/line-openapi/master/module.yml"
+  "shop.yml"                 = "https://raw.githubusercontent.com/line/line-openapi/master/shop.yml"
 }
 New-Item -ItemType Directory -Force -Path "openapi" | Out-Null
 foreach ($name in $specs.Keys) {
@@ -115,6 +118,34 @@ Invoke-Kiota @(
   "generate","-l","CSharp","-d","./openapi/liff.yml",
   "-c","LiffApiClient","-n","Line.OpenApi.Liff.Generated",
   "-o","./src/Line.OpenApi.Liff/Generated",
+  "--exclude-backward-compatible",
+  "--structured-mime-types","application/json"
+)
+
+# 6) Insight — 統計・分析。api.line.me 単一ホスト、全 GET・JSON。
+Invoke-Kiota @(
+  "generate","-l","CSharp","-d","./openapi/insight.yml",
+  "-c","InsightApiClient","-n","Line.OpenApi.Insight.Generated",
+  "-o","./src/Line.OpenApi.Insight/Generated",
+  "--exclude-backward-compatible",
+  "--structured-mime-types","application/json"
+)
+
+# 7) Module — モジュールチャネル（LOA 代理運用）。api.line.me 単一ホスト、JSON。
+#    注意: module-attach.yml（manager.line.biz / Basic 認証 / form+PKCE）は今回未取り込み。
+Invoke-Kiota @(
+  "generate","-l","CSharp","-d","./openapi/module.yml",
+  "-c","ModuleApiClient","-n","Line.OpenApi.Module.Generated",
+  "-o","./src/Line.OpenApi.Module/Generated",
+  "--exclude-backward-compatible",
+  "--structured-mime-types","application/json"
+)
+
+# 8) Shop — ミッションスタンプ送信。api.line.me 単一ホスト、JSON。
+Invoke-Kiota @(
+  "generate","-l","CSharp","-d","./openapi/shop.yml",
+  "-c","ShopApiClient","-n","Line.OpenApi.Shop.Generated",
+  "-o","./src/Line.OpenApi.Shop/Generated",
   "--exclude-backward-compatible",
   "--structured-mime-types","application/json"
 )

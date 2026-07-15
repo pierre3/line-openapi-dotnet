@@ -1,0 +1,32 @@
+{
+  "descriptionHash": "94129AE68B3CB36FB467E74F1FC20C213A1D81303045470A709461A430686E0CAB5DC601E5120782B615E92B4EC6ABE906AE8566E964EA430933DBF44E024169",
+  "descriptionLocation": "../../../openapi/shop.yml",
+  "lockFileVersion": "1.0.0",
+  "kiotaVersion": "1.34.1",
+  "clientClassName": "ShopApiClient",
+  "typeAccessModifier": "Public",
+  "clientNamespaceName": "Line.OpenApi.Shop.Generated",
+  "language": "CSharp",
+  "usesBackingStore": false,
+  "excludeBackwardCompatible": true,
+  "includeAdditionalData": true,
+  "disableSSLValidation": false,
+  "serializers": [
+    "Microsoft.Kiota.Serialization.Json.JsonSerializationWriterFactory",
+    "Microsoft.Kiota.Serialization.Text.TextSerializationWriterFactory",
+    "Microsoft.Kiota.Serialization.Form.FormSerializationWriterFactory",
+    "Microsoft.Kiota.Serialization.Multipart.MultipartSerializationWriterFactory"
+  ],
+  "deserializers": [
+    "Microsoft.Kiota.Serialization.Json.JsonParseNodeFactory",
+    "Microsoft.Kiota.Serialization.Text.TextParseNodeFactory",
+    "Microsoft.Kiota.Serialization.Form.FormParseNodeFactory"
+  ],
+  "structuredMimeTypes": [
+    "application/json"
+  ],
+  "includePatterns": [],
+  "excludePatterns": [],
+  "disabledValidationRules": [],
+  "allowedExternalOrigins": []
+}

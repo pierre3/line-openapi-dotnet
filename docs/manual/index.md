@@ -26,6 +26,11 @@ use case.
 | `Line.OpenApi.Messaging` | Message send & receive (`MessagingClient` facade = control plane + data plane). |
 | `Line.OpenApi.Messaging.Webhook` | Webhook models + receive glue (`WebhookRequestParser` = signature check + deserialization). |
 | `Line.OpenApi.Liff` | LIFF app management (`LiffClient` facade). |
+| `Line.OpenApi.Login` | LINE Login v2.1 + OpenID Connect (`LoginClient` facade). |
+| `Line.OpenApi.Insight` | Insight / statistics (`InsightClient` facade). |
+| `Line.OpenApi.Module` | Module channels for partner/agency operation (`ModuleClient` facade). |
+| `Line.OpenApi.Shop` | Mission sticker sending (`ShopClient` facade). |
+| `Line.OpenApi.Bot` | Optional meta-package bundling Messaging + Webhook + ChannelAccessToken. |
 
 > The API reference documents only the **hand-written public surface**. The Kiota-generated
 > request builders and models are treated as an opaque box; you use them through the fluent

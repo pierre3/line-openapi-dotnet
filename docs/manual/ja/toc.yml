@@ -10,6 +10,12 @@
   href: liff.md
 - name: LINE Login と OpenID Connect
   href: login.md
+- name: インサイト（統計）
+  href: insight.md
+- name: モジュールチャネル
+  href: module.md
+- name: ショップ（ミッションスタンプ）
+  href: shop.md
 - name: DI とホスティング
   href: di-and-hosting.md
 - name: セキュリティ

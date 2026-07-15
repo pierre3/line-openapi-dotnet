@@ -1,0 +1,31 @@
+namespace Line.OpenApi.Insight.DependencyInjection
+{
+    public sealed class LineInsightOptions
+    {
+        public LineInsightOptions() { }
+        public string[]? AllowedHosts { get; set; }
+        public string ChannelAccessToken { get; set; }
+    }
+    public static class ServiceCollectionExtensions
+    {
+        public const string HttpClientName = "Line.OpenApi.Insight";
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddLineInsight(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, System.Action<Line.OpenApi.Insight.DependencyInjection.LineInsightOptions> configure) { }
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddLineInsight(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, System.Func<System.IServiceProvider, Microsoft.Kiota.Abstractions.Authentication.IAuthenticationProvider> authProviderFactory) { }
+    }
+}
+namespace Line.OpenApi.Insight
+{
+    public sealed class InsightClient
+    {
+        public InsightClient(Microsoft.Kiota.Abstractions.Authentication.IAuthenticationProvider authProvider, System.Net.Http.HttpClient? httpClient = null) { }
+        public Line.OpenApi.Insight.Generated.InsightApiClient Api { get; }
+        public System.Threading.Tasks.Task<Line.OpenApi.Insight.Generated.Models.GetFriendsDemographicsResponse?> GetFriendsDemographicsAsync(System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task<Line.OpenApi.Insight.Generated.Models.GetMessageEventResponse?> GetMessageEventAsync(string requestId, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task<Line.OpenApi.Insight.Generated.Models.GetNumberOfFollowersResponse?> GetNumberOfFollowersAsync(string date, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task<Line.OpenApi.Insight.Generated.Models.GetNumberOfMessageDeliveriesResponse?> GetNumberOfMessageDeliveriesAsync(string date, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task<Line.OpenApi.Insight.Generated.Models.GetRichMenuInsightDailyResponse?> GetRichMenuInsightDailyAsync(string richMenuId, string from, string to, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task<Line.OpenApi.Insight.Generated.Models.GetRichMenuInsightSummaryResponse?> GetRichMenuInsightSummaryAsync(string richMenuId, string from, string to, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task<Line.OpenApi.Insight.Generated.Models.GetStatisticsPerUnitResponse?> GetStatisticsPerUnitAsync(string customAggregationUnit, string from, string to, System.Threading.CancellationToken cancellationToken = default) { }
+        public static Line.OpenApi.Insight.InsightClient CreateWithStaticToken(string channelAccessToken) { }
+    }
+}
