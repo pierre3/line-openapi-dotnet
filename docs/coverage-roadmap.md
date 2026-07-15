@@ -4,7 +4,7 @@
 
 ## 現状のカバレッジ
 
-line-openapi リポジトリの OpenAPI spec は **9 本**。うち **4 本を取り込み済み**（Kiota 生成＋手書きファサード）:
+line-openapi リポジトリの OpenAPI spec は **9 本**。うち **8 本を取り込み済み**（Kiota 生成＋手書きファサード。2026-07-15 のカバレッジ拡充で insight/manage-audience/module/shop を追加）。残り 1 本（module-attach）のみ見送り:
 
 | spec | パッケージ | 状態 |
 |---|---|---|
@@ -12,6 +12,11 @@ line-openapi リポジトリの OpenAPI spec は **9 本**。うち **4 本を�
 | `channel-access-token.yml` | `Line.OpenApi.ChannelAccessToken` | ✅ 取り込み済み |
 | `webhook.yml` | `Line.OpenApi.Messaging.Webhook` | ✅ 取り込み済み |
 | `liff.yml` | `Line.OpenApi.Liff` | ✅ 取り込み済み |
+| `insight.yml` | `Line.OpenApi.Insight` | ✅ 取り込み済み（`InsightClient`・7 GET） |
+| `manage-audience.yml` | `Line.OpenApi.ManageAudience` | ✅ 取り込み済み（`ManageAudienceClient`・control/data 分離＋multipart by-file） |
+| `module.yml` | `Line.OpenApi.Module` | ✅ 取り込み済み（`ModuleClient`・4 ops） |
+| `shop.yml` | `Line.OpenApi.Shop` | ✅ 取り込み済み（`ShopClient`・1 op） |
+| `module-attach.yml` | — | ⏸ 見送り（下記・パートナー限定 1 op / manager.line.biz + Basic + PKCE で最難） |
 
 ### Rich Menu は既に生成済み（重要）
 
@@ -23,15 +28,17 @@ line-openapi リポジトリの OpenAPI spec は **9 本**。うち **4 本を�
 1. 画像アップロード `setRichMenuImage` は spec 上 `*/*`（binary）だが LINE は `Content-Type: image/png`/`image/jpeg` を必須とする。生成コードは content-type を明示せず落とし穴になる（form-urlencoded の `StatelessJwtAssertionTokenSource` と同種）→ 手書きヘルパが要る。
 2. 利用シーン用の便利ファサード（`LiffClient` 相当）が無く、生の生成ビルダーは辿りにくい。
 
-## 第1部: 未取り込みの OpenAPI spec 5 本
+## 第1部: 未取り込みの OpenAPI spec（残 1 本＝module-attach のみ）
 
-| spec | 機能 | 需要 | 実装難所 | 見立て |
+> **更新（2026-07-15）:** カバレッジ拡充で **insight / manage-audience / module / shop の 4 本を取り込み完了**（`Line.OpenApi.Insight` / `.ManageAudience` / `.Module` / `.Shop`。ラウンド 1＝易 3 本、ラウンド 2＝manage-audience。記録は `docs/reviews/2026-07-15-coverage-round{1,2}-review.md`）。**module-attach のみ見送り**（下表・パートナー限定 1 op でコスト対効果最低）。
+
+| spec | 機能 | 需要 | 実装難所 | 状態 |
 |---|---|---|---|---|
-| **insight** | 統計・分析（友だち属性 demographic、配信数、フォロワー数、開封/クリック interaction、Rich Menu 表示/クリック統計。`/v2/bot/insight/*` GET 7 本） | 中 | なし（`api.line.me` 単一・全 GET・Bearer・R1 非該当） | **ほぼ生成で完了**。薄いファサードのみ |
-| **manage-audience** | オーディエンス管理（userId アップロード JSON/ファイル、click/imp リターゲ、取得/削除/一覧/共有） | 中 | ⚠️ **R1 該当**: `upload/byFile`・`addUserIdsToAudience` の 2 本が `api-data.line.me` + `multipart/form-data` | 生成 + Messaging 型の control/data 分離グルー＋multipart 手当て |
-| **module** | モジュールチャネル（LOA 代理運用、chat control acquire/release、detach、attach 済み bot 一覧。4 本） | 低 | 小（`api.line.me` 単一だが概念が難解、webhook standby イベント連携前提） | 生成で済むが需要薄（パートナー/SaaS 限定） |
-| **module-attach** | モジュール attach 認可 1 本（`POST /module/auth/v1/token`） | 低 | ⚠️ **最難**: 別ホスト `manager.line.biz` + form-urlencoded + Basic 認証 + PKCE（`code_verifier`） | 手書き必須・既存 Bearer/AllowedHosts 基盤に載らない・コスト対効果悪 |
-| **shop** | ミッションスタンプ送信 1 本（`POST /shop/v3/mission`, productType=STICKER） | 低 | なし（`api.line.me`・JSON・Bearer） | 生成で済むが実質 1 メソッド・ニッチ |
+| **insight** | 統計・分析（友だち属性 demographic、配信数、フォロワー数、開封/クリック interaction、Rich Menu 表示/クリック統計。`/v2/bot/insight/*` GET 7 本） | 中 | なし（`api.line.me` 単一・全 GET・Bearer・R1 非該当） | ✅ `Line.OpenApi.Insight`（薄ファサード） |
+| **manage-audience** | オーディエンス管理（userId アップロード JSON/ファイル、click/imp リターゲ、取得/削除/一覧/共有） | 中 | ⚠️ **R1 該当**: `upload/byFile`・`addUserIdsToAudience` の 2 本が `api-data.line.me` + `multipart/form-data` | ✅ `Line.OpenApi.ManageAudience`（control/data 分離＋multipart 手書きヘルパ） |
+| **module** | モジュールチャネル（LOA 代理運用、chat control acquire/release、detach、attach 済み bot 一覧。4 本） | 低 | 小（`api.line.me` 単一だが概念が難解、webhook standby イベント連携前提） | ✅ `Line.OpenApi.Module`（module.yml のみ） |
+| **module-attach** | モジュール attach 認可 1 本（`POST /module/auth/v1/token`） | 低 | ⚠️ **最難**: 別ホスト `manager.line.biz` + form-urlencoded + Basic 認証 + PKCE（`code_verifier`） | ⏸ **見送り**（手書き必須・既存 Bearer/AllowedHosts 基盤に載らない・コスト対効果悪。実需が出た時点で追加＝Core に Basic 認証プロバイダ＋`manager.line.biz` 定数＋form/PKCE 手書きヘルパが必要） |
+| **shop** | ミッションスタンプ送信 1 本（`POST /shop/v3/mission`, productType=STICKER） | 低 | なし（`api.line.me`・JSON・Bearer） | ✅ `Line.OpenApi.Shop`（1 op） |
 
 出典: [insight](https://raw.githubusercontent.com/line/line-openapi/master/insight.yml) / [manage-audience](https://raw.githubusercontent.com/line/line-openapi/master/manage-audience.yml) / [module](https://raw.githubusercontent.com/line/line-openapi/master/module.yml) / [module-attach](https://raw.githubusercontent.com/line/line-openapi/master/module-attach.yml) / [shop](https://raw.githubusercontent.com/line/line-openapi/master/shop.yml)
 
@@ -50,13 +57,15 @@ line-openapi リポジトリの OpenAPI spec は **9 本**。うち **4 本を�
 
 > ⚠️ **設計上の重要注意:** LINE Login 系は **user access token**（LINE Login チャネルで発行、`profile`/`openid` scope）で認証し、Messaging の **channel access token** とは別物・非互換。取り込む場合 `Line.Core` の認証抽象を「Bearer だがトークン取得経路が別」として拡張する必要がある。ホストは大半 `api.line.me`（既存 AllowedHosts に載る）だが、認可エンドポイントのみ `access.line.me`（ブラウザリダイレクト先で REST ではない）。
 
-## 推奨優先順位（Rich Menu 便利層は別途着手前提）
+## 推奨優先順位（更新: 2026-07-15）
 
-1. ~~**LINE Login + OIDC ID Token 検証**~~ **→ 実装済み（`Line.OpenApi.Login`）。** 需要最大の第二の主要シーンを取り込み完了。残タスク＝**ローカル ID Token 検証（ES256+JWKS / HS256）**を次サイクルで追加（サーバ委譲 `/verify` は実装済み）。自作リスクの大きい JWT 署名検証部分なのでライブラリ化の恩恵が大きい。
-2. **Social API 友だち関係**（`friendship/v1/status`）— 1 とセットで相乗効果（bot_prompt→友だち判定の定番導線）。単純 GET で軽く、1 の user access token 基盤に相乗り。単独では小粒なので 1 に同梱推奨。
-3. **insight 取り込み**（`Line.OpenApi.Insight`）— 5 spec 中で最も「生成即完了」かつ需要中。Messaging と同一の Bearer/単一ホストで R1 非該当、手書きグルー最小。低コスト高カバレッジ。
-4. **manage-audience 取り込み**（`Line.OpenApi.ManageAudience`）— 需要中。Messaging で確立済みの control/data 2 クライアント分離＋multipart パターンを再利用でき実装コストが読める。
-5. **module / module-attach / shop は保留（低優先）** — module 系はパートナー限定で需要低、module-attach は異ホスト+Basic+PKCE で難所突出、shop はニッチ 1 本。明確な要望が出てから。
+OpenAPI spec の取り込みは module-attach を除き完了。残る候補:
+
+1. ~~**LINE Login + OIDC ID Token 検証**~~ **→ 実装済み（`Line.OpenApi.Login`）。** 残タスク＝**ローカル ID Token 検証（ES256+JWKS / HS256）**を次サイクルで追加（サーバ委譲 `/verify` は実装済み）。自作リスクの大きい JWT 署名検証部分なのでライブラリ化の恩恵が大きい。**最有力の次テーマ。**
+2. ~~**insight / manage-audience / module / shop 取り込み**~~ **→ 実装済み（2026-07-15）。** `Line.OpenApi.Insight` / `.ManageAudience`（control/data＋multipart）/ `.Module` / `.Shop`。
+3. **Social API 友だち関係**（`friendship/v1/status`）— Login と相乗効果。既に `Line.OpenApi.Login` の `GetFriendshipStatusAsync` として実装済み（Login パッケージ内）。
+4. **module-attach**（`Line.OpenApi.Module` へ後付け）— パートナー限定 1 op。異ホスト `manager.line.biz`＋Basic＋PKCE で難所突出。明確な要望が出てから（Core に Basic 認証プロバイダ＋ホスト定数＋form/PKCE 手書きヘルパを追加）。
+5. **CLI/MCP の新パッケージ対応**（insight/manage-audience/module/shop を `line` ツールへ露出）— 需要に応じて。
 
 ---
 
