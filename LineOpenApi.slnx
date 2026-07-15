@@ -13,6 +13,7 @@
   </Folder>
   <Folder Name="/samples/">
     <Project Path="samples/Line.OpenApi.Samples.Console/Line.OpenApi.Samples.Console.csproj" />
+    <Project Path="samples/Line.OpenApi.Samples.Login/Line.OpenApi.Samples.Login.csproj" />
     <Project Path="samples/Line.OpenApi.Samples.Webhook/Line.OpenApi.Samples.Webhook.csproj" />
   </Folder>
   <Folder Name="/tests/">
