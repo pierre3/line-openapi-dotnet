@@ -28,6 +28,7 @@ use case.
 | `Line.OpenApi.Liff` | LIFF app management (`LiffClient` facade). |
 | `Line.OpenApi.Login` | LINE Login v2.1 + OpenID Connect (`LoginClient` facade). |
 | `Line.OpenApi.Insight` | Insight / statistics (`InsightClient` facade). |
+| `Line.OpenApi.ManageAudience` | Audience management incl. by-file upload (`ManageAudienceClient` facade = control plane + data plane). |
 | `Line.OpenApi.Module` | Module channels for partner/agency operation (`ModuleClient` facade). |
 | `Line.OpenApi.Shop` | Mission sticker sending (`ShopClient` facade). |
 | `Line.OpenApi.Bot` | Optional meta-package bundling Messaging + Webhook + ChannelAccessToken. |

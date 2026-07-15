@@ -44,6 +44,7 @@ $specs = @{
   "insight.yml"              = "https://raw.githubusercontent.com/line/line-openapi/master/insight.yml"
   "module.yml"               = "https://raw.githubusercontent.com/line/line-openapi/master/module.yml"
   "shop.yml"                 = "https://raw.githubusercontent.com/line/line-openapi/master/shop.yml"
+  "manage-audience.yml"      = "https://raw.githubusercontent.com/line/line-openapi/master/manage-audience.yml"
 }
 New-Item -ItemType Directory -Force -Path "openapi" | Out-Null
 foreach ($name in $specs.Keys) {
@@ -148,6 +149,29 @@ Invoke-Kiota @(
   "-o","./src/Line.OpenApi.Shop/Generated",
   "--exclude-backward-compatible",
   "--structured-mime-types","application/json"
+)
+
+# 9) ManageAudience 制御系 (api.line.me) — /upload/byFile を除外（データ系）。
+#    Messaging と同じ control/data 2 クライアント分離（R1）。data 系は byFile の
+#    ファイルアップロード 2 op のみで、operation 単位で server=api-data.line.me を宣言。
+Invoke-Kiota @(
+  "generate","-l","CSharp","-d","./openapi/manage-audience.yml",
+  "--exclude-path","**/upload/byFile",
+  "-c","ManageAudienceApiClient","-n","Line.OpenApi.ManageAudience.Generated.Api",
+  "-o","./src/Line.OpenApi.ManageAudience/Generated/Api",
+  "--exclude-backward-compatible",
+  "--structured-mime-types","application/json"
+)
+
+# 10) ManageAudience データ系 (api-data.line.me) — /upload/byFile のみ、multipart/form-data。
+#     ファサード ManageAudienceClient で BaseUrl を api-data.line.me に上書き（構築前）。
+Invoke-Kiota @(
+  "generate","-l","CSharp","-d","./openapi/manage-audience.yml",
+  "--include-path","**/upload/byFile",
+  "-c","ManageAudienceBlobApiClient","-n","Line.OpenApi.ManageAudience.Generated.Blob",
+  "-o","./src/Line.OpenApi.ManageAudience/Generated/Blob",
+  "--exclude-backward-compatible",
+  "--structured-mime-types","multipart/form-data","--structured-mime-types","application/json"
 )
 
 Write-Host "`n生成完了。次: dotnet build  /  dotnet test" -ForegroundColor Green

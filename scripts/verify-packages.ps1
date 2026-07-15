@@ -40,6 +40,7 @@ $expectedInternalDeps = @{
     'Line.OpenApi.Insight'             = @('Line.OpenApi.Core')
     'Line.OpenApi.Module'              = @('Line.OpenApi.Core')
     'Line.OpenApi.Shop'                = @('Line.OpenApi.Core')
+    'Line.OpenApi.ManageAudience'      = @('Line.OpenApi.Core')
     # Meta-package: bundles the Bot trio (no Core direct; it flows transitively). Design section 4.2.
     'Line.OpenApi.Bot'                 = @('Line.OpenApi.ChannelAccessToken', 'Line.OpenApi.Messaging', 'Line.OpenApi.Messaging.Webhook')
 }
@@ -95,7 +96,7 @@ $OutputDir = (Resolve-Path $OutputDir).Path
 Write-Host "==> dotnet pack ($Configuration) -> $OutputDir"
 # Exclude the CLI/MCP tool package (Line.OpenApi.Tools): it is released on its own cadence
 # (tag tools-v*) with a different layout (DotnetTool, bundled deps, no lib/). This smoke test
-# guards only the nine library packages and their one-way dependency ADR.
+# guards only the ten library packages and their one-way dependency ADR.
 dotnet pack $Solution --configuration $Configuration --output $OutputDir -p:ExcludeToolFromPack=true
 if ($LASTEXITCODE -ne 0) { throw "dotnet pack failed with exit code $LASTEXITCODE" }
 

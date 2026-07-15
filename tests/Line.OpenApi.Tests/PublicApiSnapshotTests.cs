@@ -39,6 +39,7 @@ public class PublicApiSnapshotTests
         ("Line.OpenApi.Insight", typeof(Line.OpenApi.Insight.InsightClient).Assembly),
         ("Line.OpenApi.Module", typeof(Line.OpenApi.Module.ModuleClient).Assembly),
         ("Line.OpenApi.Shop", typeof(Line.OpenApi.Shop.ShopClient).Assembly),
+        ("Line.OpenApi.ManageAudience", typeof(Line.OpenApi.ManageAudience.ManageAudienceClient).Assembly),
     };
 
     public static IEnumerable<object[]> RegisteredNames()

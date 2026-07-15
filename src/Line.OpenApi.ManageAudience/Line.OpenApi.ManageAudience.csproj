@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- manage-audience.yml。制御系(api.line.me)＋データ系(api-data.line.me)の 2 ホスト。
+       Messaging と同じ control/data 2 クライアント分離（R1）。データ系はファイルアップロード
+       2 op（multipart/form-data）。ファサード ManageAudienceClient で統合し、multipart
+       アップロードの手書きヘルパを提供する。 -->
+  <PropertyGroup>
+    <Description>LINE Manage Audience client for .NET (ManageAudienceClient facade: create/get/list/delete audience groups, click/imp retargeting, and by-file user-ID upload on the data plane). Part of the Line.OpenApi client libraries generated from the official LINE OpenAPI spec with Kiota.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Kiota.Bundle" Version="$(KiotaBundleVersion)" />
+    <!-- DI 統合: IHttpClientFactory / 名前付き HttpClient / Options -->
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.0" />
+    <ProjectReference Include="..\Line.OpenApi.Core\Line.OpenApi.Core.csproj" />
+  </ItemGroup>
+</Project>

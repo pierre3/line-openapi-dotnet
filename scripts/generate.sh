@@ -14,6 +14,7 @@ declare -A SPECS=(
   [insight.yml]="https://raw.githubusercontent.com/line/line-openapi/master/insight.yml"
   [module.yml]="https://raw.githubusercontent.com/line/line-openapi/master/module.yml"
   [shop.yml]="https://raw.githubusercontent.com/line/line-openapi/master/shop.yml"
+  [manage-audience.yml]="https://raw.githubusercontent.com/line/line-openapi/master/manage-audience.yml"
 )
 for name in "${!SPECS[@]}"; do
   [ -f "openapi/$name" ] || { echo "downloading $name"; curl -fsSL "${SPECS[$name]}" -o "openapi/$name"; }
@@ -74,5 +75,19 @@ kg generate -l CSharp -d ./openapi/shop.yml \
   -c ShopApiClient -n Line.OpenApi.Shop.Generated \
   -o ./src/Line.OpenApi.Shop/Generated \
   --exclude-backward-compatible --structured-mime-types application/json
+
+# 9) ManageAudience 制御系 (api.line.me) — /upload/byFile を除外（データ系）。
+kg generate -l CSharp -d ./openapi/manage-audience.yml \
+  --exclude-path '**/upload/byFile' \
+  -c ManageAudienceApiClient -n Line.OpenApi.ManageAudience.Generated.Api \
+  -o ./src/Line.OpenApi.ManageAudience/Generated/Api \
+  --exclude-backward-compatible --structured-mime-types application/json
+
+# 10) ManageAudience データ系 (api-data.line.me) — /upload/byFile のみ、multipart/form-data。
+kg generate -l CSharp -d ./openapi/manage-audience.yml \
+  --include-path '**/upload/byFile' \
+  -c ManageAudienceBlobApiClient -n Line.OpenApi.ManageAudience.Generated.Blob \
+  -o ./src/Line.OpenApi.ManageAudience/Generated/Blob \
+  --exclude-backward-compatible --structured-mime-types multipart/form-data --structured-mime-types application/json
 
 echo "生成完了。次: dotnet build / dotnet test"

@@ -28,5 +28,6 @@
     <ProjectReference Include="..\..\src\Line.OpenApi.Insight\Line.OpenApi.Insight.csproj" />
     <ProjectReference Include="..\..\src\Line.OpenApi.Module\Line.OpenApi.Module.csproj" />
     <ProjectReference Include="..\..\src\Line.OpenApi.Shop\Line.OpenApi.Shop.csproj" />
+    <ProjectReference Include="..\..\src\Line.OpenApi.ManageAudience\Line.OpenApi.ManageAudience.csproj" />
   </ItemGroup>
 </Project>
