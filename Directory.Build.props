@@ -23,7 +23,7 @@
        個別の Description は各 .csproj で設定。バージョンは当面パッケージ横断で統一（0.1.0-preview）。
        個別 SemVer が必要になれば各 .csproj の <Version> で上書きする。 -->
   <PropertyGroup>
-    <Version>0.1.0-preview</Version>
+    <Version>0.2.0-preview</Version>
     <Authors>pierre3</Authors>
     <Company>pierre3</Company>
     <Product>Line.OpenApi</Product>
