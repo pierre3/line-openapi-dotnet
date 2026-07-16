@@ -25,6 +25,7 @@ LINE 公開 OpenAPI 仕様から [Kiota](https://learn.microsoft.com/openapi/kio
 | `Line.OpenApi.Messaging.Webhook` | Webhook モデル＋受信グルー（`WebhookRequestParser`＝署名検証＋逆直列化） |
 | `Line.OpenApi.Liff` | LIFF アプリ管理（`LiffClient` ファサード） |
 | `Line.OpenApi.Login` | LINE Login v2.1 + OpenID Connect（`LoginClient` ファサード＝認可 URL／トークン交換／ID トークン・アクセストークン検証／プロフィール／友だち関係） |
+| `Line.OpenApi.MiniApp` | LINE MINI App サービスメッセージ＋アプリ内課金（`MiniAppClient` ファサード＝通知トークン発行/送信・IAP 予約・IAP Webhook 履歴） |
 | `Line.OpenApi.Insight` | インサイト／統計（`InsightClient` ファサード＝友だち属性・配信数・フォロワー数・メッセージイベント・リッチメニュー統計） |
 | `Line.OpenApi.ManageAudience` | オーディエンス管理（`ManageAudienceClient` ファサード＝オーディエンスグループ作成/取得/一覧/削除・click/imp リターゲ・データ系でのファイルによるユーザー ID アップロード） |
 | `Line.OpenApi.Module` | パートナー／代理店運用向けモジュールチャネル（`ModuleClient` ファサード＝detach・chat control・attach 済みモジュール一覧） |
@@ -43,6 +44,7 @@ dotnet add package Line.OpenApi.Bot
 dotnet add package Line.OpenApi.Messaging
 dotnet add package Line.OpenApi.Liff
 dotnet add package Line.OpenApi.Login
+dotnet add package Line.OpenApi.MiniApp
 dotnet add package Line.OpenApi.Insight
 dotnet add package Line.OpenApi.ManageAudience
 dotnet add package Line.OpenApi.Module
@@ -144,6 +146,35 @@ var friend  = await login.GetFriendshipStatusAsync(token.AccessToken!);   // fri
 DI: `services.AddLineLogin(o => { o.ChannelId = "…"; o.ChannelSecret = "…"; });`
 
 > ローカルでの ID トークン検証（Web=HS256／ネイティブ・LIFF=ES256+JWKS）は本リリースには含みません。当面は `VerifyIdTokenAsync`（LINE へのサーバ委譲）を使ってください。
+
+### LINE MINI App（`Line.OpenApi.MiniApp`）
+
+`MiniAppClient` は `api.line.me` 上の 2 つの独立機能（LINE MINI App は spec 非公開のため全て手書き）をカバーします。トークンは保持せず呼び出しごとに渡すため、`Line.OpenApi.ChannelAccessToken` にも `Line.OpenApi.Login` にも依存しません。
+
+```csharp
+using Line.OpenApi.MiniApp;
+
+var miniApp = new MiniAppClient();
+
+// サービスメッセージ：MINI App 内でのユーザーの操作に応じて通知する。
+// liffAccessToken はフロント側の liff.getAccessToken() で取得したもの。
+var issued = await miniApp.IssueNotificationTokenAsync("CHANNEL_ACCESS_TOKEN", liffAccessToken);
+var sent = await miniApp.SendServiceMessageAsync(
+    "CHANNEL_ACCESS_TOKEN", issued!.NotificationToken!, "order-complete_ja",
+    new Dictionary<string, string> { ["orderName"] = "Widget" });
+// sent.NotificationToken は送信毎に更新されるので、次回呼び出し用に保存する。
+
+// アプリ内課金（IAP）：購入者の user access token で予約する。
+var reserved = await miniApp.ReserveProductAsync(
+    userAccessToken, clientIp: "203.0.113.1", clientOs: "ios",
+    productId: "PRODUCT1", shopProductName: "Gold Pack");
+
+// プラットフォームの購入/返金 Webhook 履歴を取得（過去 7 日分・cursor ページング）。
+var events = await miniApp.GetWebhookEventsAsync(
+    "CHANNEL_ACCESS_TOKEN", startEpochSeconds, endEpochSeconds, pageSize: 50);
+```
+
+DI: `services.AddLineMiniApp();`（必須設定なし。許可ホストの既定を上書きする場合のみ `o => o.AllowedHosts = …` を渡す）
 
 ### インサイト／統計（`Line.OpenApi.Insight`）
 
@@ -328,6 +359,7 @@ API リファレンスは手書き公開表面の XML doc コメントから英�
 │   ├── Line.OpenApi.Messaging.Webhook/  # webhook モデル + WebhookRequestParser（受信グルー）
 │   ├── Line.OpenApi.Liff/               # LIFF + LiffClient ファサード
 │   ├── Line.OpenApi.Login/              # LINE Login v2.1 + OIDC（spec 非存在の手書き）+ LoginClient ファサード
+│   ├── Line.OpenApi.MiniApp/            # MINI App サービスメッセージ + IAP（spec 非存在の手書き）+ MiniAppClient ファサード
 │   ├── Line.OpenApi.Insight/            # インサイト／統計 + InsightClient ファサード
 │   ├── Line.OpenApi.ManageAudience/     # オーディエンス管理（制御系＋データ系）+ ManageAudienceClient ファサード
 │   ├── Line.OpenApi.Module/             # モジュールチャネル + ModuleClient ファサード

@@ -35,6 +35,7 @@ public class PublicApiSnapshotTests
         ("Line.OpenApi.Messaging", typeof(Line.OpenApi.Messaging.MessagingClient).Assembly),
         ("Line.OpenApi.Liff", typeof(Line.OpenApi.Liff.LiffClient).Assembly),
         ("Line.OpenApi.Login", typeof(Line.OpenApi.Login.LoginClient).Assembly),
+        ("Line.OpenApi.MiniApp", typeof(Line.OpenApi.MiniApp.MiniAppClient).Assembly),
         ("Line.OpenApi.Messaging.Webhook", typeof(Line.OpenApi.Messaging.Webhook.WebhookRequestParser).Assembly),
         ("Line.OpenApi.Insight", typeof(Line.OpenApi.Insight.InsightClient).Assembly),
         ("Line.OpenApi.Module", typeof(Line.OpenApi.Module.ModuleClient).Assembly),

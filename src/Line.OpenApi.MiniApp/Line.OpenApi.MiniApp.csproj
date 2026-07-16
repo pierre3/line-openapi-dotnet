@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- LINE MINI App service messages + in-app purchase (IAP) server REST. No OpenAPI spec is
+       published for LINE MINI App, so this package is entirely hand-written on top of the
+       Kiota runtime (no Generated/ code). Single REST host (api.line.me). -->
+  <PropertyGroup>
+    <Description>LINE MINI App service messages and in-app purchase (IAP) client for .NET (MiniAppClient facade: notification token issue/send, IAP product reservation, IAP webhook event history). Part of the Line.OpenApi client libraries.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Kiota.Bundle" Version="$(KiotaBundleVersion)" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.0" />
+    <ProjectReference Include="..\Line.OpenApi.Core\Line.OpenApi.Core.csproj" />
+  </ItemGroup>
+</Project>

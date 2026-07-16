@@ -1,0 +1,107 @@
+namespace Line.OpenApi.MiniApp.DependencyInjection
+{
+    public sealed class MiniAppOptions
+    {
+        public MiniAppOptions() { }
+        public string[]? AllowedHosts { get; set; }
+    }
+    public static class ServiceCollectionExtensions
+    {
+        public const string HttpClientName = "Line.OpenApi.MiniApp";
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddLineMiniApp(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, System.Action<Line.OpenApi.MiniApp.DependencyInjection.MiniAppOptions>? configure = null) { }
+    }
+}
+namespace Line.OpenApi.MiniApp
+{
+    public sealed class MiniAppClient
+    {
+        public MiniAppClient(System.Net.Http.HttpClient? httpClient = null, string[]? allowedHosts = null) { }
+        public System.Threading.Tasks.Task<Line.OpenApi.MiniApp.Models.MiniAppWebhookEventPage?> GetWebhookEventsAsync(string channelAccessToken, long startEpochSeconds, long endEpochSeconds, int pageSize, string? cursor = null, string? status = null, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task<Line.OpenApi.MiniApp.Models.NotifierToken?> IssueNotificationTokenAsync(string channelAccessToken, string liffAccessToken, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task<Line.OpenApi.MiniApp.Models.IapReserveResult?> ReserveProductAsync(string userAccessToken, string clientIp, string clientOs, string productId, string shopProductName, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task<Line.OpenApi.MiniApp.Models.NotifierToken?> SendServiceMessageAsync(string channelAccessToken, string notificationToken, string templateName, System.Collections.Generic.IReadOnlyDictionary<string, string> parameters, System.Threading.CancellationToken cancellationToken = default) { }
+    }
+}
+namespace Line.OpenApi.MiniApp.Models
+{
+    public sealed class IapErrorResponse : Microsoft.Kiota.Abstractions.ApiException, Microsoft.Kiota.Abstractions.Serialization.IParsable
+    {
+        public IapErrorResponse() { }
+        public System.Collections.Generic.List<Line.OpenApi.MiniApp.Models.MiniAppErrorDetail>? Details { get; set; }
+        public string? ErrorCode { get; set; }
+        public override string Message { get; }
+        public string? MessageText { get; set; }
+        public System.Collections.Generic.IDictionary<string, System.Action<Microsoft.Kiota.Abstractions.Serialization.IParseNode>> GetFieldDeserializers() { }
+        public void Serialize(Microsoft.Kiota.Abstractions.Serialization.ISerializationWriter writer) { }
+        public static Line.OpenApi.MiniApp.Models.IapErrorResponse CreateFromDiscriminatorValue(Microsoft.Kiota.Abstractions.Serialization.IParseNode parseNode) { }
+    }
+    public sealed class IapReserveResult : Microsoft.Kiota.Abstractions.Serialization.IParsable
+    {
+        public IapReserveResult() { }
+        public string? OrderId { get; set; }
+        public System.Collections.Generic.IDictionary<string, System.Action<Microsoft.Kiota.Abstractions.Serialization.IParseNode>> GetFieldDeserializers() { }
+        public void Serialize(Microsoft.Kiota.Abstractions.Serialization.ISerializationWriter writer) { }
+        public static Line.OpenApi.MiniApp.Models.IapReserveResult CreateFromDiscriminatorValue(Microsoft.Kiota.Abstractions.Serialization.IParseNode parseNode) { }
+    }
+    public sealed class MiniAppErrorDetail : Microsoft.Kiota.Abstractions.Serialization.IParsable
+    {
+        public MiniAppErrorDetail() { }
+        public string? Message { get; set; }
+        public string? Property { get; set; }
+        public System.Collections.Generic.IDictionary<string, System.Action<Microsoft.Kiota.Abstractions.Serialization.IParseNode>> GetFieldDeserializers() { }
+        public void Serialize(Microsoft.Kiota.Abstractions.Serialization.ISerializationWriter writer) { }
+        public static Line.OpenApi.MiniApp.Models.MiniAppErrorDetail CreateFromDiscriminatorValue(Microsoft.Kiota.Abstractions.Serialization.IParseNode parseNode) { }
+    }
+    public sealed class MiniAppWebhookEvent : Microsoft.Kiota.Abstractions.Serialization.IParsable
+    {
+        public MiniAppWebhookEvent() { }
+        public string? ChannelId { get; set; }
+        public string? OrderId { get; set; }
+        public string? ProductId { get; set; }
+        public long? PurchaseTimestamp { get; set; }
+        public string? Type { get; set; }
+        public string? UserId { get; set; }
+        public System.Collections.Generic.IDictionary<string, System.Action<Microsoft.Kiota.Abstractions.Serialization.IParseNode>> GetFieldDeserializers() { }
+        public void Serialize(Microsoft.Kiota.Abstractions.Serialization.ISerializationWriter writer) { }
+        public static Line.OpenApi.MiniApp.Models.MiniAppWebhookEvent CreateFromDiscriminatorValue(Microsoft.Kiota.Abstractions.Serialization.IParseNode parseNode) { }
+    }
+    public sealed class MiniAppWebhookEventEntry : Microsoft.Kiota.Abstractions.Serialization.IParsable
+    {
+        public MiniAppWebhookEventEntry() { }
+        public Line.OpenApi.MiniApp.Models.MiniAppWebhookEvent? Event { get; set; }
+        public string? TransactionType { get; set; }
+        public System.Collections.Generic.IDictionary<string, System.Action<Microsoft.Kiota.Abstractions.Serialization.IParseNode>> GetFieldDeserializers() { }
+        public void Serialize(Microsoft.Kiota.Abstractions.Serialization.ISerializationWriter writer) { }
+        public static Line.OpenApi.MiniApp.Models.MiniAppWebhookEventEntry CreateFromDiscriminatorValue(Microsoft.Kiota.Abstractions.Serialization.IParseNode parseNode) { }
+    }
+    public sealed class MiniAppWebhookEventPage : Microsoft.Kiota.Abstractions.Serialization.IParsable
+    {
+        public MiniAppWebhookEventPage() { }
+        public System.Collections.Generic.List<Line.OpenApi.MiniApp.Models.MiniAppWebhookEventEntry>? Events { get; set; }
+        public string? NextCursor { get; set; }
+        public System.Collections.Generic.IDictionary<string, System.Action<Microsoft.Kiota.Abstractions.Serialization.IParseNode>> GetFieldDeserializers() { }
+        public void Serialize(Microsoft.Kiota.Abstractions.Serialization.ISerializationWriter writer) { }
+        public static Line.OpenApi.MiniApp.Models.MiniAppWebhookEventPage CreateFromDiscriminatorValue(Microsoft.Kiota.Abstractions.Serialization.IParseNode parseNode) { }
+    }
+    public sealed class NotifierErrorResponse : Microsoft.Kiota.Abstractions.ApiException, Microsoft.Kiota.Abstractions.Serialization.IParsable
+    {
+        public NotifierErrorResponse() { }
+        public System.Collections.Generic.List<Line.OpenApi.MiniApp.Models.MiniAppErrorDetail>? Details { get; set; }
+        public override string Message { get; }
+        public string? MessageText { get; set; }
+        public System.Collections.Generic.IDictionary<string, System.Action<Microsoft.Kiota.Abstractions.Serialization.IParseNode>> GetFieldDeserializers() { }
+        public void Serialize(Microsoft.Kiota.Abstractions.Serialization.ISerializationWriter writer) { }
+        public static Line.OpenApi.MiniApp.Models.NotifierErrorResponse CreateFromDiscriminatorValue(Microsoft.Kiota.Abstractions.Serialization.IParseNode parseNode) { }
+    }
+    public sealed class NotifierToken : Microsoft.Kiota.Abstractions.Serialization.IParsable
+    {
+        public NotifierToken() { }
+        public long? ExpiresIn { get; set; }
+        public string? NotificationToken { get; set; }
+        public int? RemainingCount { get; set; }
+        public string? SessionId { get; set; }
+        public System.Collections.Generic.IDictionary<string, System.Action<Microsoft.Kiota.Abstractions.Serialization.IParseNode>> GetFieldDeserializers() { }
+        public void Serialize(Microsoft.Kiota.Abstractions.Serialization.ISerializationWriter writer) { }
+        public static Line.OpenApi.MiniApp.Models.NotifierToken CreateFromDiscriminatorValue(Microsoft.Kiota.Abstractions.Serialization.IParseNode parseNode) { }
+    }
+}

@@ -9,6 +9,7 @@
     <Project Path="src/Line.OpenApi.ManageAudience/Line.OpenApi.ManageAudience.csproj" />
     <Project Path="src/Line.OpenApi.Messaging.Webhook/Line.OpenApi.Messaging.Webhook.csproj" />
     <Project Path="src/Line.OpenApi.Messaging/Line.OpenApi.Messaging.csproj" />
+    <Project Path="src/Line.OpenApi.MiniApp/Line.OpenApi.MiniApp.csproj" />
     <Project Path="src/Line.OpenApi.Module/Line.OpenApi.Module.csproj" />
     <Project Path="src/Line.OpenApi.Shop/Line.OpenApi.Shop.csproj" />
   </Folder>

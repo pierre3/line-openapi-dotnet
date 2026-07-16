@@ -27,6 +27,7 @@ use case.
 | `Line.OpenApi.Messaging.Webhook` | Webhook models + receive glue (`WebhookRequestParser` = signature check + deserialization). |
 | `Line.OpenApi.Liff` | LIFF app management (`LiffClient` facade). |
 | `Line.OpenApi.Login` | LINE Login v2.1 + OpenID Connect (`LoginClient` facade). |
+| `Line.OpenApi.MiniApp` | LINE MINI App service messages + in-app purchase (`MiniAppClient` facade). |
 | `Line.OpenApi.Insight` | Insight / statistics (`InsightClient` facade). |
 | `Line.OpenApi.ManageAudience` | Audience management incl. by-file upload (`ManageAudienceClient` facade = control plane + data plane). |
 | `Line.OpenApi.Module` | Module channels for partner/agency operation (`ModuleClient` facade). |

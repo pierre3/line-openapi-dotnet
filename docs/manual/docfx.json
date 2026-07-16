@@ -12,6 +12,7 @@
             "src/Line.OpenApi.Messaging.Webhook/Line.OpenApi.Messaging.Webhook.csproj",
             "src/Line.OpenApi.Liff/Line.OpenApi.Liff.csproj",
             "src/Line.OpenApi.Login/Line.OpenApi.Login.csproj",
+            "src/Line.OpenApi.MiniApp/Line.OpenApi.MiniApp.csproj",
             "src/Line.OpenApi.Insight/Line.OpenApi.Insight.csproj",
             "src/Line.OpenApi.Module/Line.OpenApi.Module.csproj",
             "src/Line.OpenApi.Shop/Line.OpenApi.Shop.csproj",

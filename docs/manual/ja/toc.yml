@@ -10,6 +10,8 @@
   href: liff.md
 - name: LINE Login と OpenID Connect
   href: login.md
+- name: LINE MINI App
+  href: mini-app.md
 - name: インサイト（統計）
   href: insight.md
 - name: オーディエンス管理

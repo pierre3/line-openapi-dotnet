@@ -25,6 +25,7 @@ The target framework is **`net10.0` only** (netstandard2.0 / .NET Framework are 
 | `Line.OpenApi.Messaging.Webhook` | Webhook models + receive glue (`WebhookRequestParser` = signature verification + deserialization) |
 | `Line.OpenApi.Liff` | LIFF app management (`LiffClient` facade) |
 | `Line.OpenApi.Login` | LINE Login v2.1 + OpenID Connect (`LoginClient` facade = authorization URL / token exchange / ID-token & access-token verification / profile / friendship) |
+| `Line.OpenApi.MiniApp` | LINE MINI App service messages + in-app purchase (`MiniAppClient` facade = notification token issue/send, IAP product reservation, IAP webhook event history) |
 | `Line.OpenApi.Insight` | Insight / statistics (`InsightClient` facade = friend demographics, deliveries, followers, message events, rich menu insights) |
 | `Line.OpenApi.ManageAudience` | Audience management (`ManageAudienceClient` facade = create/get/list/delete audience groups, click/imp retargeting, by-file user-ID upload on the data plane) |
 | `Line.OpenApi.Module` | Module channels for partner/agency operation (`ModuleClient` facade = detach, chat control, list attached modules) |
@@ -43,6 +44,7 @@ dotnet add package Line.OpenApi.Bot
 dotnet add package Line.OpenApi.Messaging
 dotnet add package Line.OpenApi.Liff
 dotnet add package Line.OpenApi.Login
+dotnet add package Line.OpenApi.MiniApp
 dotnet add package Line.OpenApi.Insight
 dotnet add package Line.OpenApi.ManageAudience
 dotnet add package Line.OpenApi.Module
@@ -144,6 +146,35 @@ var friend  = await login.GetFriendshipStatusAsync(token.AccessToken!);   // fri
 DI: `services.AddLineLogin(o => { o.ChannelId = "…"; o.ChannelSecret = "…"; });`
 
 > Local ID-token verification (HS256 for web / ES256 + JWKS for native/LIFF) is not included in this release; use `VerifyIdTokenAsync` (server-side delegation) for now.
+
+### LINE MINI App (`Line.OpenApi.MiniApp`)
+
+`MiniAppClient` covers two independent feature areas on `api.line.me`, both hand-written (LINE publishes no OpenAPI spec for MINI App). Tokens are passed per call, not stored, so this package depends on neither `Line.OpenApi.ChannelAccessToken` nor `Line.OpenApi.Login`.
+
+```csharp
+using Line.OpenApi.MiniApp;
+
+var miniApp = new MiniAppClient();
+
+// Service messages: notify a user in response to an action they took in the MINI App.
+// liffAccessToken comes from the front-end's liff.getAccessToken().
+var issued = await miniApp.IssueNotificationTokenAsync("CHANNEL_ACCESS_TOKEN", liffAccessToken);
+var sent = await miniApp.SendServiceMessageAsync(
+    "CHANNEL_ACCESS_TOKEN", issued!.NotificationToken!, "order-complete_en",
+    new Dictionary<string, string> { ["orderName"] = "Widget" });
+// sent.NotificationToken is renewed on every send; save it for the next call.
+
+// In-app purchase (IAP): reserve with the purchasing user's user access token.
+var reserved = await miniApp.ReserveProductAsync(
+    userAccessToken, clientIp: "203.0.113.1", clientOs: "ios",
+    productId: "PRODUCT1", shopProductName: "Gold Pack");
+
+// Read the platform's purchase/refund webhook history (past 7 days, cursor-paginated).
+var events = await miniApp.GetWebhookEventsAsync(
+    "CHANNEL_ACCESS_TOKEN", startEpochSeconds, endEpochSeconds, pageSize: 50);
+```
+
+DI: `services.AddLineMiniApp();` (no required configuration; pass `o => o.AllowedHosts = …` only to override the default host allow list).
 
 ### Insight / statistics (`Line.OpenApi.Insight`)
 
@@ -328,6 +359,7 @@ The API reference is auto-generated in English from the XML doc comments on the 
 │   ├── Line.OpenApi.Messaging.Webhook/  # webhook models + WebhookRequestParser (receive glue)
 │   ├── Line.OpenApi.Liff/               # LIFF + LiffClient facade
 │   ├── Line.OpenApi.Login/              # LINE Login v2.1 + OIDC (hand-written, no spec) + LoginClient facade
+│   ├── Line.OpenApi.MiniApp/            # MINI App service messages + IAP (hand-written, no spec) + MiniAppClient facade
 │   ├── Line.OpenApi.Insight/            # Insight / statistics + InsightClient facade
 │   ├── Line.OpenApi.ManageAudience/     # audience management (control + data plane) + ManageAudienceClient facade
 │   ├── Line.OpenApi.Module/             # Module channels + ModuleClient facade

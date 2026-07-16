@@ -37,6 +37,7 @@ $expectedInternalDeps = @{
     'Line.OpenApi.Messaging.Webhook'   = @('Line.OpenApi.Core')
     'Line.OpenApi.Liff'                = @('Line.OpenApi.Core')
     'Line.OpenApi.Login'               = @('Line.OpenApi.Core')
+    'Line.OpenApi.MiniApp'             = @('Line.OpenApi.Core')
     'Line.OpenApi.Insight'             = @('Line.OpenApi.Core')
     'Line.OpenApi.Module'              = @('Line.OpenApi.Core')
     'Line.OpenApi.Shop'                = @('Line.OpenApi.Core')

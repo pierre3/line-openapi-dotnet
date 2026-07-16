@@ -10,6 +10,8 @@
   href: liff.md
 - name: LINE Login & OpenID Connect
   href: login.md
+- name: LINE MINI App
+  href: mini-app.md
 - name: Insight (Statistics)
   href: insight.md
 - name: Manage Audience
