@@ -14,7 +14,7 @@
 
     <!-- Independent release cadence from the library packages (spec §7):
          the tool depends on evolving tooling and is versioned/tagged (cli-v*) on its own. -->
-    <Version>0.1.0-preview</Version>
+    <Version>0.2.0-preview</Version>
 
     <!-- Application, not public API surface: no XML doc file. -->
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
