@@ -26,7 +26,7 @@ LINE Platform をローカル PC から操作する **`dotnet` グローバル�
 
 ## インストール
 
-> NuGet.org への公開は準備中です（`0.1.0-preview`）。公開後は次のように導入できます。
+> NuGet.org 公開済み: [![NuGet](https://img.shields.io/nuget/v/Line.OpenApi.Tools.svg)](https://www.nuget.org/packages/Line.OpenApi.Tools)
 
 ```sh
 dotnet tool install -g Line.OpenApi.Tools

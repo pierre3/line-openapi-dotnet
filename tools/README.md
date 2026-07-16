@@ -26,7 +26,7 @@ Target framework: **`net10.0`**.
 
 ## Installation
 
-> Publishing to NuGet.org is in preparation (`0.1.0-preview`). Once published:
+> Published on NuGet.org: [![NuGet](https://img.shields.io/nuget/v/Line.OpenApi.Tools.svg)](https://www.nuget.org/packages/Line.OpenApi.Tools)
 
 ```sh
 dotnet tool install -g Line.OpenApi.Tools

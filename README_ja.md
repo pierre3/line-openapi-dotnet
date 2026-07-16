@@ -5,6 +5,7 @@
 [![CI](https://github.com/pierre3/line-openapi-dotnet/actions/workflows/ci.yml/badge.svg)](https://github.com/pierre3/line-openapi-dotnet/actions/workflows/ci.yml)
 [![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://pierre3.github.io/line-openapi-dotnet/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/pierre3/line-openapi-dotnet/blob/main/LICENSE)
+[![NuGet](https://img.shields.io/badge/NuGet-Line.OpenApi.*-004880?logo=nuget)](https://www.nuget.org/packages?q=tags%3A%22LINE-API%22)
 
 LINE 公開 OpenAPI 仕様から [Kiota](https://learn.microsoft.com/openapi/kiota/) で生成した .NET/C# クライアントに、利用シーン単位の手書きファサード／DI／受信グルーを重ねたクライアントライブラリ群です。
 
@@ -19,22 +20,22 @@ LINE 公開 OpenAPI 仕様から [Kiota](https://learn.microsoft.com/openapi/kio
 
 | パッケージ | 役割 |
 |---|---|
-| `Line.OpenApi.Core` | 共通基盤（認証プロバイダ・Webhook 署名検証・許可ホスト） |
-| `Line.OpenApi.ChannelAccessToken` | チャネルアクセストークン発行（v2.1 JWT / v3 ステートレス・更新型プロバイダ） |
-| `Line.OpenApi.Messaging` | メッセージ送受信（`MessagingClient` ファサード＝制御系＋データ系 2 クライアント統合） |
-| `Line.OpenApi.Messaging.Webhook` | Webhook モデル＋受信グルー（`WebhookRequestParser`＝署名検証＋逆直列化） |
-| `Line.OpenApi.Liff` | LIFF アプリ管理（`LiffClient` ファサード） |
-| `Line.OpenApi.Login` | LINE Login v2.1 + OpenID Connect（`LoginClient` ファサード＝認可 URL／トークン交換／ID トークン・アクセストークン検証／プロフィール／友だち関係） |
-| `Line.OpenApi.MiniApp` | LINE MINI App サービスメッセージ＋アプリ内課金（`MiniAppClient` ファサード＝通知トークン発行/送信・IAP 予約・IAP Webhook 履歴） |
-| `Line.OpenApi.Insight` | インサイト／統計（`InsightClient` ファサード＝友だち属性・配信数・フォロワー数・メッセージイベント・リッチメニュー統計） |
-| `Line.OpenApi.ManageAudience` | オーディエンス管理（`ManageAudienceClient` ファサード＝オーディエンスグループ作成/取得/一覧/削除・click/imp リターゲ・データ系でのファイルによるユーザー ID アップロード） |
-| `Line.OpenApi.Module` | パートナー／代理店運用向けモジュールチャネル（`ModuleClient` ファサード＝detach・chat control・attach 済みモジュール一覧） |
-| `Line.OpenApi.Shop` | ミッションスタンプ送信（`ShopClient` ファサード） |
-| `Line.OpenApi.Bot` | 便宜メタパッケージ（任意）＝Bot 一式を 1 参照で導入（`Messaging` + `Messaging.Webhook` + `ChannelAccessToken` を束ねる。コードなし・依存束ねのみ） |
+| `Line.OpenApi.Core` [![NuGet](https://img.shields.io/nuget/v/Line.OpenApi.Core.svg)](https://www.nuget.org/packages/Line.OpenApi.Core) | 共通基盤（認証プロバイダ・Webhook 署名検証・許可ホスト） |
+| `Line.OpenApi.ChannelAccessToken` [![NuGet](https://img.shields.io/nuget/v/Line.OpenApi.ChannelAccessToken.svg)](https://www.nuget.org/packages/Line.OpenApi.ChannelAccessToken) | チャネルアクセストークン発行（v2.1 JWT / v3 ステートレス・更新型プロバイダ） |
+| `Line.OpenApi.Messaging` [![NuGet](https://img.shields.io/nuget/v/Line.OpenApi.Messaging.svg)](https://www.nuget.org/packages/Line.OpenApi.Messaging) | メッセージ送受信（`MessagingClient` ファサード＝制御系＋データ系 2 クライアント統合） |
+| `Line.OpenApi.Messaging.Webhook` [![NuGet](https://img.shields.io/nuget/v/Line.OpenApi.Messaging.Webhook.svg)](https://www.nuget.org/packages/Line.OpenApi.Messaging.Webhook) | Webhook モデル＋受信グルー（`WebhookRequestParser`＝署名検証＋逆直列化） |
+| `Line.OpenApi.Liff` [![NuGet](https://img.shields.io/nuget/v/Line.OpenApi.Liff.svg)](https://www.nuget.org/packages/Line.OpenApi.Liff) | LIFF アプリ管理（`LiffClient` ファサード） |
+| `Line.OpenApi.Login` [![NuGet](https://img.shields.io/nuget/v/Line.OpenApi.Login.svg)](https://www.nuget.org/packages/Line.OpenApi.Login) | LINE Login v2.1 + OpenID Connect（`LoginClient` ファサード＝認可 URL／トークン交換／ID トークン・アクセストークン検証／プロフィール／友だち関係） |
+| `Line.OpenApi.MiniApp` [![NuGet](https://img.shields.io/nuget/v/Line.OpenApi.MiniApp.svg)](https://www.nuget.org/packages/Line.OpenApi.MiniApp) | LINE MINI App サービスメッセージ＋アプリ内課金（`MiniAppClient` ファサード＝通知トークン発行/送信・IAP 予約・IAP Webhook 履歴） |
+| `Line.OpenApi.Insight` [![NuGet](https://img.shields.io/nuget/v/Line.OpenApi.Insight.svg)](https://www.nuget.org/packages/Line.OpenApi.Insight) | インサイト／統計（`InsightClient` ファサード＝友だち属性・配信数・フォロワー数・メッセージイベント・リッチメニュー統計） |
+| `Line.OpenApi.ManageAudience` [![NuGet](https://img.shields.io/nuget/v/Line.OpenApi.ManageAudience.svg)](https://www.nuget.org/packages/Line.OpenApi.ManageAudience) | オーディエンス管理（`ManageAudienceClient` ファサード＝オーディエンスグループ作成/取得/一覧/削除・click/imp リターゲ・データ系でのファイルによるユーザー ID アップロード） |
+| `Line.OpenApi.Module` [![NuGet](https://img.shields.io/nuget/v/Line.OpenApi.Module.svg)](https://www.nuget.org/packages/Line.OpenApi.Module) | パートナー／代理店運用向けモジュールチャネル（`ModuleClient` ファサード＝detach・chat control・attach 済みモジュール一覧） |
+| `Line.OpenApi.Shop` [![NuGet](https://img.shields.io/nuget/v/Line.OpenApi.Shop.svg)](https://www.nuget.org/packages/Line.OpenApi.Shop) | ミッションスタンプ送信（`ShopClient` ファサード） |
+| `Line.OpenApi.Bot` [![NuGet](https://img.shields.io/nuget/v/Line.OpenApi.Bot.svg)](https://www.nuget.org/packages/Line.OpenApi.Bot) | 便宜メタパッケージ（任意）＝Bot 一式を 1 参照で導入（`Messaging` + `Messaging.Webhook` + `ChannelAccessToken` を束ねる。コードなし・依存束ねのみ） |
 
 ## インストール
 
-> NuGet.org への公開は準備中です（現在 `0.1.0-preview`）。公開後は次のように参照できます。
+> 全パッケージ NuGet.org 公開済み（現在 `0.2.0-preview`）。[`Line.OpenApi.*` パッケージ一覧](https://www.nuget.org/packages?q=tags%3A%22LINE-API%22)。
 
 ```sh
 # Bot 一式（送信＋受信＋トークン発行）をまとめて導入

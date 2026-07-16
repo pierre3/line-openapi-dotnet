@@ -5,6 +5,7 @@
 [![CI](https://github.com/pierre3/line-openapi-dotnet/actions/workflows/ci.yml/badge.svg)](https://github.com/pierre3/line-openapi-dotnet/actions/workflows/ci.yml)
 [![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://pierre3.github.io/line-openapi-dotnet/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/pierre3/line-openapi-dotnet/blob/main/LICENSE)
+[![NuGet](https://img.shields.io/badge/NuGet-Line.OpenApi.*-004880?logo=nuget)](https://www.nuget.org/packages?q=tags%3A%22LINE-API%22)
 
 A set of .NET/C# client libraries generated from the official LINE OpenAPI specifications with [Kiota](https://learn.microsoft.com/openapi/kiota/), layered with hand-written facades / DI / receive glue organized by usage scenario.
 
@@ -19,22 +20,22 @@ The target framework is **`net10.0` only** (netstandard2.0 / .NET Framework are 
 
 | Package | Role |
 |---|---|
-| `Line.OpenApi.Core` | Common foundation (authentication providers, webhook signature verification, allowed hosts) |
-| `Line.OpenApi.ChannelAccessToken` | Channel access token issuance (v2.1 JWT / v3 stateless, refreshing provider) |
-| `Line.OpenApi.Messaging` | Messaging (`MessagingClient` facade = control-plane + data-plane clients unified) |
-| `Line.OpenApi.Messaging.Webhook` | Webhook models + receive glue (`WebhookRequestParser` = signature verification + deserialization) |
-| `Line.OpenApi.Liff` | LIFF app management (`LiffClient` facade) |
-| `Line.OpenApi.Login` | LINE Login v2.1 + OpenID Connect (`LoginClient` facade = authorization URL / token exchange / ID-token & access-token verification / profile / friendship) |
-| `Line.OpenApi.MiniApp` | LINE MINI App service messages + in-app purchase (`MiniAppClient` facade = notification token issue/send, IAP product reservation, IAP webhook event history) |
-| `Line.OpenApi.Insight` | Insight / statistics (`InsightClient` facade = friend demographics, deliveries, followers, message events, rich menu insights) |
-| `Line.OpenApi.ManageAudience` | Audience management (`ManageAudienceClient` facade = create/get/list/delete audience groups, click/imp retargeting, by-file user-ID upload on the data plane) |
-| `Line.OpenApi.Module` | Module channels for partner/agency operation (`ModuleClient` facade = detach, chat control, list attached modules) |
-| `Line.OpenApi.Shop` | Mission sticker sending (`ShopClient` facade) |
-| `Line.OpenApi.Bot` | Convenience meta-package (optional) = the full Bot set in a single reference (bundles `Messaging` + `Messaging.Webhook` + `ChannelAccessToken`; no code, dependencies only) |
+| `Line.OpenApi.Core` [![NuGet](https://img.shields.io/nuget/v/Line.OpenApi.Core.svg)](https://www.nuget.org/packages/Line.OpenApi.Core) | Common foundation (authentication providers, webhook signature verification, allowed hosts) |
+| `Line.OpenApi.ChannelAccessToken` [![NuGet](https://img.shields.io/nuget/v/Line.OpenApi.ChannelAccessToken.svg)](https://www.nuget.org/packages/Line.OpenApi.ChannelAccessToken) | Channel access token issuance (v2.1 JWT / v3 stateless, refreshing provider) |
+| `Line.OpenApi.Messaging` [![NuGet](https://img.shields.io/nuget/v/Line.OpenApi.Messaging.svg)](https://www.nuget.org/packages/Line.OpenApi.Messaging) | Messaging (`MessagingClient` facade = control-plane + data-plane clients unified) |
+| `Line.OpenApi.Messaging.Webhook` [![NuGet](https://img.shields.io/nuget/v/Line.OpenApi.Messaging.Webhook.svg)](https://www.nuget.org/packages/Line.OpenApi.Messaging.Webhook) | Webhook models + receive glue (`WebhookRequestParser` = signature verification + deserialization) |
+| `Line.OpenApi.Liff` [![NuGet](https://img.shields.io/nuget/v/Line.OpenApi.Liff.svg)](https://www.nuget.org/packages/Line.OpenApi.Liff) | LIFF app management (`LiffClient` facade) |
+| `Line.OpenApi.Login` [![NuGet](https://img.shields.io/nuget/v/Line.OpenApi.Login.svg)](https://www.nuget.org/packages/Line.OpenApi.Login) | LINE Login v2.1 + OpenID Connect (`LoginClient` facade = authorization URL / token exchange / ID-token & access-token verification / profile / friendship) |
+| `Line.OpenApi.MiniApp` [![NuGet](https://img.shields.io/nuget/v/Line.OpenApi.MiniApp.svg)](https://www.nuget.org/packages/Line.OpenApi.MiniApp) | LINE MINI App service messages + in-app purchase (`MiniAppClient` facade = notification token issue/send, IAP product reservation, IAP webhook event history) |
+| `Line.OpenApi.Insight` [![NuGet](https://img.shields.io/nuget/v/Line.OpenApi.Insight.svg)](https://www.nuget.org/packages/Line.OpenApi.Insight) | Insight / statistics (`InsightClient` facade = friend demographics, deliveries, followers, message events, rich menu insights) |
+| `Line.OpenApi.ManageAudience` [![NuGet](https://img.shields.io/nuget/v/Line.OpenApi.ManageAudience.svg)](https://www.nuget.org/packages/Line.OpenApi.ManageAudience) | Audience management (`ManageAudienceClient` facade = create/get/list/delete audience groups, click/imp retargeting, by-file user-ID upload on the data plane) |
+| `Line.OpenApi.Module` [![NuGet](https://img.shields.io/nuget/v/Line.OpenApi.Module.svg)](https://www.nuget.org/packages/Line.OpenApi.Module) | Module channels for partner/agency operation (`ModuleClient` facade = detach, chat control, list attached modules) |
+| `Line.OpenApi.Shop` [![NuGet](https://img.shields.io/nuget/v/Line.OpenApi.Shop.svg)](https://www.nuget.org/packages/Line.OpenApi.Shop) | Mission sticker sending (`ShopClient` facade) |
+| `Line.OpenApi.Bot` [![NuGet](https://img.shields.io/nuget/v/Line.OpenApi.Bot.svg)](https://www.nuget.org/packages/Line.OpenApi.Bot) | Convenience meta-package (optional) = the full Bot set in a single reference (bundles `Messaging` + `Messaging.Webhook` + `ChannelAccessToken`; no code, dependencies only) |
 
 ## Installation
 
-> Publishing to NuGet.org is in preparation (currently `0.1.0-preview`). Once published:
+> All packages are published on NuGet.org (currently `0.2.0-preview`). See [all `Line.OpenApi.*` packages](https://www.nuget.org/packages?q=tags%3A%22LINE-API%22).
 
 ```sh
 # Install the full Bot set (send + receive + token issuance) at once
