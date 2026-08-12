@@ -35,7 +35,7 @@ LINE 公開 OpenAPI 仕様から [Kiota](https://learn.microsoft.com/openapi/kio
 
 ## インストール
 
-> 全パッケージ NuGet.org 公開済み（現在 `0.2.0-preview`）。[`Line.OpenApi.*` パッケージ一覧](https://www.nuget.org/packages?q=tags%3A%22LINE-API%22)。
+> 全パッケージ NuGet.org 公開済み（現在 `1.0.0`）。[`Line.OpenApi.*` パッケージ一覧](https://www.nuget.org/packages?q=tags%3A%22LINE-API%22)。
 
 ```sh
 # Bot 一式（送信＋受信＋トークン発行）をまとめて導入
@@ -308,6 +308,18 @@ line mcp                                   # MCP サーバとして起動
 - **`Line.OpenApi.Samples.Webhook`** — minimal API の Webhook 受信＋エコー返信（dev トンネルでライブデモ）
 
 実行手順・環境変数・dev トンネル設定は [`samples/README_ja.md`](https://github.com/pierre3/line-openapi-dotnet/blob/main/samples/README_ja.md) を参照してください。
+
+## チュートリアル
+
+実地で一通り動かす手引きとして、コンパニオンプロジェクト
+**[pierre3/line-companion-bot](https://github.com/pierre3/line-companion-bot)** を用意しています。
+バーチャルペット育成 LINE ボットと LINE MINI App ショップを組み合わせ、`Line.OpenApi.*` ライブラリ群を
+一体で動かす題材です（メッセージ送受信 / Webhook / リッチメニュー / MINI App サービスメッセージ＋アプリ内課金）。
+バイリンガルのチュートリアルが `dotnet new` からエンドツーエンドの一連の流れまでを 1 章ずつ実装していき、
+LINE Developers Console の設定・dev トンネルの構成・`line` CLI によるリッチメニュー登録までカバーします。
+
+- チュートリアル（英語）: [`docs/manual/en/`](https://github.com/pierre3/line-companion-bot/blob/main/docs/manual/en/README.md)
+- チュートリアル（日本語）: [`docs/manual/ja/`](https://github.com/pierre3/line-companion-bot/blob/main/docs/manual/ja/README.md)
 
 ## ソースからのビルド
 

@@ -35,7 +35,7 @@ The target framework is **`net10.0` only** (netstandard2.0 / .NET Framework are 
 
 ## Installation
 
-> All packages are published on NuGet.org (currently `0.2.0-preview`). See [all `Line.OpenApi.*` packages](https://www.nuget.org/packages?q=tags%3A%22LINE-API%22).
+> All packages are published on NuGet.org (currently `1.0.0`). See [all `Line.OpenApi.*` packages](https://www.nuget.org/packages?q=tags%3A%22LINE-API%22).
 
 ```sh
 # Install the full Bot set (send + receive + token issuance) at once
@@ -308,6 +308,19 @@ Runnable demo apps are included under `samples/` (not part of the NuGet packages
 - **`Line.OpenApi.Samples.Webhook`** — minimal API webhook receiver + echo reply (live demo via a dev tunnel)
 
 See [`samples/README.md`](https://github.com/pierre3/line-openapi-dotnet/blob/main/samples/README.md) for run steps, environment variables, and dev tunnel setup.
+
+## Tutorial
+
+For a hands-on, end-to-end walkthrough, see the companion project
+**[pierre3/line-companion-bot](https://github.com/pierre3/line-companion-bot)** — a virtual
+companion-raising LINE bot combined with a LINE MINI App shop, built to exercise the
+`Line.OpenApi.*` libraries as a whole (Messaging / Webhook / Rich Menu / MINI App service messages +
+In-App Purchase). Its bilingual tutorial builds the app one chapter at a time, from `dotnet new` to
+the full end-to-end loop, and covers LINE Developers Console setup, dev tunnel configuration, and
+the rich-menu registration flow via the `line` CLI.
+
+- Tutorial (English): [`docs/manual/en/`](https://github.com/pierre3/line-companion-bot/blob/main/docs/manual/en/README.md)
+- Tutorial (日本語): [`docs/manual/ja/`](https://github.com/pierre3/line-companion-bot/blob/main/docs/manual/ja/README.md)
 
 ## Build from source
 
