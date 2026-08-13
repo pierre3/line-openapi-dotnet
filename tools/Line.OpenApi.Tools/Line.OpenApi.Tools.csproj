@@ -13,8 +13,8 @@
     <Description>Local CLI and MCP tool for the LINE Platform, built on the Line.OpenApi client libraries. Exposes token management, message send / bot lookup, webhook development helpers, and LIFF management both as CLI subcommands and as MCP server tools.</Description>
 
     <!-- Independent release cadence from the library packages (spec §7):
-         the tool depends on evolving tooling and is versioned/tagged (cli-v*) on its own. -->
-    <Version>1.0.0</Version>
+         the tool depends on evolving tooling and is versioned/tagged (tools-v*) on its own. -->
+    <Version>1.1.0</Version>
 
     <!-- Application, not public API surface: no XML doc file. -->
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
