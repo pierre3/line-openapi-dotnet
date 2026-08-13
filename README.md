@@ -347,6 +347,7 @@ Generated code lives under `src/**/Generated/` (`kiota-lock.json` is committed).
 ## Documentation
 
 - **📖 User manual (published): https://pierre3.github.io/line-openapi-dotnet/** — conceptual articles (English / Japanese) plus the English API reference.
+- Changelog: [`CHANGELOG.md`](https://github.com/pierre3/line-openapi-dotnet/blob/main/CHANGELOG.md)
 - Design: [`docs/LINE-dotnet-client-design.md`](https://github.com/pierre3/line-openapi-dotnet/blob/main/docs/LINE-dotnet-client-design.md)
 - The manual is generated with [DocFX](https://dotnet.github.io/docfx/) into `docs/manual/` and published to GitHub Pages by the `docs` workflow. DocFX is pinned as a local tool (`.config/dotnet-tools.json`); build it locally with:
 

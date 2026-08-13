@@ -346,6 +346,7 @@ bash scripts/generate.sh      # macOS / Linux
 ## ドキュメント
 
 - **📖 ユーザーマニュアル（公開中）: https://pierre3.github.io/line-openapi-dotnet/** — 概念記事（英語 / 日本語）＋英語 API リファレンス。
+- 変更履歴: [`CHANGELOG_ja.md`](https://github.com/pierre3/line-openapi-dotnet/blob/main/CHANGELOG_ja.md)
 - 設計方針: [`docs/LINE-dotnet-client-design.md`](https://github.com/pierre3/line-openapi-dotnet/blob/main/docs/LINE-dotnet-client-design.md)
 - マニュアルは [DocFX](https://dotnet.github.io/docfx/) で `docs/manual/` に生成し、`docs` ワークフローで GitHub Pages へ発行します。DocFX はローカルツール（`.config/dotnet-tools.json`）としてピン留め済み。ローカルビルドは以下:
 
