@@ -74,6 +74,25 @@ internal sealed class LiffCommands
         });
     }
 
+    [Command("update-url", Description = "Update only a LIFF app's endpoint URL (view.url). Must be https. Use 'liff list' to find the id.")]
+    public Task<int> UpdateUrl(GlobalOptions g,
+        [Argument(Description = "LIFF app id.")] string liffId,
+        [Option("url", Description = "New endpoint URL (absolute https).")] string url)
+    {
+        return _runtime.ExecuteAsync(g, async () =>
+        {
+            await _liff.UpdateUrlAsync(_runtime.Resolve(g), liffId, url, CancellationToken.None);
+            if (g.Json)
+            {
+                Json.Print(new { liffId, url, updated = true });
+            }
+            else
+            {
+                Console.WriteLine($"updated {liffId} url = {url}");
+            }
+        });
+    }
+
     [Command("delete", Description = "Delete a LIFF app.")]
     public Task<int> Delete(GlobalOptions g, [Argument(Description = "LIFF app id.")] string liffId)
     {

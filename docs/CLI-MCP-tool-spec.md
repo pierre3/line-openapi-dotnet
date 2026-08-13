@@ -110,8 +110,13 @@ src/Line.OpenApi.Tools/                 (PackAsTool, ToolCommandName = line, Pac
 | `webhook listen --port <n> [--secret <s>]` | ローカル受信サーバ。署名検証しつつ受信イベントを整形表示（トンネル併用） | ✕（長時間常駐のため CLI 専用） |
 | `webhook verify --body <file> --signature <sig> [--secret <s>]` | 保存ペイロードの署名検証＋逆直列化（イベント要約表示） | ○ |
 | `webhook replay --body <file> --to <url>` | 保存イベントを指定 URL へ再送（アプリ側デバッグ） | ○ |
+| `webhook get-endpoint` | チャネルの Webhook エンドポイント URL / active 状態を表示 | ○（read） |
+| `webhook set-endpoint --url <url>` | Webhook エンドポイント URL を設定（dev トンネル URL の貼り替え自動化）。https 必須 | ○（write） |
+| `webhook test-endpoint [--url <url>]` | LINE から実エンドポイントへテスト配信し到達可否を返す（url 省略時は登録済みをテスト） | ○（read／診断） |
 
 実体は `WebhookRequestParser`（署名検証＝Core の `WebhookSignatureValidator`、逆直列化＝自己完結の `KiotaJsonSerializer` 非依存経路）。`listen`/`verify` はこの Parser を共有。
+
+**endpoint 3 コマンド（get/set/test）** は署名検証系（channel secret）と別軸で、messaging-api の control-plane 操作＝channel access token 認証。実体は生成 `MessagingClient.Api.V2.Bot.Channel.Webhook.Endpoint`/`.Test`（R1 はファサードが解決済み）。サービス層は既存の control-plane クライアントを持つ `MessageService` に相乗り（`WebhookService` は資格情報非依存・自己完結の設計特性を温存するため足さない）。set/test の url は絶対 https を要求し、外れれば送信前に `MessageInputException`（exit 2）。set は「LINE 側に保存する自チャネル設定 URL の書き込み」で `replay` のような任意ホスト直 POST ではないため SSRF ループバック制限は不要。
 
 **トンネル（確定）:** cloudflared / ngrok 等の外部トンネルは**バンドルせずドキュメント案内のみ**。CLI の責務は「ローカルで受信・署名検証・整形表示」に限定し、トンネルの張り方は手順とコマンド例をマニュアルに載せる（外部ツールのライセンス・更新追従・プラットフォーム差を抱え込まない）。
 
@@ -122,17 +127,21 @@ src/Line.OpenApi.Tools/                 (PackAsTool, ToolCommandName = line, Pac
 
 | コマンド | 説明 | 実体 |
 |---|---|---|
-| `liff list` | アプリ一覧 | `LiffClient.GetAppsAsync` |
+| `liff list` | アプリ一覧（liffId・URL を含む＝ID 取得はこれで完結） | `LiffClient.GetAppsAsync` |
 | `liff add --file <app.json>` | 追加 | `LiffClient.AddAppAsync` |
-| `liff update <liffId> --file <app.json>` | 更新 | `LiffClient.UpdateAppAsync` |
+| `liff update <liffId> --file <app.json>` | 更新（フル定義 JSON） | `LiffClient.UpdateAppAsync` |
+| `liff update-url <liffId> --url <url>` | エンドポイント URL（`view.url`）のみ部分更新（dev トンネル貼り替え）。https 必須 | `LiffClient.UpdateAppAsync`（`view.url` のみ） |
 | `liff delete <liffId>` | 削除 | `LiffClient.DeleteAppAsync` |
+
+`liff update-url` は LINE の部分更新（指定プロパティのみ更新）を使い、`UpdateLiffAppRequest { View = { Url } }` だけを送る。url は絶対 https を要求（送信前に `MessageInputException` / exit 2）。
 
 ### 4.5 MCP ツール表面
 
 CLI コマンドのうち **`webhook listen` を除く**すべてを MCP ツールとして公開する。命名は例外なく `line_<area>_<verb>`（例: `line_message_push`、`line_bot_info`、`line_token_issue`、`line_liff_list`、`line_webhook_verify`）。CLI のトップレベル別名（`line push` 等）は MCP には持ち込まない。各ツールに `[Description]` で LLM 可読な説明と引数説明を付す。
 
-- **破壊的/送信系**（push/multicast/broadcast/reply/liff add・update・delete/token revoke/webhook replay）は description に副作用を明記し、可能なら MCP のツール注釈（destructive/idempotent 等）を付与。
-- **既定は全ツール有効**。安全側運用のため `line mcp --read-only` で読み取り系（`bot info`/`bot quota`/`bot profile`/`liff list`/`token verify`/`webhook verify`/`message schema`）のみに絞れるフラグを設ける。
+- **破壊的/送信系**（push/multicast/broadcast/reply/liff add・update・update-url・delete/token revoke/webhook replay/webhook set-endpoint）は description に副作用を明記し、可能なら MCP のツール注釈（destructive/idempotent 等）を付与。
+- **既定は全ツール有効**。安全側運用のため `line mcp --read-only` で読み取り系（`bot info`/`bot quota`/`bot profile`/`liff list`/`token verify`/`webhook verify`/`webhook get-endpoint`/`webhook test-endpoint`/`message schema` 等）のみに絞れるフラグを設ける。
+- **Webhook endpoint / LIFF url（MCP）:** `line_webhook_get_endpoint`・`line_webhook_test_endpoint`（read）／`line_webhook_set_endpoint`・`line_liff_update_url`（write。副作用を description に明記）。set/update_url の url は絶対 https 必須。LIFF の liffId は `line_liff_list` で取得できるため MCP だけで貼り替えループが完結する。
 - **`token issue` のシークレット非露出（確定・§8-1）:** MCP のツール戻り値はモデル文脈（プロバイダ送信・会話履歴・ログ）へ載るため、**生のチャネルアクセストークンを MCP 経由で返さない**。
   - **既定（C）:** `line_token_issue` は発行したトークンを**ローカルのプロファイルへ保存**し、戻り値はメタのみ = `tokenType`（v2.1 / stateless）/ `expiresIn` / `keyId` / `maskedToken`（末尾数桁のみ、例 `…AbCd`）/ `storedProfile`。以後の送信系ツール（`line_message_push` 等）はこの `storedProfile` を参照して動作するため、エージェントは秘密値に触れず「送信できる能力（capability handle）」だけを得る。
   - **明示的な逃げ道（B）:** サーバ起動フラグ `line mcp --allow-secret-output`（既定 off）を立てたときのみ、`reveal: true` 付き呼び出しで生トークンを返す。人が値を別アプリ設定へ貼るケース向け。ツール description に露出リスクを明記する。

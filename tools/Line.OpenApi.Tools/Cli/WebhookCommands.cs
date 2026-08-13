@@ -14,11 +14,13 @@ internal sealed class WebhookCommands
 {
     private readonly CliRuntime _runtime;
     private readonly WebhookService _webhook;
+    private readonly MessageService _messages;
 
-    public WebhookCommands(CliRuntime runtime, WebhookService webhook)
+    public WebhookCommands(CliRuntime runtime, WebhookService webhook, MessageService messages)
     {
         _runtime = runtime;
         _webhook = webhook;
+        _messages = messages;
     }
 
     [Command("verify", Description = "Verify a stored webhook payload's signature and summarize its events.")]
@@ -68,6 +70,66 @@ internal sealed class WebhookCommands
             else
             {
                 Console.WriteLine($"{result.StatusCode} {result.ReasonPhrase}");
+            }
+        });
+    }
+
+    [Command("get-endpoint", Description = "Show the channel's configured webhook endpoint URL and whether it is active.")]
+    public Task<int> GetEndpoint(GlobalOptions g)
+    {
+        return _runtime.ExecuteAsync(g, async () =>
+        {
+            var info = await _messages.GetWebhookEndpointAsync(_runtime.Resolve(g), CancellationToken.None);
+            if (g.Json)
+            {
+                Json.Print(info);
+            }
+            else
+            {
+                Console.WriteLine($"endpoint: {info.Endpoint ?? "(not set)"}");
+                Console.WriteLine($"active  : {(info.Active?.ToString() ?? "n/a")}");
+            }
+        });
+    }
+
+    [Command("set-endpoint", Description = "Set the channel's webhook endpoint URL (e.g. a fresh dev-tunnel URL). Must be https.")]
+    public Task<int> SetEndpoint(
+        GlobalOptions g,
+        [Option("url", Description = "The webhook endpoint URL (absolute https).")] string url)
+    {
+        return _runtime.ExecuteAsync(g, async () =>
+        {
+            await _messages.SetWebhookEndpointAsync(_runtime.Resolve(g), url, CancellationToken.None);
+            if (g.Json)
+            {
+                Json.Print(new { endpoint = url, updated = true });
+            }
+            else
+            {
+                Console.WriteLine($"webhook endpoint set to {url}");
+            }
+        });
+    }
+
+    [Command("test-endpoint", Description = "Ask the LINE platform to send a test event to the webhook endpoint and report reachability.")]
+    public Task<int> TestEndpoint(
+        GlobalOptions g,
+        [Option("url", Description = "Endpoint URL to test (absolute https). Omit to test the currently configured endpoint.")] string? url = null)
+    {
+        return _runtime.ExecuteAsync(g, async () =>
+        {
+            var result = await _messages.TestWebhookEndpointAsync(_runtime.Resolve(g), url, CancellationToken.None);
+            if (g.Json)
+            {
+                Json.Print(result);
+            }
+            else
+            {
+                Console.WriteLine($"success   : {(result.Success?.ToString() ?? "n/a")}");
+                Console.WriteLine($"statusCode: {(result.StatusCode?.ToString() ?? "n/a")}");
+                Console.WriteLine($"reason    : {result.Reason ?? "n/a"}");
+                Console.WriteLine($"detail    : {result.Detail ?? "n/a"}");
+                Console.WriteLine($"timestamp : {(result.Timestamp?.ToString("o") ?? "n/a")}");
             }
         });
     }

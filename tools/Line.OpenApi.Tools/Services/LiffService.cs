@@ -47,6 +47,19 @@ public sealed class LiffService
         await Create(credentials).UpdateAppAsync(liffId, request, cancellationToken).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Updates only a LIFF app's endpoint URL (<c>view.url</c>) via a partial update. Convenient for
+    /// repointing a LIFF app at a fresh dev tunnel without supplying a full app definition. The URL
+    /// must be absolute https. Throws <see cref="MessageInputException"/> for a malformed or non-https
+    /// URL (before any network call).
+    /// </summary>
+    public Task UpdateUrlAsync(ResolvedCredentials credentials, string liffId, string url, CancellationToken cancellationToken)
+    {
+        UrlGuard.RequireHttps(url, nameof(url));
+        var request = new UpdateLiffAppRequest { View = new UpdateLiffView { Url = url } };
+        return Create(credentials).UpdateAppAsync(liffId, request, cancellationToken);
+    }
+
     /// <summary>Deletes a LIFF app.</summary>
     public Task DeleteAsync(ResolvedCredentials credentials, string liffId, CancellationToken cancellationToken) =>
         Create(credentials).DeleteAppAsync(liffId, cancellationToken);

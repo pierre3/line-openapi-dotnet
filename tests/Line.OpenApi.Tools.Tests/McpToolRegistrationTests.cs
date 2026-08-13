@@ -28,9 +28,10 @@ public sealed class McpToolRegistrationTests
             "line_ping", "line_message_schema",
             "line_bot_info", "line_bot_profile", "line_bot_quota", "line_bot_quota_consumption",
             "line_liff_list", "line_token_verify", "line_webhook_verify",
+            "line_webhook_get_endpoint", "line_webhook_test_endpoint",
             "line_message_push", "line_message_multicast", "line_message_broadcast", "line_message_reply",
-            "line_liff_add", "line_liff_update", "line_liff_delete",
-            "line_token_issue", "line_token_revoke", "line_webhook_replay",
+            "line_liff_add", "line_liff_update", "line_liff_update_url", "line_liff_delete",
+            "line_token_issue", "line_token_revoke", "line_webhook_replay", "line_webhook_set_endpoint",
             // Rich menu
             "line_richmenu_schema", "line_richmenu_list", "line_richmenu_get",
             "line_richmenu_get_default", "line_richmenu_id_of_user",
@@ -80,6 +81,9 @@ public sealed class McpToolRegistrationTests
         Assert.Contains("line_token_verify", readOnly);
         Assert.Contains("line_webhook_verify", readOnly);
         Assert.Contains("line_message_schema", readOnly);
+        // Webhook endpoint get/test are non-mutating diagnostics (test only asks LINE to probe the URL).
+        Assert.Contains("line_webhook_get_endpoint", readOnly);
+        Assert.Contains("line_webhook_test_endpoint", readOnly);
         // Insight is entirely read-only. Assert ALL seven so misclassifying one into WriteTools —
         // which is a hidden availability regression under --read-only, not a safety one, and so is
         // caught by neither the exact-set nor the disjoint test — fails here.
@@ -97,9 +101,11 @@ public sealed class McpToolRegistrationTests
         // Mutating operations must never appear in the read-only set.
         Assert.DoesNotContain("line_message_push", readOnly);
         Assert.DoesNotContain("line_liff_delete", readOnly);
+        Assert.DoesNotContain("line_liff_update_url", readOnly);
         Assert.DoesNotContain("line_token_issue", readOnly);
         Assert.DoesNotContain("line_token_revoke", readOnly);
         Assert.DoesNotContain("line_webhook_replay", readOnly);
+        Assert.DoesNotContain("line_webhook_set_endpoint", readOnly);
         // Rich menu mutations (set_default changes what every user sees) must stay out of read-only.
         Assert.DoesNotContain("line_richmenu_create", readOnly);
         Assert.DoesNotContain("line_richmenu_delete", readOnly);
@@ -121,8 +127,10 @@ public sealed class McpToolRegistrationTests
         Assert.Contains("line_message_push", write);
         Assert.Contains("line_message_broadcast", write);
         Assert.Contains("line_liff_add", write);
+        Assert.Contains("line_liff_update_url", write);
         Assert.Contains("line_token_issue", write);
         Assert.Contains("line_webhook_replay", write);
+        Assert.Contains("line_webhook_set_endpoint", write);
     }
 
     [Fact]

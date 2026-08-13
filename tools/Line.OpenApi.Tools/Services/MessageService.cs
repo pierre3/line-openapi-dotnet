@@ -121,6 +121,49 @@ public sealed class MessageService
         return new ProfileInfo(res?.UserId, res?.DisplayName, res?.PictureUrl, res?.StatusMessage, res?.Language);
     }
 
+    /// <summary>Gets the channel's currently configured webhook endpoint URL and its active state.</summary>
+    public async Task<WebhookEndpointInfo> GetWebhookEndpointAsync(ResolvedCredentials credentials, CancellationToken cancellationToken)
+    {
+        var client = Create(credentials);
+        var res = await client.Api.V2.Bot.Channel.Webhook.Endpoint
+            .GetAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+        return new WebhookEndpointInfo(res?.Endpoint, res?.Active);
+    }
+
+    /// <summary>
+    /// Sets the channel's webhook endpoint URL. Useful for repointing at a fresh dev tunnel without
+    /// visiting the LINE console. The URL must be absolute https. Throws
+    /// <see cref="MessageInputException"/> for a malformed or non-https URL (before any network call).
+    /// </summary>
+    public async Task SetWebhookEndpointAsync(ResolvedCredentials credentials, string url, CancellationToken cancellationToken)
+    {
+        UrlGuard.RequireHttps(url, nameof(url));
+        var client = Create(credentials);
+        // PUT returns an (empty) stream body; dispose it without reading.
+        await using var _ = await client.Api.V2.Bot.Channel.Webhook.Endpoint
+            .PutAsync(new SetWebhookEndpointRequest { Endpoint = url }, cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Tests a webhook endpoint by asking the LINE platform to send it a test event. When
+    /// <paramref name="url"/> is null the currently configured endpoint is tested. A non-null URL
+    /// must be absolute https. Returns the platform's reachability result (status code, success, etc.).
+    /// </summary>
+    public async Task<WebhookTestResult> TestWebhookEndpointAsync(ResolvedCredentials credentials, string? url, CancellationToken cancellationToken)
+    {
+        if (url is not null)
+        {
+            UrlGuard.RequireHttps(url, nameof(url));
+        }
+
+        var client = Create(credentials);
+        var res = await client.Api.V2.Bot.Channel.Webhook.Test
+            .PostAsync(new TestWebhookEndpointRequest { Endpoint = url }, cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
+        return new WebhookTestResult(res?.StatusCode, res?.Success, res?.Reason, res?.Detail, res?.Timestamp);
+    }
+
     /// <summary>Downloads a message's binary content (data host) to a file.</summary>
     public async Task<ContentResult> DownloadContentAsync(ResolvedCredentials credentials, string messageId, string outputPath, CancellationToken cancellationToken)
     {
@@ -164,3 +207,9 @@ public sealed record ProfileInfo(string? UserId, string? DisplayName, string? Pi
 
 /// <summary>Downloaded content descriptor.</summary>
 public sealed record ContentResult(string Path, long Bytes);
+
+/// <summary>The channel's configured webhook endpoint (non-secret).</summary>
+public sealed record WebhookEndpointInfo(string? Endpoint, bool? Active);
+
+/// <summary>Result of a webhook endpoint reachability test from the LINE platform.</summary>
+public sealed record WebhookTestResult(int? StatusCode, bool? Success, string? Reason, string? Detail, DateTimeOffset? Timestamp);

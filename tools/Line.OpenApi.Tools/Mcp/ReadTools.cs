@@ -216,6 +216,28 @@ internal class ReadTools
         return Json.Serialize(result);
     }
 
+    [McpServerTool(Name = "line_webhook_get_endpoint"), Description("Get the channel's configured webhook endpoint URL and whether it is active.")]
+    public static async Task<string> WebhookGetEndpoint(
+        MessageService messages, CredentialResolver resolver,
+        [Description("Optional credential profile name.")] string? profile = null)
+    {
+        var info = await messages.GetWebhookEndpointAsync(Resolve(resolver, profile), CancellationToken.None);
+        return Json.Serialize(info);
+    }
+
+    [McpServerTool(Name = "line_webhook_test_endpoint"), Description(
+        "Ask the LINE platform to send a test event to the webhook endpoint and report reachability "
+        + "(statusCode, success). Diagnostic only. Pass a url (absolute https) to test that URL, or omit "
+        + "it to test the currently configured endpoint.")]
+    public static async Task<string> WebhookTestEndpoint(
+        MessageService messages, CredentialResolver resolver,
+        [Description("Endpoint URL to test (absolute https). Omit to test the configured endpoint.")] string? url = null,
+        [Description("Optional credential profile name.")] string? profile = null)
+    {
+        var result = await messages.TestWebhookEndpointAsync(Resolve(resolver, profile), url, CancellationToken.None);
+        return Json.Serialize(result);
+    }
+
     internal static ResolvedCredentials Resolve(CredentialResolver resolver, string? profile) =>
         resolver.Resolve(new CredentialOverrides { ProfileName = profile });
 }

@@ -15,8 +15,8 @@ LINE Platform をローカル PC から操作する **`dotnet` グローバル�
 |---|---|
 | **A. トークン管理** | チャネルアクセストークンの発行（v2.1 JWT / ステートレス）・検証・失効 |
 | **B. メッセージ送信・Bot 照会** | push / multicast / broadcast / reply、bot 情報・送信上限・消費数、ユーザープロフィール、メッセージ内容ダウンロード |
-| **C. Webhook 開発支援** | ローカル受信サーバ（署名検証付き）・保存ペイロードの署名検証・ローカルアプリへの再送 |
-| **D. LIFF 管理** | LIFF アプリの一覧・追加・更新・削除 |
+| **C. Webhook 開発支援** | ローカル受信サーバ（署名検証付き）・保存ペイロードの署名検証・ローカルアプリへの再送・Webhook エンドポイントの get/set/test（dev トンネル貼り替え） |
+| **D. LIFF 管理** | LIFF アプリの一覧・追加・更新・削除・エンドポイント URL（`view.url`）のみ更新 |
 | **E. リッチメニュー** | 作成・検証・一覧・取得・削除、画像アップロード/ダウンロード、既定設定/解除、ユーザー単位のリンク/解除 |
 | **F. Insight / Audience / Shop** | 統計（属性・配信数・フォロワー・開封/クリック・リッチメニュー）、オーディエンス管理（ファイルからの userId アップロード含む）、ミッションスタンプ送信 |
 
@@ -158,17 +158,24 @@ line webhook verify --body ./payload.json --signature <x-line-signature>
 
 # 保存ペイロードをローカルアプリへ再送（署名は付与しない・宛先は検証しない）
 line webhook replay --body ./payload.json --to http://localhost:5000/webhook
+
+# Webhook エンドポイント設定（チャネルアクセストークン。dev トンネル URL の貼り替え等）
+line webhook get-endpoint                        # 設定済み URL と active 状態を表示
+line webhook set-endpoint --url https://<tunnel>/callback
+line webhook test-endpoint                       # LINE から実エンドポイントへテスト配信し到達可否を返す
 ```
 
-- 署名検証にはチャネルシークレットが必要です（プロファイル / `--secret`）。
-- `listen` は外部トンネル（cloudflared / ngrok 等）と併用して LINE からの実 Webhook を受けられます。トンネル自体はツールに含みません。
+- 署名検証（`listen` / `verify`）にはチャネルシークレットが必要です（プロファイル / `--secret`）。エンドポイント設定コマンド（`get/set/test-endpoint`）はチャネルアクセストークンを使います。
+- `set-endpoint` / `test-endpoint` / `liff update-url` の URL は絶対 **https** が必須です。
+- `listen` は外部トンネル（cloudflared / ngrok 等）と併用して LINE からの実 Webhook を受けられます。トンネル自体はツールに含みません。`set-endpoint` を使えばコンソールを開かずに LINE 側の Webhook URL を更新できます。
 
 ### D. LIFF 管理 `line liff`
 
 ```sh
-line liff list
+line liff list                                # liffId と URL を一覧表示（ID 取得はこれで完結）
 line liff add --file ./app.json               # LIFF アプリ定義 JSON から追加
-line liff update <liffId> --file ./app.json
+line liff update <liffId> --file ./app.json   # フル定義 JSON で更新
+line liff update-url <liffId> --url https://<tunnel>/   # view.url のみ部分更新（https。dev トンネル貼り替え）
 line liff delete <liffId>
 ```
 
@@ -247,8 +254,8 @@ line mcp --allow-remote-replay # webhook replay の非ループバック宛先�
 
 CLI コマンドを `line_<area>_<verb>` の名前で公開します（`webhook listen` を除く）。
 
-- 読み取り系（`--read-only` でもこれらは有効）: `line_message_schema` / `line_richmenu_schema` / `line_richmenu_list` / `line_richmenu_get` / `line_richmenu_get_default` / `line_richmenu_id_of_user` / `line_insight_demographic` / `line_insight_deliveries` / `line_insight_followers` / `line_insight_events` / `line_insight_per_unit` / `line_insight_richmenu_summary` / `line_insight_richmenu_daily` / `line_audience_list` / `line_audience_get` / `line_bot_info` / `line_bot_quota` / `line_bot_quota_consumption` / `line_bot_profile` / `line_liff_list` / `line_token_verify` / `line_webhook_verify` / `line_ping`
-- 変更系（`--read-only` では除外）: `line_message_push` / `line_message_multicast` / `line_message_broadcast` / `line_message_reply` / `line_richmenu_create` / `line_richmenu_delete` / `line_richmenu_set_default` / `line_richmenu_cancel_default` / `line_richmenu_link` / `line_richmenu_unlink` / `line_audience_create` / `line_audience_add_users` / `line_audience_delete` / `line_shop_mission` / `line_liff_add` / `line_liff_update` / `line_liff_delete` / `line_token_issue` / `line_token_revoke` / `line_webhook_replay`
+- 読み取り系（`--read-only` でもこれらは有効）: `line_message_schema` / `line_richmenu_schema` / `line_richmenu_list` / `line_richmenu_get` / `line_richmenu_get_default` / `line_richmenu_id_of_user` / `line_insight_demographic` / `line_insight_deliveries` / `line_insight_followers` / `line_insight_events` / `line_insight_per_unit` / `line_insight_richmenu_summary` / `line_insight_richmenu_daily` / `line_audience_list` / `line_audience_get` / `line_bot_info` / `line_bot_quota` / `line_bot_quota_consumption` / `line_bot_profile` / `line_liff_list` / `line_token_verify` / `line_webhook_verify` / `line_webhook_get_endpoint` / `line_webhook_test_endpoint` / `line_ping`
+- 変更系（`--read-only` では除外）: `line_message_push` / `line_message_multicast` / `line_message_broadcast` / `line_message_reply` / `line_richmenu_create` / `line_richmenu_delete` / `line_richmenu_set_default` / `line_richmenu_cancel_default` / `line_richmenu_link` / `line_richmenu_unlink` / `line_audience_create` / `line_audience_add_users` / `line_audience_delete` / `line_shop_mission` / `line_liff_add` / `line_liff_update` / `line_liff_update_url` / `line_liff_delete` / `line_token_issue` / `line_token_revoke` / `line_webhook_replay` / `line_webhook_set_endpoint`
 
 > オーディエンスのファイルアップロード（`upload-file` / `add-file`）は **CLI 専用**です（バイナリ/ファイルは MCP で扱いにくいため）。`line_audience_create` の説明からファイルアップロードは CLI へ誘導します。
 
