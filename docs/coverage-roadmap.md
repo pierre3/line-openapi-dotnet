@@ -90,6 +90,7 @@ OpenAPI spec の取り込みは module-attach を除き完了。残る候補:
 3. **Social API 友だち関係**（`friendship/v1/status`）— Login と相乗効果。既に `Line.OpenApi.Login` の `GetFriendshipStatusAsync` として実装済み（Login パッケージ内）。
 4. **module-attach**（`Line.OpenApi.Module` へ後付け）— パートナー限定 1 op。異ホスト `manager.line.biz`＋Basic＋PKCE で難所突出。明確な要望が出てから（Core に Basic 認証プロバイダ＋ホスト定数＋form/PKCE 手書きヘルパを追加）。
 5. ~~**CLI/MCP の新パッケージ対応**~~ **→ 実装済み（2026-07-15）。** insight / manage-audience / shop を `line` ツールへ露出（CLI `line insight·audience·shop`／MCP `line_insight_*`〔全 read-only〕・`line_audience_*`・`line_shop_mission`。by-file アップロードは CLI 専用）。**module は見送り**（パートナー限定・概念難でローカル開発ツールに不適）。3 役ゲート PASS（記録 `docs/reviews/2026-07-15-coverage-tools-review.md`）。spec §4.8 参照。
+6. ~~**CLI/MCP の dev トンネル URL 貼り替え自動化**~~ **→ 実装済み（2026-08-13）。** Webhook エンドポイント get/set/test（CLI `line webhook get/set/test-endpoint`／MCP `line_webhook_get_endpoint`・`_test_endpoint`〔read〕・`_set_endpoint`〔write〕）と LIFF `view.url` 部分更新（CLI `line liff update-url`／MCP `line_liff_update_url`〔write〕）。トンネル再起動時のコンソール貼り替えを不要化。3 役ゲート PASS（記録 `docs/reviews/2026-08-13-webhook-endpoint-liff-url-tools-review.md`）。spec §4.3/§4.4/§4.5 参照。
 
 ---
 

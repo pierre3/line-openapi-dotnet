@@ -101,6 +101,14 @@ Append `/webhook` to the displayed HTTPS forwarding URL (e.g. `https://xxxx.devt
 3. Turn **Use webhook** ON and click **Verify** to check connectivity (it reaches `POST /webhook`, not `GET /`)
 4. Add the bot as a friend and send text in the chat; success is when `echo: <text>` comes back
 
+> 💡 **Tip — skip the console for step 2/3.** With the [`line` CLI tool](../tools/README.md) you can set the URL and verify connectivity from the terminal, which is handy because a dev tunnel gets a new URL on every restart:
+>
+> ```powershell
+> $env:LINE_CHANNEL_ACCESS_TOKEN = "<channel access token>"
+> line webhook set-endpoint --url https://xxxx.devtunnels.ms/webhook
+> line webhook test-endpoint    # asks LINE to probe the endpoint and reports reachability
+> ```
+
 ---
 
 ## 3. LINE Login web app (`Line.OpenApi.Samples.Login`)

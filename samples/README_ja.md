@@ -101,6 +101,14 @@ devtunnel host -p 5000 --allow-anonymous
 3. **Webhook の利用** を ON、**検証** ボタンで疎通確認（`GET /` ではなく `POST /webhook` に届きます）
 4. Bot を友だち追加し、トークルームでテキストを送ると `echo: <本文>` が返れば成功
 
+> 💡 **ヒント — 手順 2/3 はコンソール不要。** [`line` CLI ツール](../tools/README_ja.md) を使えば URL 設定と疎通確認をターミナルから実行できます。dev トンネルは再起動のたびに URL が変わるため特に便利です:
+>
+> ```powershell
+> $env:LINE_CHANNEL_ACCESS_TOKEN = "<channel access token>"
+> line webhook set-endpoint --url https://xxxx.devtunnels.ms/webhook
+> line webhook test-endpoint    # LINE から実エンドポイントへテスト配信し到達可否を返す
+> ```
+
 ---
 
 ## 3. LINE Login Web アプリ (`Line.OpenApi.Samples.Login`)
