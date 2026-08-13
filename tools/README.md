@@ -15,8 +15,8 @@ Both share the same service layer, so behavior is identical.
 |---|---|
 | **A. Token management** | Issue (v2.1 JWT / stateless), verify, and revoke channel access tokens |
 | **B. Message send & bot lookup** | push / multicast / broadcast / reply, bot info / quota / consumption, user profile, message content download |
-| **C. Webhook development** | Local receiver (with signature verification), offline signature verification of a stored payload, replay to a local app |
-| **D. LIFF management** | List / add / update / delete LIFF apps |
+| **C. Webhook development** | Local receiver (with signature verification), offline signature verification of a stored payload, replay to a local app, webhook endpoint get/set/test (repoint at a dev tunnel) |
+| **D. LIFF management** | List / add / update / delete LIFF apps, update endpoint URL only (`view.url`) |
 | **E. Rich menu** | Create / validate / list / get / delete, image upload & download, set / cancel default, link / unlink per user |
 | **F. Insight / Audience / Shop** | Statistics (demographics, deliveries, followers, events, rich menu); audience group manage (incl. by-file user-id upload); mission sticker send |
 
@@ -158,17 +158,24 @@ line webhook verify --body ./payload.json --signature <x-line-signature>
 
 # Replay a stored payload to a local app (no signature added; destination not validated)
 line webhook replay --body ./payload.json --to http://localhost:5000/webhook
+
+# Webhook endpoint configuration (channel access token; e.g. repoint at a fresh dev-tunnel URL)
+line webhook get-endpoint                        # show the configured URL and active state
+line webhook set-endpoint --url https://<tunnel>/callback
+line webhook test-endpoint                       # ask LINE to probe the endpoint and report reachability
 ```
 
-- Signature verification requires the channel secret (profile / `--secret`).
-- Combine `listen` with an external tunnel (cloudflared / ngrok, etc.) to receive real webhooks from LINE. The tunnel itself is not bundled.
+- Signature verification (`listen` / `verify`) requires the channel secret (profile / `--secret`); the endpoint commands (`get/set/test-endpoint`) use the channel access token instead.
+- The URL for `set-endpoint`, `test-endpoint`, and `liff update-url` must be absolute **https**.
+- Combine `listen` with an external tunnel (cloudflared / ngrok, etc.) to receive real webhooks from LINE. The tunnel itself is not bundled. `set-endpoint` then updates the LINE-side webhook URL without visiting the console.
 
 ### D. LIFF management — `line liff`
 
 ```sh
-line liff list
+line liff list                                # lists liffId + URL — use it to find the id
 line liff add --file ./app.json               # add from a LIFF app definition JSON
-line liff update <liffId> --file ./app.json
+line liff update <liffId> --file ./app.json   # full update from a JSON definition
+line liff update-url <liffId> --url https://<tunnel>/   # update only view.url (https), e.g. a fresh dev tunnel
 line liff delete <liffId>
 ```
 
@@ -247,8 +254,8 @@ line mcp --allow-remote-replay # allow non-loopback destinations for webhook rep
 
 CLI commands are exposed as `line_<area>_<verb>` (except `webhook listen`).
 
-- Read-only (available even under `--read-only`): `line_message_schema` / `line_richmenu_schema` / `line_richmenu_list` / `line_richmenu_get` / `line_richmenu_get_default` / `line_richmenu_id_of_user` / `line_insight_demographic` / `line_insight_deliveries` / `line_insight_followers` / `line_insight_events` / `line_insight_per_unit` / `line_insight_richmenu_summary` / `line_insight_richmenu_daily` / `line_audience_list` / `line_audience_get` / `line_bot_info` / `line_bot_quota` / `line_bot_quota_consumption` / `line_bot_profile` / `line_liff_list` / `line_token_verify` / `line_webhook_verify` / `line_ping`
-- Mutating (excluded under `--read-only`): `line_message_push` / `line_message_multicast` / `line_message_broadcast` / `line_message_reply` / `line_richmenu_create` / `line_richmenu_delete` / `line_richmenu_set_default` / `line_richmenu_cancel_default` / `line_richmenu_link` / `line_richmenu_unlink` / `line_audience_create` / `line_audience_add_users` / `line_audience_delete` / `line_shop_mission` / `line_liff_add` / `line_liff_update` / `line_liff_delete` / `line_token_issue` / `line_token_revoke` / `line_webhook_replay`
+- Read-only (available even under `--read-only`): `line_message_schema` / `line_richmenu_schema` / `line_richmenu_list` / `line_richmenu_get` / `line_richmenu_get_default` / `line_richmenu_id_of_user` / `line_insight_demographic` / `line_insight_deliveries` / `line_insight_followers` / `line_insight_events` / `line_insight_per_unit` / `line_insight_richmenu_summary` / `line_insight_richmenu_daily` / `line_audience_list` / `line_audience_get` / `line_bot_info` / `line_bot_quota` / `line_bot_quota_consumption` / `line_bot_profile` / `line_liff_list` / `line_token_verify` / `line_webhook_verify` / `line_webhook_get_endpoint` / `line_webhook_test_endpoint` / `line_ping`
+- Mutating (excluded under `--read-only`): `line_message_push` / `line_message_multicast` / `line_message_broadcast` / `line_message_reply` / `line_richmenu_create` / `line_richmenu_delete` / `line_richmenu_set_default` / `line_richmenu_cancel_default` / `line_richmenu_link` / `line_richmenu_unlink` / `line_audience_create` / `line_audience_add_users` / `line_audience_delete` / `line_shop_mission` / `line_liff_add` / `line_liff_update` / `line_liff_update_url` / `line_liff_delete` / `line_token_issue` / `line_token_revoke` / `line_webhook_replay` / `line_webhook_set_endpoint`
 
 > Audience by-file uploads (`upload-file` / `add-file`) are **CLI-only** — binary/file input is impractical over MCP, so `line_audience_create` directs you to the CLI for file uploads.
 

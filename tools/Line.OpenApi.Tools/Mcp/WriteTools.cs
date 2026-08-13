@@ -183,6 +183,20 @@ internal class WriteTools
         return Json.Serialize(new { liffId, updated = true });
     }
 
+    [McpServerTool(Name = "line_liff_update_url"), Description(
+        "UPDATES only a LIFF app's endpoint URL (view.url) via a partial update — handy for repointing "
+        + "at a fresh dev-tunnel URL. The url must be absolute https. Side effect: modifies a LIFF app. "
+        + "Use line_liff_list to find the liffId.")]
+    public static async Task<string> LiffUpdateUrl(
+        LiffService liff, CredentialResolver resolver,
+        [Description("LIFF app id.")] string liffId,
+        [Description("New endpoint URL (absolute https).")] string url,
+        [Description("Optional credential profile name.")] string? profile = null)
+    {
+        await liff.UpdateUrlAsync(ReadTools.Resolve(resolver, profile), liffId, url, CancellationToken.None);
+        return Json.Serialize(new { liffId, url, updated = true });
+    }
+
     [McpServerTool(Name = "line_liff_delete"), Description("DELETES a LIFF app. Side effect: permanently removes a LIFF app.")]
     public static async Task<string> LiffDelete(
         LiffService liff, CredentialResolver resolver,
@@ -314,6 +328,19 @@ internal class WriteTools
 
         var result = await webhook.ReplayAsync(System.Text.Encoding.UTF8.GetBytes(body), target, CancellationToken.None);
         return Json.Serialize(result);
+    }
+
+    [McpServerTool(Name = "line_webhook_set_endpoint"), Description(
+        "SETS the channel's webhook endpoint URL (e.g. a fresh dev-tunnel URL), so the LINE platform "
+        + "delivers webhook events there. The url must be absolute https. Side effect: changes the LINE-side "
+        + "webhook URL for this channel.")]
+    public static async Task<string> WebhookSetEndpoint(
+        MessageService messages, CredentialResolver resolver,
+        [Description("The webhook endpoint URL (absolute https).")] string url,
+        [Description("Optional credential profile name.")] string? profile = null)
+    {
+        await messages.SetWebhookEndpointAsync(ReadTools.Resolve(resolver, profile), url, CancellationToken.None);
+        return Json.Serialize(new { endpoint = url, updated = true });
     }
 }
 
