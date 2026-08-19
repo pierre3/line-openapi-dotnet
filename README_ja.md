@@ -300,12 +300,43 @@ line mcp                                   # MCP サーバとして起動
 
 詳細は [`tools/README.md`](https://github.com/pierre3/line-openapi-dotnet/blob/main/tools/README.md)（[日本語](https://github.com/pierre3/line-openapi-dotnet/blob/main/tools/README_ja.md)）を参照してください。
 
+## AI ツール（`Line.OpenApi.Extensions.AI`）
+
+`Line.OpenApi.Extensions.AI` は Messaging 利用シーンを [Microsoft.Extensions.AI](https://learn.microsoft.com/dotnet/ai/) の `AIFunction` ツールとしてラップし、Semantic Kernel や任意の Microsoft.Extensions.AI ホストから LLM エージェントが LINE を **アプリ内 in-process** で操作できるようにします（別プロセスで動く上記 CLI/MCP ツールを補完する関係です）。依存は `Line.OpenApi.Messaging` と `Microsoft.Extensions.AI.Abstractions` の 2 本のみです。
+
+```csharp
+using Line.OpenApi.Extensions.AI;
+using Line.OpenApi.Messaging;
+
+var line = MessagingClient.CreateWithStaticToken("CHANNEL_ACCESS_TOKEN");
+
+// 安全側の既定：読み取り専用ツールのみ（bot info / quota / profile / message-validate）。
+IReadOnlyList<AIFunction> readTools = LineMessagingAiTools.CreateReadOnly(line);
+
+// 送信は明示 opt-in、かつゲート越し。
+IReadOnlyList<AIFunction> tools = LineMessagingAiTools.Create(line, new LineAiToolOptions
+{
+    EnableSending = true,                 // push / multicast / reply を有効化（既定 false）
+    AllowBroadcast = false,               // broadcast は最大ブラスト半径＝独立 opt-in
+    SendPolicy = (ctx, ct) =>             // ブラスト半径を制限（操作種別 / 宛先 / 件数）
+        new(ctx.Operation != LineSendOperation.Broadcast),
+    BeforeSend = (ctx, ct) => /* human-in-the-loop / 監査。ctx.MessagesJson を検査 */ new(true),
+});
+
+// Semantic Kernel は Microsoft.Extensions.AI の関数をそのまま消費できます:
+// kernel.Plugins.AddFromFunctions("Line", tools);
+```
+
+**安全モデル。** 送信は既定オフ、broadcast は独立 opt-in、`SendPolicy` と `BeforeSend` が全送信をゲートし、いずれも生成時に開発者が設定します＝**ツール引数には一切出ない**ためモデルからは変更不可。戻り値は非機密で、チャネルアクセストークンは戻り値・説明・例外のいずれにも出ません。レート／累積回数の制限はホスト側パイプラインの責務です。メッセージ本文は `SendPolicy` / `BeforeSend` に渡り `LineSendContext.MessagesJson`（`LineSendRefusedException` 上を含む）に保持され、read ツールの戻り値（表示名など）は LLM プロバイダに渡るため、ログや監査証跡ではツール引数・戻り値を PII として扱ってください。
+
 ## サンプル
 
 `samples/` に動くデモアプリを同梱しています（NuGet パッケージには含みません）。**既定はオフライン**で、環境変数を設定すると実 API に接続します。
 
 - **`Line.OpenApi.Samples.Console`** — 送信 / LIFF 管理 / トークン発行 / Webhook パース（`dotnet run -- webhook` は資格情報不要で動作）
 - **`Line.OpenApi.Samples.Webhook`** — minimal API の Webhook 受信＋エコー返信（dev トンネルでライブデモ）
+- **`Line.OpenApi.Samples.Login`** — LINE Login + OpenID Connect 認可コードフロー（PKCE・localhost コールバック）
+- **`Line.OpenApi.Samples.Ai`** — LLM tool-calling：スクリプト（または実モデル）が `Line.OpenApi.Extensions.AI` のツールを安全ゲート越しに操作（完全オフラインで動作）
 
 実行手順・環境変数・dev トンネル設定は [`samples/README_ja.md`](https://github.com/pierre3/line-openapi-dotnet/blob/main/samples/README_ja.md) を参照してください。
 
@@ -398,7 +429,10 @@ API リファレンスは手書き公開表面の XML doc コメントから英�
 │   ├── Line.OpenApi.Module/             # モジュールチャネル + ModuleClient ファサード
 │   ├── Line.OpenApi.Shop/               # ミッションスタンプ + ShopClient ファサード
 │   └── Line.OpenApi.Bot/                # 便宜メタパッケージ（依存束ねのみ・コードなし）
-├── tools/                       # CLI / MCP ツール（Line.OpenApi.Tools, コマンド名 line）
+├── tools/
+│   ├── Line.OpenApi.Tools/              # CLI / MCP ツール（コマンド名 line）
+│   ├── Line.OpenApi.Extensions.AI/      # LLM tool-calling 向け Microsoft.Extensions.AI ツール
+│   └── shared/                          # Tools と Extensions.AI の共有ソース（非パッケージ）
 ├── samples/                     # 同梱デモアプリ（コンソール / Webhook Web API）
 ├── tests/                       # 手書き表面のテスト（署名/受信/ルーティング/DI/snapshot 等）
 └── docs/                        # 設計・レビュー記録・ユーザーマニュアル（manual/）
