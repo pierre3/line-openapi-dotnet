@@ -184,6 +184,7 @@ dotnet run -- --send
 ```
 
 - Offline mode uses a **local stub transport** (not dry-run) precisely so the gates run — dry-run would short-circuit before them. Real message content is passed to `SendPolicy` / `BeforeSend`; treat tool arguments as potential PII in your logs.
+- On a denied send the tool raises `LineSendRefusedException`. `FunctionInvokingChatClient` catches it and feeds the error back to the model (so step 3 shows the model's reply); the sample also has a defensive `catch` for versions/configs where the exception surfaces to the caller instead. With a real model, note that the default `IncludeDetailedErrors=false` hands it a generic error rather than the exact refusal reason.
 - To use a real LLM instead of the scripted client, replace `ScriptedChatClient` with any `IChatClient` (OpenAI / Azure OpenAI / Ollama) — the `AsBuilder().UseFunctionInvocation()` wiring and the tool list are unchanged. For Semantic Kernel, pass the same tools to `kernel.Plugins.AddFromFunctions("Line", tools)`.
 
 ---

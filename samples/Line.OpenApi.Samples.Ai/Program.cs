@@ -60,9 +60,9 @@ Con.WriteLine();
 
 // Direct invocation (how an M.E.AI host ultimately calls a tool) of the read-only validator.
 Con.WriteLine("Directly invoking the read-only line_message_validate tool:");
-var flex = "[{\"type\":\"text\",\"text\":\"Meeting tomorrow at 10:00\"}]";
+var textMessages = "[{\"type\":\"text\",\"text\":\"Meeting tomorrow at 10:00\"}]";
 var validateResult = await tools.Single(t => t.Name == "line_message_validate")
-    .InvokeAsync(new AIFunctionArguments { ["messagesJson"] = flex });
+    .InvokeAsync(new AIFunctionArguments { ["messagesJson"] = textMessages });
 Con.WriteLine($"  -> {JsonSerializer.Serialize(validateResult)}\n");
 
 // Part 2 — the model drives the tools through the gates -----------------------
@@ -107,8 +107,10 @@ async Task RunAgentAsync(string userPrompt, ChatMessage toolCallTurn, string fin
     }
     catch (LineSendRefusedException ex)
     {
-        // Depending on the M.E.AI version a tool exception may surface here rather than being fed
-        // back to the model; either way the send was blocked before any API call.
+        // With the pinned M.E.AI version, FunctionInvokingChatClient catches the tool exception and
+        // feeds an error result back to the model, so scenario 3 shows the scripted reply above
+        // rather than this branch. This catch is a defensive fallback for versions/configurations
+        // where a tool exception surfaces to the caller instead; either way no API call was made.
         Con.WriteLine($"── [refused] {ex.Message}\n");
     }
 }
@@ -123,14 +125,20 @@ ValueTask<bool> AllowListPolicy(LineSendContext ctx, CancellationToken ct)
     return new ValueTask<bool>(ok);
 }
 
-// A human-in-the-loop hook: show the pending send and ask for approval. Non-interactive runs
-// (piped input) auto-approve so the sample completes unattended.
+// A human-in-the-loop hook: show the pending send and ask for approval. In OFFLINE mode a
+// non-interactive run (piped input) auto-approves so the sample completes unattended. In LIVE mode
+// a real message would go out, so approval is never automatic — non-interactive runs are refused.
 ValueTask<bool> ApproveOnConsole(LineSendContext ctx, CancellationToken ct)
 {
     Con.WriteLine($"   [approve] about to {ctx.Operation} {ctx.MessagesJson}");
     if (Con.IsInputRedirected)
     {
-        Con.WriteLine("   [approve] non-interactive -> auto-approved");
+        if (live)
+        {
+            Con.WriteLine("   [approve] non-interactive + LIVE -> refused (run interactively to approve a real send)");
+            return new ValueTask<bool>(false);
+        }
+        Con.WriteLine("   [approve] non-interactive -> auto-approved (offline)");
         return new ValueTask<bool>(true);
     }
     Con.Write("   [approve] send it? [y/N] ");

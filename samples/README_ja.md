@@ -174,6 +174,7 @@ dotnet run -- --send
 ```
 
 - オフラインは dry-run ではなく**ローカルスタブ transport** を使う（ゲートを実行するため。dry-run はゲートより前で短絡する）。メッセージ本文は `SendPolicy` / `BeforeSend` に渡るため、ログではツール引数を PII として扱うこと。
+- 拒否時はツールが `LineSendRefusedException` を送出。`FunctionInvokingChatClient` がそれを捕捉してエラーをモデルに返す（＝ステップ3 はモデルの返答が表示される）。サンプルには、例外が呼び出し側へ浮上する版/設定向けの防御的 `catch` も用意。実モデルでは既定 `IncludeDetailedErrors=false` のため、拒否の具体理由でなく汎用エラーが渡る点に注意。
 - スクリプトの代わりに実 LLM を使うには `ScriptedChatClient` を任意の `IChatClient`（OpenAI / Azure OpenAI / Ollama）に差し替えるだけ（`AsBuilder().UseFunctionInvocation()` の配線とツール一覧は不変）。Semantic Kernel なら同じツールを `kernel.Plugins.AddFromFunctions("Line", tools)` に渡します。
 
 ---
