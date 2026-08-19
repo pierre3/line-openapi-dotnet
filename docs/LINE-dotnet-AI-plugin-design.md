@@ -7,6 +7,7 @@
 
 ## 変更履歴
 
+- **rev.3 (2026-08-19):** G0 後の人の判断3点を確定。①**コア抽出は最小抽出案を採用**（`MessageJson`＋平坦 DTO のみ共有・操作は各消費者が薄く自前。§3.1-3.2）＝操作を共有しないことで CLI/MCP 結合・二層アダプタ・テスト破壊が丸ごと不要に。②**`Tools.Core` は NuGet 非公開＝共有ソース方式**（`tools/shared/` を両 csproj にリンクコンパイル。§3.3）。③**パッケージ名 `Line.OpenApi.Extensions.AI` で確定**。これに伴い依存グラフ・pack-verify・テスト計画・ADR-2/3 を更新。
 - **rev.2 (2026-08-19):** G0 レビュー（`docs/reviews/2026-08-19-G0-ai-plugin-design-review.md`）の MUST 指摘を反映。主な変更: 抽出は「挙動不変」でなく**二層アダプタによる API 変更リファクタ**と是正（§3.2・§6）／結合点を補完（exit 3 `CredentialException`・`MessageJson` 内の入力例外契約、§3.2）／static メモ化の維持義務を明記（§3.2）／pack-verify の一方向 ADR ガードを確定（§3.4）／`Extensions.AI` の公開 API snapshot を必須化（§6）／宛先制約を述語から**ポリシー型へ格上げ**＋broadcast 独立 opt-in（§5）／送信を**明示 opt-in・安全側既定**（§4・§5）／**送信前フック（human-in-the-loop）** を第一級 API 化（§5）／安全ゲートは LLM 可視引数にしない不変条件（§5・ADR-4）／M.E.AI 版ポリシーを別軸で明記（§8 ADR-6）。
 - **rev.1 (2026-08-19):** 初版ドラフト。
 
@@ -60,53 +61,61 @@ SK は MCP サーバを間接消費もできるが、in-process の方が transp
 
 ### 3.1 現状の重複の実態
 
-AI ツール層が必要とする実体は、**既に `Line.OpenApi.Tools/Services/MessageService.cs` にほぼ全部ある**:
+AI ツール層が必要とする実体は、**既に `Line.OpenApi.Tools/Services/` にほぼ全部ある**:
 
-- `PushTextAsync`/`PushRawAsync`/`MulticastAsync`/`BroadcastAsync`/`ReplyAsync`/`GetProfileAsync`/`GetBotInfoAsync`/`GetQuotaAsync`
+- 操作: `PushTextAsync`/`PushRawAsync`/`MulticastAsync`/`BroadcastAsync`/`ReplyAsync`/`GetProfileAsync`/`GetBotInfoAsync`/`GetQuotaAsync`（`MessageService.cs`）
 - `ValidateMessagesAsync`（dry-run）
-- LLM に返す**平坦 DTO**（`SendResult`/`ProfileInfo`/`BotInfo`/`QuotaInfo`。Kiota 生成モデルを露出しない）
+- LLM に返す**平坦 DTO**（`SendResult`/`ProfileInfo`/`BotInfo`/`QuotaInfo`/`MessageValidationResult`。Kiota 生成モデルを露出しない）
 - `MessageJson.ParseMessagesAsync`（非配列/空/不正 JSON の穴を塞ぐ非自明ロジック）
 
-これを AI 側にコピーすると ~200 行の非自明ロジックを 2 箇所で保守することになり、**CLI・LLM・アプリで同じ結果形状を共有すべき**という要件に反して乖離しやすい。2 人目の消費者が現れた今、rule-of-three 的に抽出が正当化される。
+ただし G0 の観察どおり、**共有価値の内訳には大きな差がある**:
 
-### 3.2 現状のサービス層はドロップイン再利用できない（＝挙動不変ではない）
+- **高い（＝共有すべき）:** `MessageJson`（解析＋非自明ガード。~50 行）と平坦 DTO（結果形状の契約。CLI・LLM・アプリで揃えたい）。
+- **低い（＝共有不要）:** 操作メソッド本体は `client.Api.V2.Bot.Message.Push.PostAsync(...)` の**ほぼ 1 行パススルー**（`MessageService.cs` L47-89）。ここに CLI/MCP 固有の結合（`ResolvedCredentials`・static メモ化・exit-code 例外）が絡む。
 
-CLI/MCP ホスト固有の結合があり、抽出時に切断する。**重要（G0 是正）: これは「挙動不変リファクタ」ではなく、被テストシグネチャと例外型を変える API 変更リファクタ**である。テスト温存のため**二層構え**を採る（§6 参照）:
+### 3.2 決定: 最小抽出（`MessageJson` + 平坦 DTO のみ）を共有ソースで（G0 対案採用・rev.3）
 
-> **二層アダプタ方針:** core は「注入済み `MessagingClient` を受け、平坦 DTO を返し、プレーンな入力例外を投げる」ホスト中立層。Tools 側に `ResolvedCredentials` → `MessagingClient` 変換と exit-code 写像を行う**薄アダプタ**を残す。これにより既存 Tools テストの多くを温存しつつ core を切り出す。
+**操作メソッドは共有しない。** 高共有価値の `MessageJson`＋平坦 DTO **だけ**を共有し、操作の 1 行パススルーは各消費者（Tools / AI）が薄く自前で書く。理由:
 
-切断する結合点（G0 で補完）:
+- 操作を共有しようとすると `ResolvedCredentials`・static メモ化・exit-code 例外という CLI/MCP 結合を全部引き受け、G0 で問題化した「二層アダプタ・API 変更リファクタ・テスト破壊」が必要になる。
+- 対して 1 行パススルー（`Api.V2.Bot.Message.Push.PostAsync`）を AI 側で書き直すコストは些少。→ **結合を丸ごと回避できる。**
 
-1. **`ResolvedCredentials`（config/env 解決）** — 利用者は `MessagingClient`／トークンを直接渡したい。→ core は注入された `MessagingClient` に対して動作。資格情報解決は Tools 薄アダプタに残す。
-   - **補完:** `credentials.RequireAccessToken()` は未設定時に `CredentialException`（**exit 3**）を投げる。exit-code 意味論は exit 2 だけでなく **exit 3 も**結合しており、両方 Tools 薄アダプタ側に残す。
-2. **static クライアントメモ化辞書** — 長寿命 MCP サーバ向け（トークン別に `MessagingClient`/HttpClient を再利用＝code gate Medium#1 対応）。DI 管理のアプリでは利用者が自分の `MessagingClient` を持つため core では持たない。
-   - **⚠️ 維持義務（G0 MUST）:** メモ化を core から外すと、Tools が呼び出し毎に新 `MessagingClient` を作った瞬間 Medium#1 がサイレント退行する。→ **Tools 薄アダプタ側でトークン別メモ化（または `IHttpClientFactory` 管理）を維持**する。可能なら「同一トークンでクライアント同一性」を観測する回帰テストを追加。
-3. **`MessageInputException` = exit code 2** — CLI 終了コード意味論。**補完（G0 MUST）:** この例外は移設対象の `MessageJson.ParseMessagesAsync` の**内部で発生**する（＝「共有したい非自明ロジック」と「exit-code 例外型」が同じメソッドに絡む）。機械的移設では切れない。→ **core 側で入力例外契約を明示定義**（新 core 例外型 `LineAiInputException` 等、または `ArgumentException`/`FormatException`）し、Tools 薄アダプタの `catch` を新契約へ張り替えて exit 2/3 に写像し直す。
+**帰結（G0 CONCERNS の大半が解消）:**
 
-### 3.3 依存グラフ（tools 支援ティア）
+- **`MessageService.cs` は Tools 内にそのまま残す**（`ResolvedCredentials`・static メモ化・`MessageInputException`＝exit 2/3 も残る）。→ **既存 Tools テストは被テストシグネチャが変わらず温存**（G0 test-arch MUST①「挙動不変ではない」問題・「二層アダプタ」・メモ化退行の懸念がいずれも不要になる）。
+- 移すのは `MessageJson`＋平坦 DTO のみ。これらは**共有ソース**として両アセンブリにコンパイルする（下記 §3.3）。名前空間を保てば Tools 側からは従来と同一の型に見えるため、`CliRuntime` の `catch (MessageInputException)` → exit 2 もそのまま機能する。
 
-published ライブラリの「各パッケージは Core のみ依存」ADR を壊さないため、抽出コアは**ツール支援ティア**として `/tools` 配下に置く（published usage-scene パッケージには混ぜない）。
+### 3.3 決定: 共有は NuGet パッケージでなく「共有ソース」（Tools.Core 非公開・rev.3）
+
+`Tools.Core` を**独立した NuGet パッケージにはしない**（非公開）。代わりに `MessageJson`＋平坦 DTO を **共有ソース**（`tools/shared/` の `.cs` を各 csproj が `<Compile Include ... Link=... />` でリンク）として、`Line.OpenApi.Tools` と `Line.OpenApi.Extensions.AI` の**両方にコンパイル**する。
+
+- published な `Extensions.AI` が非公開プロジェクトへ NuGet 依存する矛盾が生じない（＝共有ソースはアセンブリ依存を作らない）。
+- 共有ソースは各アセンブリで別型になるが、Tools と AI は相互運用しない別消費者なので問題なし。**契約はソースレベルで同期**（同一ソースをコンパイル）＝乖離しない。
+- 高共有価値ロジック（解析ガード・DTO 形状）の DRY は保たれ、低共有価値の 1 行パススルーだけが各消費者に重複する（許容）。
+- 共有ソース内の入力例外型は名称を中立化（例 `LineMessageInputException`、または現行名を維持）。Tools 側は自アセンブリの同名型を catch して exit 2/3 に写像（現状維持）。AI 側は自アセンブリの同型を検証エラーとして扱う。
+
+#### 依存グラフ
 
 ```
-Line.OpenApi.Tools.Core   （新規・ホスト中立の操作コア）
-   ├─ 操作: 注入された MessagingClient に対し push/reply/... を実行
-   ├─ 平坦 DTO: SendResult / ProfileInfo / BotInfo / QuotaInfo（現状から移設）
-   ├─ MessageJson: JSON 解析＋ガード（プレーン例外へ変更）
-   └─ 依存: Line.OpenApi.Messaging（初期スコープ）
-        ↑                              ↑
-Line.OpenApi.Tools              Line.OpenApi.Extensions.AI（新規）
-（CLI/MCP: config 解決 +        （AIFunction 注釈 + read-only/dry-run
-  exit-code 整形を自層に）          ゲートを被せる薄いシェル）
+（共有ソース: tools/shared/  = MessageJson + 平坦 DTO。NuGet 非公開。両者にリンク）
+        │ compile-link                         │ compile-link
+        ▼                                       ▼
+Line.OpenApi.Tools                     Line.OpenApi.Extensions.AI（新規・公開）
+（CLI/MCP: MessageService 温存・        （AIFunction 注釈 + 安全ゲート。操作は
+  ResolvedCredentials/メモ化/exit-code）   Messaging へ薄く自前パススルー）
+        │ 参照                                   │ 参照
+        ▼                                       ▼
+  各 usage-scene パッケージ            Line.OpenApi.Messaging + Microsoft.Extensions.AI.Abstractions
 ```
 
-- `Line.OpenApi.Extensions.AI` は NuGet 公開する（tools 支援ティアだが利用者向け）。依存は `Line.OpenApi.Tools.Core` + `Microsoft.Extensions.AI.Abstractions`。
-- `Line.OpenApi.Tools.Core` を NuGet 公開するかは要判断（§9 オープン論点）。初期は「公開する」前提（AI パッケージが依存するため）。
+- `Line.OpenApi.Extensions.AI` の**公開 NuGet 依存は `Line.OpenApi.Messaging` + `Microsoft.Extensions.AI.Abstractions` の 2 本のみ**（Tools.Core パッケージ辺は存在しない）。
+- 配置は `/tools` 支援ティア（`Extensions.AI` は Messaging に依存＝published usage-scene の「Core のみ依存」ADR に該当しないため `/src` には置かない。ADR-3）。
 
 ### 3.4 リリース系統
 
 `Line.OpenApi.Tools` と同系統の**別サイクル・独立採番**。タグ例 `ai-v*`。ライブラリ本体（`v*`）・Tools（`tools-v*`）とは分ける。`release.yml` に publish ジョブを追加（Trusted Publishing / OIDC は既存踏襲）。
 
-**pack-verify の一方向 ADR ガード（G0 MUST・確定）:** 現行 `scripts/verify-packages.ps1` は「published パッケージは Core のみ依存」を厳密照合する不変条件を守っている。`Tools.Core`/`Extensions.AI` は `Messaging` に依存するため、これらを**ライブラリ本体の pack-verify 対象から明示除外**し（Tools の `ExcludeToolFromPack` と同方式）、別系統として**両パッケージの期待依存形（`Tools.Core`→`Messaging`、`Extensions.AI`→`Tools.Core`＋`Microsoft.Extensions.AI.Abstractions`）を専用に照合**する。これにより本体の一方向 ADR ガードの意味を保ちつつ AI 系の依存も検証する。
+**pack-verify の一方向 ADR ガード（G0 MUST・確定）:** 現行 `scripts/verify-packages.ps1` は「published パッケージは Core のみ依存」を厳密照合する。`Extensions.AI` は `Messaging`＋`Microsoft.Extensions.AI.Abstractions` に依存するため、**ライブラリ本体の pack-verify 対象から明示除外**し（Tools の `ExcludeToolFromPack` と同方式）、別系統として **`Extensions.AI` の期待依存形（`Messaging` + `Microsoft.Extensions.AI.Abstractions` の 2 本ちょうど）を専用に照合**する。`Tools.Core` は非公開＝パッケージ辺が無いため照合対象外（共有ソースはアセンブリ依存を作らない）。これにより本体の一方向 ADR ガードの意味を保ちつつ AI パッケージの依存も検証する。
 
 ---
 
@@ -166,8 +175,7 @@ LLM に**実ユーザーへの送信を自律実行**させるため、安全機
 
 ## 6. テスト方針
 
-- **コア抽出は API 変更リファクタ（G0 是正）** — 「挙動不変で既存テストが全緑」は成立しない（既存 Tools テストは `MessageService` を `ResolvedCredentials` 受けで直接検証しているため、`MessagingClient` 受けへの変更でシグネチャが壊れる）。→ **二層アダプタ**（§3.2）で、Tools 側に `ResolvedCredentials` 薄アダプタを残して既存テストの多くを温存しつつ core を切り出す。抽出後に全テスト全緑を確認。
-- **静的メモ化の退行検知（G0 MUST）** — Tools 薄アダプタで「同一トークン → 同一 `MessagingClient` インスタンス」を観測する回帰テストを追加し、Medium#1 の退行をガード。
+- **最小抽出により既存 Tools テストは温存（rev.3）** — 操作（`MessageService`）を移設せず Tools に残すため、`ResolvedCredentials` 受けの被テストシグネチャも static メモ化も変わらない。→ G0 で問題化した「挙動不変ではない API 変更リファクタ」「二層アダプタ」「メモ化退行」の懸念は本方式では**発生しない**。共有ソース化する `MessageJson`＋DTO は名前空間を保てば Tools 側から同一型に見えるため、既存の `MessageJson`/DTO 参照・テストも影響を受けない（移設後に全テスト全緑を確認）。
 - **AI 層**:
   - `CreateReadOnly`／`EnableSending=false` 時に**送信系ツールが列挙されない**ことを検証。`AllowBroadcast=false` 時に broadcast ツールが出ないことを検証。
   - `DryRun=true` 時に**transport に触れない（送信リクエスト 0 件）**ことを transport スタブで assert（core 語彙の不変条件）。
@@ -175,15 +183,15 @@ LLM に**実ユーザーへの送信を自律実行**させるため、安全機
   - `SendPolicy` が deny 時／`BeforeSend` が拒否時に**送信前で弾く**ことを検証。broadcast が `SendPolicy` で拒否可能なこと・multicast の宛先配列に述語が全適用されることを検証。
   - `AIFunction` の name/description/引数スキーマは M.E.AI 版で揺れうるため、**厳密 snapshot は避け版ピン＋寛容 assert**（name・必須引数の存在確認等）に留める。
   - HTTP 正常系は既存 Tools と同じスタブハンドラ方式を流用。
-- **公開 API snapshot は必須（G0 MUST）** — `Extensions.AI` は利用者向け公開表面なので `PublicApiGenerator` で snapshot 化（現行 snapshot 対象は `src/**` のみで Tools 非対象のため、AI 系は別途）。`Tools.Core` は公開する場合、安定性契約を明示（snapshot 化 or 「実装詳細・無保証」宣言のいずれかに決着）。
+- **公開 API snapshot は必須（G0 MUST）** — `Extensions.AI` は利用者向け公開表面なので `PublicApiGenerator` で snapshot 化（現行 snapshot 対象は `src/**` のみで Tools 非対象のため、AI 系は別途）。`Tools.Core` は**非公開＝共有ソース**なので独立した公開表面を持たず、安定性契約は不要（rev.3）。ただし AI 層が要さない共有ソース（例 `WrapFlex`）はアクセス修飾子を最小化。
 
 ---
 
 ## 7. 段階案（安全順）
 
-1. **G0 設計**（本書）を 4 役ゲートへ。
-2. `MessageService`/`MessageJson`/平坦 DTO を `Line.OpenApi.Tools.Core` へ機械的に分割（挙動不変）。Tools は薄層で config 解決＋exit-code を被せ直す。テスト全緑を確認。
-3. `Line.OpenApi.Extensions.AI` をコア上に実装（初期スコープ）。3 役ゲート（code/security/test-arch）。
+1. **G0 設計**（本書）を 4 役ゲートへ。→ 完了（CONCERNS・MUST 反映済み・人の go/no-go = GO）。
+2. **共有ソース化（最小抽出・rev.3）:** `MessageJson`＋平坦 DTO（`SendResult`/`ProfileInfo`/`BotInfo`/`QuotaInfo`/`MessageValidationResult`）を `MessageService.cs` から切り出し `tools/shared/` へ移設、`Line.OpenApi.Tools.csproj` にリンクコンパイル（名前空間維持＝Tools は無改変）。入力例外型を中立化。`MessageService` の操作は Tools に残す。テスト全緑を確認（無改変のため差分小）。
+3. **`Line.OpenApi.Extensions.AI` 実装（初期スコープ）:** `tools/shared/` をリンクコンパイル、`Messaging` へ薄く操作をパススルー、`AIFunction` 注釈＋安全ゲート（§4・§5）。公開 API snapshot・ゲーティングテスト（§6）。3 役ゲート（code/security/test-arch）。
 4. サンプル（`samples/`）にエンドツーエンドのエージェント実例を追加、README で訴求。
 
 ---
@@ -191,22 +199,24 @@ LLM に**実ユーザーへの送信を自律実行**させるため、安全機
 ## 8. ADR（今回の設計判断）
 
 - **ADR-1:** 抽象化は `Microsoft.Extensions.AI` 主軸（SK 直結にしない）。理由 §2。
-- **ADR-2:** 操作ロジックを `Line.OpenApi.Tools.Core` に抽出し、Tools と AI で共有。CLI/MCP ホスト固有の結合（資格情報解決・static メモ化・exit-code 例外）はコアに持ち込まない。理由 §3。
-- **ADR-3:** コアは `/tools` 支援ティアに置き、published usage-scene パッケージの「Core のみ依存」ADR を保持。
+- **ADR-2（rev.3 更新）:** 共有は**最小抽出**とし、`MessageJson`＋平坦 DTO **のみ**を共有ソース（`tools/shared/`）として Tools と AI の両アセンブリにリンクコンパイルする。操作メソッド（1 行パススルー）と CLI/MCP 結合（資格情報解決・static メモ化・exit-code 例外）は共有せず Tools 内の `MessageService` に残す。→ 二層アダプタ・API 変更リファクタ・テスト破壊を回避。理由 §3.1-3.3。
+- **ADR-3（rev.3 更新）:** 共有ソース＋`Extensions.AI` は `/tools` 支援ティアに置く。`Tools.Core` は**独立 NuGet パッケージにしない（非公開）**＝共有ソース方式のためアセンブリ依存辺を作らず、published usage-scene パッケージの「Core のみ依存」ADR を保持。`Extensions.AI`（公開）の依存は `Messaging`＋`Microsoft.Extensions.AI.Abstractions` の 2 本のみ。
 - **ADR-4:** LLM 送信の安全機構を第一級要素とする（送信明示 opt-in・安全側既定・`SendPolicy` ポリシー型・broadcast 独立 opt-in・`BeforeSend` human-in-the-loop・シークレット非露出）。**安全ゲートは生成時クロージャ束縛し、ツール引数スキーマに露出させない**（LLM バイパス防止）。理由 §5。
 - **ADR-5:** リリースは Tools と同系統の別サイクル（`ai-v*`）。
 - **ADR-6:** `Microsoft.Extensions.AI.Abstractions` は Kiota ロックステップ**外**の新規外部依存軸。`Directory.Build.props` で下限版を集中ピンし、NuGetAudit ゲート（restore の warnings-as-errors）で推移的脆弱性を検知。`.Abstractions` 以外（実装/DI パッケージ）は引き込まない。理由: M.E.AI は版動が速いため本体安定性から隔離。
 
 ---
 
-## 9. オープン論点（G0 レビュー後の状態）
+## 9. オープン論点（すべて決着・rev.3）
 
-1. **コア抽出の粒度**（G0 で対案提示・**未決**）— 現案は `MessageService` 全体を移す。test-arch の対案: **共有価値が高いのは `MessageJson`（解析＋非自明ガード）＋平坦 DTO** であり、操作メソッド自体は `client.Api.V2.Bot.Message.Push.PostAsync(...)` の 1 行パススルー。**「JSON 解析＋DTO」だけを共有プリミティブとして抽出**すれば結合の大半を回避でき、AI 層は `Messaging` に薄く直接乗せられる。→ **実装着手時（段階 2）に最小抽出案 vs 全体抽出案を最終判断**。配置は tools 支援ティアで両者合意。
-2. **`Tools.Core` の NuGet 公開・命名**（**要判断**）— AI パッケージが依存するため公開が要る。公開する場合 **AI 層が要する最小 API のみ public、他は internal**（`WrapFlex` 等）。命名 `.Tools.Core` は「CLI 内部」を連想させ紛らわしい懸念あり（対案 1 で公開範囲を絞れば緩和）。安定性契約（snapshot or 無保証宣言）を §6 のとおり決着。
-3. ~~抽出のタイミング~~（**決着**）— 段階 2 で先行。ただし「挙動不変」ではなく二層アダプタによる API 変更リファクタ（§3.2・§6）。
+1. ~~コア抽出の粒度~~（**決着**）— **最小抽出案を採用**（`MessageJson`＋平坦 DTO のみ共有・操作は各消費者が薄く自前）。§3.1-3.2。
+2. ~~`Tools.Core` の NuGet 公開・命名~~（**決着**）— **非公開＝共有ソース方式**。独立パッケージにしない。§3.3。
+3. ~~抽出のタイミング~~（**決着**）— 段階 2 で先行。最小抽出のため既存テスト温存（§3.2・§6）。
 4. ~~安全既定値~~（**決着**）— 送信は明示 opt-in・既定 read-only（§4・§5・ADR-4）。broadcast は別 opt-in。
 5. ~~宛先制約フックの形状~~（**決着**）— 述語ではなくポリシー型（操作種別×宛先×件数・非同期）＋送信前フック（§5）。
-6. **パッケージ名**（**要確認**）— `Line.OpenApi.Extensions.AI` で妥当か（`Microsoft.Extensions.AI` 命名に寄せた）。
+6. ~~パッケージ名~~（**決着**）— **`Line.OpenApi.Extensions.AI`** で確定。
+
+**残る実装レベルの細部（G3 で確定）:** 共有ソースの物理配置（`tools/shared/` のディレクトリ名・リンク方式）、中立化する入力例外型の最終名、`SendPolicy`/`BeforeSend` の正確なデリゲート形状。いずれも設計判断ではなく実装時の詳細。
 
 ---
 
