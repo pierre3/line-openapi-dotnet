@@ -1,7 +1,19 @@
 # DocFX API-reference filter.
-# Scope the API reference to the HANDWRITTEN public surface only.
-# Kiota-generated code lives under a "Generated" namespace segment and is treated
-# as an opaque box (design section 13.1), so it is excluded from the reference.
+# Scope the API reference to the handwritten public surface PLUS the Kiota-generated
+# data models. The generated data models (TextMessage/FlexMessage, webhook event types,
+# entity shapes, etc.) live under a "Models" namespace segment and are the shapes callers
+# construct and receive, so they are valuable in the reference. The rest of the generated
+# code (request builders that mirror the URL path tree, and the generated client classes)
+# is plumbing accessed only through the handwritten facades and is treated as an opaque box
+# (design section 13.1), so it stays excluded.
+#
+# Rules are evaluated top to bottom, first match wins: the include for Models must precede
+# the broad Generated exclude.
 apiRules:
+  # Keep generated data models (e.g. Line.OpenApi.Messaging.Generated.Api.Models.TextMessage,
+  # Line.OpenApi.ChannelAccessToken.Generated.Models.*).
+  - include:
+      uidRegex: ^Line\..*\.Generated(\..+)?\.Models(\.|$)
+  # Exclude the remaining generated plumbing (request builders, client classes).
   - exclude:
       uidRegex: ^Line\..*\.Generated(\.|$)
