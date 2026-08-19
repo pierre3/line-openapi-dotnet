@@ -304,6 +304,47 @@ claude mcp add line -- line mcp --read-only
 
 ---
 
+## In-process AI tools (`Line.OpenApi.Extensions.AI`)
+
+The MCP server above lets an **out-of-process** agent (Claude Desktop / Claude Code) operate LINE. If instead you are building your own .NET agent, the companion package **`Line.OpenApi.Extensions.AI`** exposes the same Messaging operations as **in-process** [Microsoft.Extensions.AI](https://learn.microsoft.com/dotnet/ai/) `AIFunction` tools — usable from Semantic Kernel or any Microsoft.Extensions.AI host, with no separate process. It depends only on `Line.OpenApi.Messaging` and `Microsoft.Extensions.AI.Abstractions`.
+
+```sh
+dotnet add package Line.OpenApi.Extensions.AI
+```
+
+```csharp
+using Line.OpenApi.Extensions.AI;
+using Line.OpenApi.Messaging;
+
+var line = MessagingClient.CreateWithStaticToken("CHANNEL_ACCESS_TOKEN");
+
+// Safe by default: read-only tools only (bot info / quota / profile / message-validate).
+IReadOnlyList<AIFunction> readTools = LineMessagingAiTools.CreateReadOnly(line);
+
+// Sending is explicit opt-in and gated.
+IReadOnlyList<AIFunction> tools = LineMessagingAiTools.Create(line, new LineAiToolOptions
+{
+    EnableSending  = true,                // enables push / multicast / reply (default false)
+    AllowBroadcast = false,               // broadcast = largest blast radius, separate opt-in
+    SendPolicy = (ctx, ct) =>             // bound blast radius (operation / recipients / count)
+        new(ctx.Operation != LineSendOperation.Broadcast),
+    BeforeSend = (ctx, ct) => /* human-in-the-loop / audit; inspect ctx.MessagesJson */ new(true),
+});
+
+// Give the tools to any Microsoft.Extensions.AI chat client:
+//   new ChatOptions { Tools = [.. tools] }
+// Or to Semantic Kernel:
+//   kernel.Plugins.AddFromFunctions("Line", tools);
+```
+
+**Tool names** mirror the MCP tools (`line_message_push`, `line_bot_profile`, …). **Safety gates** (`EnableSending` / `AllowBroadcast` / `SendPolicy` / `BeforeSend`) are set by you at creation time and are **never** exposed as tool arguments, so a model cannot flip them. Sends are off by default; broadcast needs its own opt-in; results are non-secret. Rate / cumulative-count limiting is the host pipeline's responsibility, and message content / read-tool results flow to your LLM provider — treat tool arguments as potential PII in your logs.
+
+Released on its own cadence (tag `ai-v*`), separate from this CLI/MCP tool (`tools-v*`).
+
+For a runnable end-to-end example (a scripted **or** real model driving the tools through the gates, offline by default), see [`samples/Line.OpenApi.Samples.Ai`](https://github.com/pierre3/line-openapi-dotnet/blob/main/samples/README.md#4-ai-tools-agent-lineopenapisamplesai).
+
+---
+
 ## Build from source
 
 ```sh

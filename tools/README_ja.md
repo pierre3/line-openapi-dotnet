@@ -304,6 +304,47 @@ claude mcp add line -- line mcp --read-only
 
 ---
 
+## アプリ内蔵の AI ツール (`Line.OpenApi.Extensions.AI`)
+
+上記の MCP サーバは、**別プロセス**のエージェント（Claude Desktop / Claude Code）に LINE 操作を公開します。一方、自作の .NET エージェントを作る場合は、姉妹パッケージ **`Line.OpenApi.Extensions.AI`** が同じ Messaging 操作を**アプリ内 in-process** の [Microsoft.Extensions.AI](https://learn.microsoft.com/dotnet/ai/) `AIFunction` ツールとして公開します（Semantic Kernel や任意の Microsoft.Extensions.AI ホストから利用可・別プロセス不要）。依存は `Line.OpenApi.Messaging` と `Microsoft.Extensions.AI.Abstractions` の 2 本のみです。
+
+```sh
+dotnet add package Line.OpenApi.Extensions.AI
+```
+
+```csharp
+using Line.OpenApi.Extensions.AI;
+using Line.OpenApi.Messaging;
+
+var line = MessagingClient.CreateWithStaticToken("CHANNEL_ACCESS_TOKEN");
+
+// 安全側の既定：読み取り専用ツールのみ（bot info / quota / profile / message-validate）。
+IReadOnlyList<AIFunction> readTools = LineMessagingAiTools.CreateReadOnly(line);
+
+// 送信は明示 opt-in、かつゲート越し。
+IReadOnlyList<AIFunction> tools = LineMessagingAiTools.Create(line, new LineAiToolOptions
+{
+    EnableSending  = true,                // push / multicast / reply を有効化（既定 false）
+    AllowBroadcast = false,               // broadcast は最大ブラスト半径＝独立 opt-in
+    SendPolicy = (ctx, ct) =>             // ブラスト半径を制限（操作種別 / 宛先 / 件数）
+        new(ctx.Operation != LineSendOperation.Broadcast),
+    BeforeSend = (ctx, ct) => /* human-in-the-loop / 監査。ctx.MessagesJson を検査 */ new(true),
+});
+
+// 任意の Microsoft.Extensions.AI チャットクライアントに渡す:
+//   new ChatOptions { Tools = [.. tools] }
+// Semantic Kernel なら:
+//   kernel.Plugins.AddFromFunctions("Line", tools);
+```
+
+**ツール名**は MCP ツールと揃えています（`line_message_push`・`line_bot_profile` 等）。**安全ゲート**（`EnableSending` / `AllowBroadcast` / `SendPolicy` / `BeforeSend`）は生成時に開発者が設定し、**ツール引数には一切出ません**＝モデルからは変更不可。送信は既定オフ、broadcast は独立 opt-in、戻り値は非機密。レート / 累積回数の制限はホスト側パイプラインの責務で、メッセージ本文や read ツールの戻り値は LLM プロバイダに渡るため、ログではツール引数を PII として扱ってください。
+
+リリースはこの CLI/MCP ツール（`tools-v*`）とは別サイクル（タグ `ai-v*`）です。
+
+スクリプト**または**実モデルがツールをゲート越しに駆動する動作例（オフライン既定）は [`samples/Line.OpenApi.Samples.Ai`](https://github.com/pierre3/line-openapi-dotnet/blob/main/samples/README_ja.md#4-ai-ツールエージェント-lineopenapisamplesai) を参照。
+
+---
+
 ## ソースからのビルド
 
 ```sh
