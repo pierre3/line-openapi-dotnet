@@ -1,0 +1,61 @@
+{
+  "$comment": "Provenance anchor for the vendored LINE OpenAPI spec snapshots under openapi/. Records which upstream commit the committed specs correspond to and their LF-normalized content hashes. Consumed by scripts/check-spec-drift.ps1 (drift detection) and scripts/generate.ps1 -Update (pinned re-fetch). Upstream (github.com/line/line-openapi) publishes no tags/releases and its spec info.version fields are static, so the upstream commit SHA is the only reliable version anchor. See docs/LINE-dotnet-client-design.md §9.",
+  "schemaVersion": 1,
+  "repository": "line/line-openapi",
+  "ref": "de8bd9e2872ed9d9800e23b86136695fcd370a0c",
+  "refDate": "2026-07-28",
+  "retrievedAt": "2026-08-19",
+  "hashAlgorithm": "sha256",
+  "hashNormalization": "line endings normalized to LF before hashing",
+  "ignoredUpstreamFiles": [
+    "docker-compose.yml"
+  ],
+  "specs": {
+    "messaging-api.yml": {
+      "sha256": "0227978ce1b3133e20da034fc33a9241000619ae4fea2fda7b61983abf79577a",
+      "package": "Line.OpenApi.Messaging",
+      "imported": true
+    },
+    "channel-access-token.yml": {
+      "sha256": "3313df3856336fe18351d2ebc48a37109727aa1d055f0b85c0928cc3af7ff884",
+      "package": "Line.OpenApi.ChannelAccessToken",
+      "imported": true,
+      "note": "generate.ps1 quotes the unquoted urn: scheme inside a flow array (SharpYaml parse pitfall); the committed snapshot is already normalized, so this hash is of the normalized form."
+    },
+    "webhook.yml": {
+      "sha256": "0faebd7722139abe9fb2abee610ea9d46a648f20b9305bb17555e038100a6fc1",
+      "package": "Line.OpenApi.Messaging.Webhook",
+      "imported": true
+    },
+    "liff.yml": {
+      "sha256": "2ba074ae9da7916510707c4b456428e20c93433e391a3558d2ce160a3effd460",
+      "package": "Line.OpenApi.Liff",
+      "imported": true
+    },
+    "insight.yml": {
+      "sha256": "e4e3a1bbf6c5bf670f11f07c3c92659b236536355286748f3b27252d335723cd",
+      "package": "Line.OpenApi.Insight",
+      "imported": true
+    },
+    "manage-audience.yml": {
+      "sha256": "e3f4c214604305ca9d0db45435bd15161d40fb959a4b6cf38356d38fc0577e29",
+      "package": "Line.OpenApi.ManageAudience",
+      "imported": true
+    },
+    "module.yml": {
+      "sha256": "31d9580396bb6e781bb42e5ea513e1884c3998b783cf6d7b30d65c87d32fa498",
+      "package": "Line.OpenApi.Module",
+      "imported": true
+    },
+    "shop.yml": {
+      "sha256": "460b804a4c4d20617380ab982c9c41f5682b988c7c04aef9c57bca51c0025333",
+      "package": "Line.OpenApi.Shop",
+      "imported": true
+    },
+    "module-attach.yml": {
+      "sha256": "1cd753812d51339008fd42c7fccee28d90cfda659f13b2d97dcc1116331298ac",
+      "imported": false,
+      "note": "Deliberately not imported (partner-only, manager.line.biz + Basic auth + form/PKCE). The sha256 is an awareness baseline only: drift detection reports upstream changes here but does not regenerate."
+    }
+  }
+}

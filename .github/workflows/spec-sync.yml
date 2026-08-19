@@ -1,0 +1,202 @@
+# spec-sync: 上流 line/line-openapi の OpenAPI 仕様ドリフトを週次で検知し、
+# ドリフトがあれば追跡 Issue を upsert し、Kiota 再生成した「下書き PR」を自動作成する。
+#
+# 方針（design section 9 / CLAUDE.md）:
+#   - 検知は scripts/check-spec-drift.ps1（manifest 基準・LF+urn 正規化・純検知）。
+#   - 再生成は scripts/generate.ps1 -Update -Ref <sha>（SHA ピン再取得＋manifest 更新）。
+#   - マージは常に人＋4役ゲート。ワークフローは draft PR までで自動マージしない。
+#   - 破壊的変更は公開 API snapshot テストが捕捉。生成コードだけの追加は PR 本文チェックリストで人手確認。
+name: spec-sync
+
+on:
+  schedule:
+    - cron: '23 5 * * 1'   # 毎週月曜 05:23 UTC
+  workflow_dispatch:
+    inputs:
+      fail_on_awareness:
+        description: 'awareness 専用 spec（module-attach 等）の変化でも Issue/PR を作る'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write        # ブランチ push
+  issues: write          # 追跡 Issue の upsert
+  pull-requests: write   # draft PR 作成
+
+concurrency:
+  group: spec-sync
+  cancel-in-progress: false
+
+jobs:
+  spec-sync:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: '10.0.x'
+
+      # --- 1) ドリフト検知（純検知・非破壊）---
+      - name: Detect drift
+        id: drift
+        shell: pwsh
+        run: |
+          $json = & ./scripts/check-spec-drift.ps1 -Json | Out-String
+          $json | Set-Content "$env:RUNNER_TEMP/drift.json"
+          $r = $json | ConvertFrom-Json
+          $r.specs | ForEach-Object { "  $($_.status.PadRight(12)) $($_.spec)" } | Write-Host
+          "drifted=$($r.drifted.ToString().ToLower())"           >> $env:GITHUB_OUTPUT
+          "awareness=$($r.awarenessDrift.ToString().ToLower())"  >> $env:GITHUB_OUTPUT
+          "latestSha=$($r.latestSha)"                            >> $env:GITHUB_OUTPUT
+          "manifestRef=$($r.manifestRef)"                        >> $env:GITHUB_OUTPUT
+          "compareUrl=$($r.compareUrl)"                          >> $env:GITHUB_OUTPUT
+          # 人間可読サマリと本文素材を生成。
+          $lines = @()
+          $lines += "Upstream: [$($r.repository)]($($r.compareUrl)) @ $($r.branch)"
+          $lines += ""
+          $lines += "| spec | status | imported |"
+          $lines += "|------|--------|----------|"
+          foreach ($s in $r.specs) { $lines += "| $($s.spec) | $($s.status) | $($s.imported) |" }
+          $lines += ""
+          $lines += "manifest ref: ``$($r.manifestRef)`` → latest: ``$($r.latestSha)``"
+          $lines += ""
+          $lines += "Compare: $($r.compareUrl)"
+          if ($r.upstreamCommits.Count -gt 0) {
+            $lines += ""
+            $lines += "### Upstream commits since manifest ref"
+            foreach ($c in $r.upstreamCommits) { $lines += "- ``$($c.sha)`` $($c.date) $($c.message)" }
+          }
+          if ($r.unknownSpecs -and $r.unknownSpecs.Count -gt 0) {
+            $lines += ""
+            $lines += "### New upstream specs not tracked in manifest"
+            foreach ($u in $r.unknownSpecs) { $lines += "- ``$u`` (consider importing; see docs/coverage-roadmap.md)" }
+          }
+          # スクラッチはリポジトリ外（RUNNER_TEMP）に置き、後段の git add で PR に混入させない。
+          ($lines -join "`n") | Set-Content "$env:RUNNER_TEMP/drift-summary.md"
+          # check-spec-drift.ps1 は drift 時 exit 1。検知は正常系なのでステップは常に成功させる
+          # （shell: pwsh は末尾に自動で exit $LASTEXITCODE を付与するため明示的に 0 で終える）。
+          exit 0
+
+      # act? = 何か動く必要があるか（imported ドリフト、または awareness を明示的に対象化した時）
+      - name: Decide action
+        id: decide
+        shell: pwsh
+        run: |
+          $drifted = "${{ steps.drift.outputs.drifted }}" -eq "true"
+          $awareness = "${{ steps.drift.outputs.awareness }}" -eq "true"
+          $failOnAwareness = "${{ github.event.inputs.fail_on_awareness }}" -eq "true"
+          $notify = $drifted -or ($awareness -and $failOnAwareness)
+          "notify=$($notify.ToString().ToLower())"     >> $env:GITHUB_OUTPUT
+          "regenerate=$($drifted.ToString().ToLower())" >> $env:GITHUB_OUTPUT
+
+      # --- 2) 追跡 Issue の upsert（open な spec-sync Issue があれば本文更新、無ければ作成）---
+      - name: Upsert tracking issue
+        if: steps.decide.outputs.notify == 'true'
+        shell: pwsh
+        run: |
+          $title = "Upstream spec drift: line/line-openapi @ ${{ steps.drift.outputs.latestSha }}"
+          $body = @()
+          $body += "Automated by ``.github/workflows/spec-sync.yml``. Do not edit by hand; this issue is upserted each run."
+          $body += ""
+          $body += (Get-Content "$env:RUNNER_TEMP/drift-summary.md" -Raw)
+          $body += ""
+          $body += "A draft PR with the regenerated client is opened/updated automatically when imported specs drift. Review it under the 4-role gate before merging."
+          ($body -join "`n") | Set-Content "$env:RUNNER_TEMP/issue-body.md"
+          $existing = gh issue list --repo $env:REPO --label spec-sync --state open --json number --jq '.[0].number'
+          if ($existing) {
+            gh issue edit $existing --repo $env:REPO --title $title --body-file "$env:RUNNER_TEMP/issue-body.md"
+            Write-Host "updated issue #$existing"
+          } else {
+            gh label create spec-sync --repo $env:REPO --color 1d76db --description "Upstream OpenAPI spec drift tracking" 2>$null
+            gh issue create --repo $env:REPO --title $title --label spec-sync --body-file "$env:RUNNER_TEMP/issue-body.md"
+          }
+
+      # 同期回復時（ドリフト無し）は、残っている追跡 Issue をクローズする。
+      - name: Close tracking issue when back in sync
+        if: steps.decide.outputs.notify == 'false'
+        shell: pwsh
+        run: |
+          $open = gh issue list --repo $env:REPO --label spec-sync --state open --json number --jq '.[].number'
+          foreach ($n in $open) {
+            if ($n) { gh issue close $n --repo $env:REPO --comment "Upstream specs are back in sync with the committed snapshot (no drift). Closed automatically by spec-sync." }
+          }
+          exit 0
+
+      # --- 3) 再生成（imported ドリフト時のみ）---
+      - name: Install Kiota CLI (pinned)
+        if: steps.decide.outputs.regenerate == 'true'
+        run: dotnet tool install --global Microsoft.OpenApi.Kiota --version 1.34.1
+
+      - name: Regenerate at pinned upstream SHA
+        if: steps.decide.outputs.regenerate == 'true'
+        shell: pwsh
+        run: ./scripts/generate.ps1 -Update -Ref ${{ steps.drift.outputs.latestSha }}
+
+      - name: Build
+        id: build
+        if: steps.decide.outputs.regenerate == 'true'
+        continue-on-error: true
+        run: dotnet build LineOpenApi.slnx --configuration Release
+
+      - name: Test
+        id: test
+        if: steps.decide.outputs.regenerate == 'true' && steps.build.outcome == 'success'
+        continue-on-error: true
+        run: dotnet test LineOpenApi.slnx --configuration Release --no-build --verbosity normal
+
+      # --- 4) 下書き PR の作成/更新 ---
+      - name: Open or update draft PR
+        if: steps.decide.outputs.regenerate == 'true'
+        shell: pwsh
+        run: |
+          $sha = "${{ steps.drift.outputs.latestSha }}"
+          $short = $sha.Substring(0,8)
+          $branch = "spec-sync/update-$short"
+          $buildOutcome = "${{ steps.build.outcome }}"
+          $testOutcome = "${{ steps.test.outcome }}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b $branch
+          # 再生成が触るのは openapi/（spec＋manifest）と src/**/Generated/** のみ。
+          # 対象を限定し、CI スクラッチや不測のファイルを PR に巻き込まない。
+          git add openapi src
+          if (git diff --cached --quiet) { Write-Host "no file changes to commit"; exit 0 }
+          git commit -m "chore(spec-sync): update LINE OpenAPI specs to $short and regenerate"
+          # 専用の bot ブランチ（SHA 命名で決定的）。前回 run の残りは上書きしたいが、
+          # レビュアーが同ブランチに積んだ fixup を握り潰さないよう --force-with-lease を使う
+          # （新規ブランチ＝リモート追跡 ref 無しでもモダン git は許容）。
+          git push --force-with-lease origin $branch
+
+          # PR 本文（チェックリスト付き）
+          $pb = @()
+          $pb += "Automated by ``spec-sync``. **Draft** — requires human review and the 4-role gate before merge."
+          $pb += ""
+          $pb += (Get-Content "$env:RUNNER_TEMP/drift-summary.md" -Raw)
+          $pb += ""
+          $pb += "### CI (this run)"
+          $pb += "- build: ``$buildOutcome``"
+          $pb += "- test:  ``$testOutcome`` (public API snapshot test catches breaking changes to the hand-written surface)"
+          $pb += ""
+          $pb += "### Reviewer checklist"
+          $pb += "- [ ] ``src/**/Generated/**`` の差分に新規オペレーション/モデルが無いか（あれば手書きファサード要検討＝公開 API snapshot には出ない）"
+          $pb += "- [ ] 公開 API snapshot テスト結果（破壊的変更の有無）を確認"
+          $pb += "- [ ] 4役ゲート（code/security/spec/test-arch）を実施し ``docs/reviews/`` に記録"
+          $pb += "- [ ] ``channel-access-token.yml`` の urn 正規化が効いているか（ビルド成功で担保）"
+          $pb += "- [ ] ``openapi/upstream-manifest.json`` の ref/hash が更新されているか"
+          ($pb -join "`n") | Set-Content "$env:RUNNER_TEMP/pr-body.md"
+
+          $existingPr = gh pr list --repo $env:REPO --head $branch --state open --json number --jq '.[0].number'
+          if ($existingPr) {
+            gh pr edit $existingPr --repo $env:REPO --body-file "$env:RUNNER_TEMP/pr-body.md"
+            Write-Host "updated PR #$existingPr"
+          } else {
+            gh pr create --repo $env:REPO --draft --base main --head $branch `
+              --title "chore(spec-sync): update specs to $short and regenerate" `
+              --label spec-sync --body-file "$env:RUNNER_TEMP/pr-body.md"
+          }

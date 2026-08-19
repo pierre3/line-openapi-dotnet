@@ -344,6 +344,19 @@ bash scripts/generate.sh      # macOS / Linux
 
 Generated code lives under `src/**/Generated/` (`kiota-lock.json` is committed). The `Microsoft.Kiota.Bundle` version is managed centrally via `KiotaBundleVersion` in `Directory.Build.props` (currently 2.0.0).
 
+### Staying in sync with upstream
+
+The bundled specs under `openapi/` are a pinned snapshot of [`line/line-openapi`](https://github.com/line/line-openapi). Upstream publishes no tags/releases and its `info.version` fields are static, so the ingested revision is anchored by **upstream commit SHA** in `openapi/upstream-manifest.json` (ref + retrieval date + per-spec LF-normalized sha256).
+
+A weekly workflow ([`.github/workflows/spec-sync.yml`](.github/workflows/spec-sync.yml)) detects drift, opens a tracking issue, and files a **draft PR** with the regenerated client. Merging is always human-gated. To run the pieces locally:
+
+```sh
+pwsh scripts/check-spec-drift.ps1        # report drift vs the manifest (exit 1 if drifted)
+pwsh scripts/generate.ps1 -Update        # re-fetch at the upstream HEAD, normalize, update manifest, regenerate
+```
+
+Line endings are normalized to LF before hashing/diffing (see `.gitattributes`); comparing raw bytes against the LF upstream would otherwise report whole-file false drift.
+
 ## Documentation
 
 - **📖 User manual (published): https://pierre3.github.io/line-openapi-dotnet/** — conceptual articles (English / Japanese) plus the English API reference.

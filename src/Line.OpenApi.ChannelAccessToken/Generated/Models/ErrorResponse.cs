@@ -8,14 +8,15 @@ using System.IO;
 using System;
 namespace Line.OpenApi.ChannelAccessToken.Generated.Models
 {
+    /// <summary>
+    /// Error response of the Channel access token
+    /// </summary>
     [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.0.0")]
-    #pragma warning disable CS1591
     public partial class ErrorResponse : ApiException, IAdditionalDataHolder, IParsable
-    #pragma warning restore CS1591
     {
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
-        /// <summary>The error property</summary>
+        /// <summary>Error summary</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
         public string? Error { get; set; }
@@ -23,7 +24,7 @@ namespace Line.OpenApi.ChannelAccessToken.Generated.Models
 #else
         public string Error { get; set; }
 #endif
-        /// <summary>The error_description property</summary>
+        /// <summary>Details of the error. Not returned in certain situations.</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
         public string? ErrorDescription { get; set; }

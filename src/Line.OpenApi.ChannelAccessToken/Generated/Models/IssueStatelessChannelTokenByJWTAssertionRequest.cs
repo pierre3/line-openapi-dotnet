@@ -7,14 +7,15 @@ using System.IO;
 using System;
 namespace Line.OpenApi.ChannelAccessToken.Generated.Models
 {
+    /// <summary>
+    /// Request body to issue a new token with JWT assertion
+    /// </summary>
     [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.0.0")]
-    #pragma warning disable CS1591
     public partial class IssueStatelessChannelTokenByJWTAssertionRequest : IAdditionalDataHolder, IParsable
-    #pragma warning restore CS1591
     {
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
-        /// <summary>The client_assertion property</summary>
+        /// <summary>A JSON Web Token the client needs to create and sign with the private key of the Assertion Signing Key.</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
         public string? ClientAssertion { get; set; }
@@ -22,9 +23,9 @@ namespace Line.OpenApi.ChannelAccessToken.Generated.Models
 #else
         public string ClientAssertion { get; set; }
 #endif
-        /// <summary>The client_assertion_type property</summary>
+        /// <summary>URL-encoded value of `urn:ietf:params:oauth:client-assertion-type:jwt-bearer`</summary>
         public global::Line.OpenApi.ChannelAccessToken.Generated.Models.IssueStatelessChannelTokenByJWTAssertionRequest_client_assertion_type? ClientAssertionType { get; set; }
-        /// <summary>The grant_type property</summary>
+        /// <summary>client_credentials</summary>
         public global::Line.OpenApi.ChannelAccessToken.Generated.Models.IssueStatelessChannelTokenByJWTAssertionRequest_grant_type? GrantType { get; set; }
         /// <summary>
         /// Instantiates a new <see cref="global::Line.OpenApi.ChannelAccessToken.Generated.Models.IssueStatelessChannelTokenByJWTAssertionRequest"/> and sets the default values.

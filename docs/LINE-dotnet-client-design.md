@@ -228,21 +228,28 @@ Webhook（モデルのみ）／LIFF も同様に個別生成。
   - **確認:** `Line.OpenApi.{Core,ChannelAccessToken,Messaging,Messaging.Webhook,Liff,Bot}` は 2026-07-13 時点で NuGet 全件未使用（空き）を確認済み。
   - **適用範囲:** NuGet `PackageId`、アセンブリ名、ルート名前空間、DocFX の `filterConfig.yml`（`Line.OpenApi.*.Generated` 除外）、公開 API snapshot の approved、README/マニュアルの `using`・コード例。
 - **配布:** NuGet。SourceLink・XML ドキュメント・決定的ビルドを有効化。
-- **バージョニング:** 各パッケージ SemVer。仕様スナップショットのコミットハッシュ/取得日を `kiota-lock.json` とリリースノートに記録。
+- **バージョニング:** 各パッケージ SemVer。仕様スナップショットの上流コミット SHA/取得日は `openapi/upstream-manifest.json` に記録（§9・実装済み）。
 - **回帰の baseline:** 公開 API 表面（public 型/シグネチャ）に snapshot 対象を限定し、内部生成差分のノイズを避ける（中程度指摘）。
 
 ---
 
-## 9. 仕様更新への追従と CI/CD
+## 9. 仕様更新への追従と CI/CD（実装済み）
 
-1. 最新仕様取得（`openapi/` 更新）。
-2. `kiota update`（`kiota-lock.json` 基準で再生成）。
-3. ビルド + テスト。
-4. 公開 API 差分検知 → 破壊的変更はラベル付けし人手レビュー。
+上流 `line/line-openapi` はタグ/リリースを持たず、spec の `info.version` も実質固定値（`0.0.1`/`1.0.0`）のため、**取り込み世代の唯一の信頼できるアンカーは上流コミット SHA**。これを軸に以下を実装した。
 
-GitHub Actions（週次 cron + 手動）で仕様 DL → 生成/更新 → build → test → 差分 PR。**Kiota 本体バージョンをワークフローで固定**し生成物との整合を検証（R3）。全パッケージは `Line.Core` + Kiota ランタイム版に連動するため、**パッケージ横断のバージョン協調（ロックステップ運用）**を明文化して整合崩れを防ぐ。
+**バージョンアンカー = `openapi/upstream-manifest.json`:** 取り込んだ上流コミット `ref`（SHA）・取得日・各 spec の**LF 正規化後 sha256** を記録する単一の真実源。設計当初の意図（「仕様スナップショットのコミットハッシュ/取得日を記録」§8）の実装。同梱 `openapi/*.yml` はその `ref` を LF + urn 正規化した確定スナップショット（`.gitattributes` の `openapi/*.yml text eol=lf` で改行を固定）。
 
-> engineering プラグインの GitHub / Slack 等 MCP は現在**認証待ち**。CI 自体は GitHub Actions と公開 raw 取得で完結するため未接続でも支障なし。接続すれば PR 差分レビューや通知連携が可能。
+**⚠️ CRLF 落とし穴:** 手元 spec が CRLF・上流 raw が LF だと生バイト比較で全行が差分に見える（messaging-api だけで約 11,800 行の誤検知）。よってハッシュ/比較の前に必ず改行を LF 正規化する。正規化ロジック（LF + フロー配列内 urn 引用符化）は `scripts/lib/SpecNormalization.ps1` に一元化し、取り込み（`generate.ps1`）と検知（`check-spec-drift.ps1`）で共有する（乖離すると永久誤検知になるため）。
+
+**週次自動追従（`.github/workflows/spec-sync.yml`、cron + 手動）:**
+1. **検知** `scripts/check-spec-drift.ps1` — manifest 基準で上流 `main` と内容ハッシュ比較（純検知・非破壊）。imported spec に差分があれば drift。
+2. **追跡 Issue upsert** — drift 時、`spec-sync` ラベルの Issue を作成/更新（compare リンク・spec 別状態・上流コミット一覧）。同期回復時は自動クローズ。
+3. **再生成** `scripts/generate.ps1 -Update -Ref <latestSha>` — SHA ピンで再取得 → 正規化 → manifest 更新 → Kiota 再生成 → build + test。**Kiota CLI 版は 1.34.1 にピン**（R3・生成物との整合）。
+4. **下書き PR** — 再生成コード＋正規化 spec＋manifest を含む draft PR を自動作成。**マージは常に人＋4役ゲート**（自動マージしない）。
+
+破壊的変更は公開 API snapshot テストが捕捉。**生成コードだけの追加（新オペレーション/モデル）は snapshot に出ない**ため、PR 本文のレビュアーチェックリストで人手確認する（手書きファサードの要否判断）。全パッケージは `Line.Core` + Kiota ランタイム版にロックステップ連動。
+
+> ローカル運用: `pwsh scripts/check-spec-drift.ps1`（ドリフト有無）→ `pwsh scripts/generate.ps1 -Update`（再取得＋再生成）→ `dotnet build`/`dotnet test`。手動でも同じ経路。
 
 ---
 

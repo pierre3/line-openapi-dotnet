@@ -33,6 +33,9 @@ namespace Line.OpenApi.ChannelAccessToken.Generated.Oauth2.V21.Verify
         public VerifyRequestBuilder(string rawUrl, IRequestAdapter requestAdapter) : base(requestAdapter, "{+baseurl}/oauth2/v2.1/verify?access_token={access_token}", rawUrl)
         {
         }
+        /// <summary>
+        /// You can verify whether a Channel access token with a user-specified expiration (Channel Access Token v2.1) is valid.
+        /// </summary>
         /// <returns>A <see cref="global::Line.OpenApi.ChannelAccessToken.Generated.Models.VerifyChannelAccessTokenResponse"/></returns>
         /// <param name="cancellationToken">Cancellation token to use when cancelling requests</param>
         /// <param name="requestConfiguration">Configuration for the request such as headers, query parameters, and middleware options.</param>
@@ -48,6 +51,9 @@ namespace Line.OpenApi.ChannelAccessToken.Generated.Oauth2.V21.Verify
             var requestInfo = ToGetRequestInformation(requestConfiguration);
             return await RequestAdapter.SendAsync<global::Line.OpenApi.ChannelAccessToken.Generated.Models.VerifyChannelAccessTokenResponse>(requestInfo, global::Line.OpenApi.ChannelAccessToken.Generated.Models.VerifyChannelAccessTokenResponse.CreateFromDiscriminatorValue, default, cancellationToken).ConfigureAwait(false);
         }
+        /// <summary>
+        /// You can verify whether a Channel access token with a user-specified expiration (Channel Access Token v2.1) is valid.
+        /// </summary>
         /// <returns>A <see cref="RequestInformation"/></returns>
         /// <param name="requestConfiguration">Configuration for the request such as headers, query parameters, and middleware options.</param>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
@@ -73,11 +79,13 @@ namespace Line.OpenApi.ChannelAccessToken.Generated.Oauth2.V21.Verify
         {
             return new global::Line.OpenApi.ChannelAccessToken.Generated.Oauth2.V21.Verify.VerifyRequestBuilder(rawUrl, RequestAdapter);
         }
+        /// <summary>
+        /// You can verify whether a Channel access token with a user-specified expiration (Channel Access Token v2.1) is valid.
+        /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.0.0")]
-        #pragma warning disable CS1591
         public partial class VerifyRequestBuilderGetQueryParameters 
-        #pragma warning restore CS1591
         {
+            /// <summary>Channel access token with a user-specified expiration (Channel Access Token v2.1).</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
             [QueryParameter("access_token")]

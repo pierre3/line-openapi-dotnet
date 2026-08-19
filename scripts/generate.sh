@@ -1,20 +1,28 @@
 #!/usr/bin/env bash
 # LINE .NET クライアント PoC — Kiota 生成スクリプト (bash / macOS・Linux)
 # 前提: .NET SDK 8+ / kiota (dotnet tool install --global Microsoft.OpenApi.Kiota)
+#
+# ⚠️ parity メモ: このスクリプトは generate.ps1 の全機能を持たない副系統。
+#   欠けているもの: Kiota CLI 版ピン照合 / LF+urn 正規化 / upstream-manifest.json 連携 /
+#   -Update（SHA ピン再取得・manifest 更新）。上流追従（ドリフト検知→再生成→PR）の
+#   正となるのは generate.ps1（pwsh）＋ scripts/check-spec-drift.ps1 で、CI(spec-sync.yml)も
+#   そちらを使う。このスクリプトは欠損 spec の素朴なフォールバック取得と手元生成のみを想定。
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
 mkdir -p openapi
+# 取得元は上流の既定ブランチ main（旧 master ブランチは存在しない）。再現性が要るときは
+# generate.ps1 -Update -Ref <sha> を使い manifest でコミット SHA をピンすること。
 declare -A SPECS=(
-  [messaging-api.yml]="https://raw.githubusercontent.com/line/line-openapi/master/messaging-api.yml"
-  [channel-access-token.yml]="https://raw.githubusercontent.com/line/line-openapi/master/channel-access-token.yml"
-  [webhook.yml]="https://raw.githubusercontent.com/line/line-openapi/master/webhook.yml"
-  [liff.yml]="https://raw.githubusercontent.com/line/line-openapi/master/liff.yml"
-  [insight.yml]="https://raw.githubusercontent.com/line/line-openapi/master/insight.yml"
-  [module.yml]="https://raw.githubusercontent.com/line/line-openapi/master/module.yml"
-  [shop.yml]="https://raw.githubusercontent.com/line/line-openapi/master/shop.yml"
-  [manage-audience.yml]="https://raw.githubusercontent.com/line/line-openapi/master/manage-audience.yml"
+  [messaging-api.yml]="https://raw.githubusercontent.com/line/line-openapi/main/messaging-api.yml"
+  [channel-access-token.yml]="https://raw.githubusercontent.com/line/line-openapi/main/channel-access-token.yml"
+  [webhook.yml]="https://raw.githubusercontent.com/line/line-openapi/main/webhook.yml"
+  [liff.yml]="https://raw.githubusercontent.com/line/line-openapi/main/liff.yml"
+  [insight.yml]="https://raw.githubusercontent.com/line/line-openapi/main/insight.yml"
+  [module.yml]="https://raw.githubusercontent.com/line/line-openapi/main/module.yml"
+  [shop.yml]="https://raw.githubusercontent.com/line/line-openapi/main/shop.yml"
+  [manage-audience.yml]="https://raw.githubusercontent.com/line/line-openapi/main/manage-audience.yml"
 )
 for name in "${!SPECS[@]}"; do
   [ -f "openapi/$name" ] || { echo "downloading $name"; curl -fsSL "${SPECS[$name]}" -o "openapi/$name"; }

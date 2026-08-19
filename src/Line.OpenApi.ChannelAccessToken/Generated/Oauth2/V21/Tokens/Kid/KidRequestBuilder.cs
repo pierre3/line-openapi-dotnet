@@ -85,6 +85,7 @@ namespace Line.OpenApi.ChannelAccessToken.Generated.Oauth2.V21.Tokens.Kid
         [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.0.0")]
         public partial class KidRequestBuilderGetQueryParameters 
         {
+            /// <summary>A JSON Web Token (JWT) (opens new window)the client needs to create and sign with the private key.</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
             [QueryParameter("client_assertion")]
@@ -94,6 +95,7 @@ namespace Line.OpenApi.ChannelAccessToken.Generated.Oauth2.V21.Tokens.Kid
             [QueryParameter("client_assertion")]
             public string ClientAssertion { get; set; }
 #endif
+            /// <summary>`urn:ietf:params:oauth:client-assertion-type:jwt-bearer`</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
             [QueryParameter("client_assertion_type")]

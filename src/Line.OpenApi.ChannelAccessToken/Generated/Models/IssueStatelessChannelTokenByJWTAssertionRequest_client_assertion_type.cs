@@ -3,10 +3,9 @@ using System.Runtime.Serialization;
 using System;
 namespace Line.OpenApi.ChannelAccessToken.Generated.Models
 {
+    /// <summary>URL-encoded value of `urn:ietf:params:oauth:client-assertion-type:jwt-bearer`</summary>
     [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.0.0")]
-    #pragma warning disable CS1591
     public enum IssueStatelessChannelTokenByJWTAssertionRequest_client_assertion_type
-    #pragma warning restore CS1591
     {
         [EnumMember(Value = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer")]
         #pragma warning disable CS1591

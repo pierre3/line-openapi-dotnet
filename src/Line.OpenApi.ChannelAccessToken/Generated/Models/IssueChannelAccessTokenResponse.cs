@@ -7,12 +7,13 @@ using System.IO;
 using System;
 namespace Line.OpenApi.ChannelAccessToken.Generated.Models
 {
+    /// <summary>
+    /// Issued channel access token
+    /// </summary>
     [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.0.0")]
-    #pragma warning disable CS1591
     public partial class IssueChannelAccessTokenResponse : IAdditionalDataHolder, IParsable
-    #pragma warning restore CS1591
     {
-        /// <summary>The access_token property</summary>
+        /// <summary>Channel access token.</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
         public string? AccessToken { get; set; }
@@ -22,9 +23,9 @@ namespace Line.OpenApi.ChannelAccessToken.Generated.Models
 #endif
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
-        /// <summary>The expires_in property</summary>
+        /// <summary>Amount of time in seconds from issue to expiration of the channel access token</summary>
         public int? ExpiresIn { get; set; }
-        /// <summary>The key_id property</summary>
+        /// <summary>Unique key ID for identifying the channel access token.</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
         public string? KeyId { get; set; }
@@ -32,7 +33,7 @@ namespace Line.OpenApi.ChannelAccessToken.Generated.Models
 #else
         public string KeyId { get; set; }
 #endif
-        /// <summary>The token_type property</summary>
+        /// <summary>A token type.</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
         public string? TokenType { get; set; }
