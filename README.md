@@ -322,6 +322,12 @@ the rich-menu registration flow via the `line` CLI.
 - Tutorial (English): [`docs/manual/en/`](https://github.com/pierre3/line-companion-bot/blob/main/docs/manual/en/README.md)
 - Tutorial (日本語): [`docs/manual/ja/`](https://github.com/pierre3/line-companion-bot/blob/main/docs/manual/ja/README.md)
 
+## Showcase
+
+Apps built with these libraries:
+
+- **[pierre3/line-hf-bot](https://github.com/pierre3/line-hf-bot)** — a LINE bot for AI chat, image generation/editing, and video generation with Hugging Face models (ASP.NET, .NET 10). Built on the `Line.OpenApi.Bot` package (Messaging / Webhook / Rich Menu) and shipped as a Docker image.
+
 ## Build from source
 
 At the repository root:
