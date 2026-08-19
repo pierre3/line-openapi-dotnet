@@ -2,11 +2,12 @@
 
 **対象:** LLM tool-calling（Function Calling）向けの LINE 操作ツール群を .NET アプリへ組み込み可能にする新規パッケージ
 **関連:** `docs/LINE-dotnet-client-design.md`（本体設計）、`docs/CLI-MCP-tool-spec.md`（既存 CLI/MCP ツール）、`docs/REVIEW-WORKFLOW.md`（ゲート運用）
-**最終更新:** 2026-08-19（rev.2 — G0 レビュー指摘反映）
-**ステータス:** ドラフト（G0 レビュー済み・人の go/no-go 待ち・コードは含まない）
+**最終更新:** 2026-08-19（rev.4 — 段階2・3 実装完了）
+**ステータス:** 実装完了（段階2 共有ソース化＋段階3 `Line.OpenApi.Extensions.AI` 本体）・3 役ゲート待ち
 
 ## 変更履歴
 
+- **rev.4 (2026-08-19):** 段階2・3 を実装。**段階2**: `MessageJson`＋平坦 DTO を `tools/shared/`（`MessageJson.cs`/`MessageDtos.cs`）へ切り出し、`Line.OpenApi.Tools` にリンクコンパイル（名前空間 `Line.OpenApi.Tools.Services` 維持）。**段階3**: `tools/Line.OpenApi.Extensions.AI/` を新規実装（`LineMessagingAiTools` ファクトリ／`LineAiToolOptions`／`LineSendContext`・`LineSendOperation`・`LineSendPolicy`・`LineBeforeSendHook`・`LineSendRefusedException`／内部実行 `LineMessagingToolset`）。依存は `Line.OpenApi.Messaging`＋`Microsoft.Extensions.AI.Abstractions`（10.9.0・`AIFunctionFactory` は `.Abstractions` 収録を確認）の 2 本ちょうど。実装上の確定: **共有 DTO＋`MessageInputException` は `internal` 化**（各消費者が JSON 直列化する実装詳細＝公開表面に出さない）。これに伴い Tools の `MessageService` も `internal` 化（アプリ内消費＋テスト IVT のみ＝挙動不変）。安全ゲートは生成時クロージャ束縛で AIFunction 引数スキーマ非露出（negative assertion テストで固定）。公開 API snapshot（AI テストプロジェクト内・別途）／pack-verify に AI 専用照合（`Messaging`＋`.Abstractions` の 2 本・lib＋snupkg）／`release.yml` に `ai-v*` publish ジョブを追加。テスト: AI 18／Tools 83／ライブラリ 264／Isolation 1＝全緑・0 警告・監査クリーン・pack 12＋AI 1 パッケージ。
 - **rev.3 (2026-08-19):** G0 後の人の判断3点を確定。①**コア抽出は最小抽出案を採用**（`MessageJson`＋平坦 DTO のみ共有・操作は各消費者が薄く自前。§3.1-3.2）＝操作を共有しないことで CLI/MCP 結合・二層アダプタ・テスト破壊が丸ごと不要に。②**`Tools.Core` は NuGet 非公開＝共有ソース方式**（`tools/shared/` を両 csproj にリンクコンパイル。§3.3）。③**パッケージ名 `Line.OpenApi.Extensions.AI` で確定**。これに伴い依存グラフ・pack-verify・テスト計画・ADR-2/3 を更新。
 - **rev.2 (2026-08-19):** G0 レビュー（`docs/reviews/2026-08-19-G0-ai-plugin-design-review.md`）の MUST 指摘を反映。主な変更: 抽出は「挙動不変」でなく**二層アダプタによる API 変更リファクタ**と是正（§3.2・§6）／結合点を補完（exit 3 `CredentialException`・`MessageJson` 内の入力例外契約、§3.2）／static メモ化の維持義務を明記（§3.2）／pack-verify の一方向 ADR ガードを確定（§3.4）／`Extensions.AI` の公開 API snapshot を必須化（§6）／宛先制約を述語から**ポリシー型へ格上げ**＋broadcast 独立 opt-in（§5）／送信を**明示 opt-in・安全側既定**（§4・§5）／**送信前フック（human-in-the-loop）** を第一級 API 化（§5）／安全ゲートは LLM 可視引数にしない不変条件（§5・ADR-4）／M.E.AI 版ポリシーを別軸で明記（§8 ADR-6）。
 - **rev.1 (2026-08-19):** 初版ドラフト。

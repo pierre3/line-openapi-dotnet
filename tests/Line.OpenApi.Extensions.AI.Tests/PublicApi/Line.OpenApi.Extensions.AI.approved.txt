@@ -1,0 +1,44 @@
+namespace Line.OpenApi.Extensions.AI
+{
+    public sealed class LineAiToolOptions
+    {
+        public LineAiToolOptions() { }
+        public bool AllowBroadcast { get; set; }
+        public Line.OpenApi.Extensions.AI.LineBeforeSendHook? BeforeSend { get; set; }
+        public bool DryRun { get; set; }
+        public bool EnableSending { get; set; }
+        public Line.OpenApi.Extensions.AI.LineSendPolicy? SendPolicy { get; set; }
+    }
+    public delegate System.Threading.Tasks.ValueTask<bool> LineBeforeSendHook(Line.OpenApi.Extensions.AI.LineSendContext context, System.Threading.CancellationToken cancellationToken);
+    public static class LineMessagingAiTools
+    {
+        public static System.Collections.Generic.IReadOnlyList<Microsoft.Extensions.AI.AIFunction> Create(Line.OpenApi.Messaging.MessagingClient client, Line.OpenApi.Extensions.AI.LineAiToolOptions? options = null) { }
+        public static System.Collections.Generic.IReadOnlyList<Microsoft.Extensions.AI.AIFunction> CreateReadOnly(Line.OpenApi.Messaging.MessagingClient client) { }
+    }
+    public sealed class LineSendContext : System.IEquatable<Line.OpenApi.Extensions.AI.LineSendContext>
+    {
+        public LineSendContext(Line.OpenApi.Extensions.AI.LineSendOperation Operation, System.Collections.Generic.IReadOnlyList<string> Recipients, int MessageCount, string MessagesJson) { }
+        public int MessageCount { get; init; }
+        public string MessagesJson { get; init; }
+        public Line.OpenApi.Extensions.AI.LineSendOperation Operation { get; init; }
+        public System.Collections.Generic.IReadOnlyList<string> Recipients { get; init; }
+    }
+    public enum LineSendOperation
+    {
+        Push = 0,
+        Multicast = 1,
+        Reply = 2,
+        Broadcast = 3,
+    }
+    public delegate System.Threading.Tasks.ValueTask<bool> LineSendPolicy(Line.OpenApi.Extensions.AI.LineSendContext context, System.Threading.CancellationToken cancellationToken);
+    public enum LineSendRefusalStage
+    {
+        Policy = 0,
+        BeforeSend = 1,
+    }
+    public sealed class LineSendRefusedException : System.Exception
+    {
+        public Line.OpenApi.Extensions.AI.LineSendContext Context { get; }
+        public Line.OpenApi.Extensions.AI.LineSendRefusalStage Stage { get; }
+    }
+}

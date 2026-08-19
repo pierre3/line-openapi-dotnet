@@ -16,6 +16,13 @@
          CLI(Microsoft.OpenApi.Kiota)は 1.34.1 据え置き（2.x CLI 未リリース）。
          ランタイムのみ 2.0.0 へ（1.22.2 が 1.x 系最終・保守終了のため）。詳細は R3 doc。 -->
     <KiotaBundleVersion>2.0.0</KiotaBundleVersion>
+
+    <!-- Microsoft.Extensions.AI.Abstractions is a new external dependency axis OUTSIDE the Kiota
+         lockstep (ADR-6, docs/LINE-dotnet-AI-plugin-design.md). Only Line.OpenApi.Extensions.AI
+         consumes it; pin the lower bound centrally and let the NuGetAudit gate flag transitive
+         CVEs. Do NOT pull the implementation/DI packages (Microsoft.Extensions.AI) — Abstractions
+         alone carries AIFunction / AIFunctionFactory. -->
+    <MicrosoftExtensionsAIVersion>10.9.0</MicrosoftExtensionsAIVersion>
   </PropertyGroup>
 
   <!-- NuGet パッケージ共通メタデータ（設計 §8）。公開 ID / ルート名前空間は Line.OpenApi.*。

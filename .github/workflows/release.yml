@@ -4,6 +4,7 @@
 #   - Library packages (Line.OpenApi.Core/.../Bot): push a tag like `v0.1.0-preview`.
 #     The CLI/MCP tool package is excluded here (-p:ExcludeToolFromPack=true).
 #   - CLI/MCP tool (Line.OpenApi.Tools): push a tag like `tools-v0.1.0-preview`.
+#   - AI tools (Line.OpenApi.Extensions.AI): push a tag like `ai-v0.1.0-preview`.
 #
 # The resolved version is applied at BUILD time (not just pack) so the assembly's
 # AssemblyVersion/FileVersion and the .nupkg version stay in sync.
@@ -18,7 +19,7 @@ name: release
 
 on:
   push:
-    tags: ['v*', 'tools-v*']
+    tags: ['v*', 'tools-v*', 'ai-v*']
   workflow_dispatch:
     inputs:
       version:
@@ -90,6 +91,62 @@ jobs:
 
       # Exchange the GitHub OIDC token for a short-lived nuget.org API key (valid 1h).
       # Runs immediately before push so the key does not expire.
+      - name: NuGet login (OIDC -> temp API key)
+        id: login
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
+        with:
+          user: pierre3
+
+      - name: Push to NuGet.org
+        run: >
+          dotnet nuget push "artifacts/*.nupkg"
+          --api-key "${{ steps.login.outputs.NUGET_API_KEY }}"
+          --source https://api.nuget.org/v3/index.json
+          --skip-duplicate
+
+  # --- AI tools package: tag `ai-v*` -------------------------------------------
+  publish-ai:
+    if: ${{ startsWith(github.ref, 'refs/tags/ai-v') }}
+    runs-on: ubuntu-latest
+    environment: nuget
+    permissions:
+      contents: read
+      id-token: write # request a GitHub OIDC token for NuGet Trusted Publishing
+    env:
+      AI_PROJECT: tools/Line.OpenApi.Extensions.AI/Line.OpenApi.Extensions.AI.csproj
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: '10.0.x'
+
+      # ai-v0.1.0-preview -> 0.1.0-preview
+      - name: Resolve version
+        id: ver
+        run: echo "value=${GITHUB_REF_NAME#ai-v}" >> "$GITHUB_OUTPUT"
+
+      # Build the test project (which references the AI project) with the resolved version, so the
+      # AI assembly's AssemblyVersion/FileVersion match the package version. Then test and pack
+      # --no-build to package exactly that stamped assembly (mirrors the library job).
+      - name: Restore
+        run: dotnet restore tests/Line.OpenApi.Extensions.AI.Tests/Line.OpenApi.Extensions.AI.Tests.csproj
+
+      - name: Build
+        env:
+          VERSION: ${{ steps.ver.outputs.value }}
+        run: dotnet build tests/Line.OpenApi.Extensions.AI.Tests/Line.OpenApi.Extensions.AI.Tests.csproj --configuration Release --no-restore -p:Version="${VERSION}"
+
+      - name: Test
+        run: dotnet test tests/Line.OpenApi.Extensions.AI.Tests/Line.OpenApi.Extensions.AI.Tests.csproj --configuration Release --no-build --verbosity normal
+
+      - name: Pack
+        env:
+          VERSION: ${{ steps.ver.outputs.value }}
+        run: dotnet pack "$AI_PROJECT" --configuration Release --no-build -o artifacts -p:Version="${VERSION}"
+
+      # Exchange the GitHub OIDC token for a short-lived nuget.org API key (valid 1h).
       - name: NuGet login (OIDC -> temp API key)
         id: login
         uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
