@@ -7,14 +7,15 @@ using System.IO;
 using System;
 namespace Line.OpenApi.ChannelAccessToken.Generated.Models
 {
+    /// <summary>
+    /// Verification result
+    /// </summary>
     [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.0.0")]
-    #pragma warning disable CS1591
     public partial class VerifyChannelAccessTokenResponse : IAdditionalDataHolder, IParsable
-    #pragma warning restore CS1591
     {
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
-        /// <summary>The client_id property</summary>
+        /// <summary>The channel ID for which the channel access token was issued.</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
         public string? ClientId { get; set; }
@@ -22,9 +23,9 @@ namespace Line.OpenApi.ChannelAccessToken.Generated.Models
 #else
         public string ClientId { get; set; }
 #endif
-        /// <summary>The expires_in property</summary>
+        /// <summary>Number of seconds before the channel access token expires.</summary>
         public long? ExpiresIn { get; set; }
-        /// <summary>The scope property</summary>
+        /// <summary>Permissions granted to the channel access token.</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
         public string? Scope { get; set; }

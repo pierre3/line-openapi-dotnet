@@ -15,7 +15,7 @@ namespace Line.OpenApi.ChannelAccessToken.Generated.Oauth2.V21.Token
     {
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
-        /// <summary>The client_assertion property</summary>
+        /// <summary>A JSON Web Token the client needs to create and sign with the private key of the Assertion Signing Key.</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
         public string? ClientAssertion { get; set; }
@@ -23,7 +23,7 @@ namespace Line.OpenApi.ChannelAccessToken.Generated.Oauth2.V21.Token
 #else
         public string ClientAssertion { get; set; }
 #endif
-        /// <summary>The client_assertion_type property</summary>
+        /// <summary>urn:ietf:params:oauth:client-assertion-type:jwt-bearer</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
         public string? ClientAssertionType { get; set; }
@@ -31,7 +31,7 @@ namespace Line.OpenApi.ChannelAccessToken.Generated.Oauth2.V21.Token
 #else
         public string ClientAssertionType { get; set; }
 #endif
-        /// <summary>The grant_type property</summary>
+        /// <summary>client_credentials</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
         public string? GrantType { get; set; }

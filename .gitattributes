@@ -1,0 +1,9 @@
+# Upstream OpenAPI spec snapshots are stored with LF line endings so they match
+# the raw files from github.com/line/line-openapi byte-for-byte after ingestion.
+# This lets the drift detector (scripts/check-spec-drift.ps1) and the manifest
+# (openapi/upstream-manifest.json) compare content hashes without line-ending noise.
+# Without this, Windows autocrlf rewrites the snapshots to CRLF and every hash/diff
+# against the LF upstream reports spurious "drift" (whole-file changes).
+openapi/*.yml text eol=lf
+# manifest も LF 固定（Windows ローカルと CI Linux 再生成での改行 churn を防ぐ）。
+openapi/*.json text eol=lf

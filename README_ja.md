@@ -343,6 +343,19 @@ bash scripts/generate.sh      # macOS / Linux
 
 生成コードは `src/**/Generated/`（`kiota-lock.json` はコミット対象）。`Microsoft.Kiota.Bundle` の版は `Directory.Build.props` の `KiotaBundleVersion` で一元管理しています（現状 2.0.0）。
 
+### 上流仕様への追従
+
+`openapi/` に同梱している spec は [`line/line-openapi`](https://github.com/line/line-openapi) の**ピン留めスナップショット**です。上流はタグ/リリースを持たず `info.version` も固定値のため、取り込み世代は **上流コミット SHA** で管理します（`openapi/upstream-manifest.json` に ref・取得日・spec 別 LF 正規化 sha256 を記録）。
+
+週次ワークフロー（[`.github/workflows/spec-sync.yml`](.github/workflows/spec-sync.yml)）がドリフトを検知し、追跡 Issue を立て、再生成した**下書き PR** を自動作成します（マージは常に人が判断）。ローカルでは:
+
+```sh
+pwsh scripts/check-spec-drift.ps1        # manifest 基準でドリフト検知（ドリフト時 exit 1）
+pwsh scripts/generate.ps1 -Update        # 上流 HEAD で再取得→正規化→manifest 更新→再生成
+```
+
+ハッシュ/差分の前に改行を LF 正規化します（`.gitattributes` 参照）。生バイトのまま LF の上流と比較すると全ファイルが誤ってドリフト判定されるためです。
+
 ## ドキュメント
 
 - **📖 ユーザーマニュアル（公開中）: https://pierre3.github.io/line-openapi-dotnet/** — 概念記事（英語 / 日本語）＋英語 API リファレンス。

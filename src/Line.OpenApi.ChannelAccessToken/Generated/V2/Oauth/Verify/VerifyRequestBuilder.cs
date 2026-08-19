@@ -33,8 +33,11 @@ namespace Line.OpenApi.ChannelAccessToken.Generated.V2.Oauth.Verify
         public VerifyRequestBuilder(string rawUrl, IRequestAdapter requestAdapter) : base(requestAdapter, "{+baseurl}/v2/oauth/verify", rawUrl)
         {
         }
+        /// <summary>
+        /// Verify the validity of short-lived and long-lived channel access tokens
+        /// </summary>
         /// <returns>A <see cref="global::Line.OpenApi.ChannelAccessToken.Generated.Models.VerifyChannelAccessTokenResponse"/></returns>
-        /// <param name="body">The request body</param>
+        /// <param name="body">request of the verifyChannelToken</param>
         /// <param name="cancellationToken">Cancellation token to use when cancelling requests</param>
         /// <param name="requestConfiguration">Configuration for the request such as headers, query parameters, and middleware options.</param>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
@@ -50,8 +53,11 @@ namespace Line.OpenApi.ChannelAccessToken.Generated.V2.Oauth.Verify
             var requestInfo = ToPostRequestInformation(body, requestConfiguration);
             return await RequestAdapter.SendAsync<global::Line.OpenApi.ChannelAccessToken.Generated.Models.VerifyChannelAccessTokenResponse>(requestInfo, global::Line.OpenApi.ChannelAccessToken.Generated.Models.VerifyChannelAccessTokenResponse.CreateFromDiscriminatorValue, default, cancellationToken).ConfigureAwait(false);
         }
+        /// <summary>
+        /// Verify the validity of short-lived and long-lived channel access tokens
+        /// </summary>
         /// <returns>A <see cref="RequestInformation"/></returns>
-        /// <param name="body">The request body</param>
+        /// <param name="body">request of the verifyChannelToken</param>
         /// <param name="requestConfiguration">Configuration for the request such as headers, query parameters, and middleware options.</param>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable

@@ -21,6 +21,13 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
+      # Guards that openapi/upstream-manifest.json hashes match the vendored openapi/*.yml
+      # (via the shared normalizer). Catches a manifest hand-edited or gone stale vs the
+      # committed specs, which would make drift detection trust a wrong baseline. Offline.
+      - name: Verify spec manifest integrity
+        shell: pwsh
+        run: scripts/verify-spec-manifest.ps1
+
       # NuGet vulnerability audit is the real gate: NuGetAudit runs during restore and
       # emits NU1901-NU1904 for vulnerable direct/transitive packages. Promoting those to
       # errors fails the build on any advisory, enforcing the security floor documented in

@@ -32,8 +32,11 @@ namespace Line.OpenApi.ChannelAccessToken.Generated.Oauth2.V21.Revoke
         public RevokeRequestBuilder(string rawUrl, IRequestAdapter requestAdapter) : base(requestAdapter, "{+baseurl}/oauth2/v2.1/revoke", rawUrl)
         {
         }
+        /// <summary>
+        /// Revoke channel access token v2.1
+        /// </summary>
         /// <returns>A <see cref="Stream"/></returns>
-        /// <param name="body">The request body</param>
+        /// <param name="body">Request of the revokeChannelTokenByJWT</param>
         /// <param name="cancellationToken">Cancellation token to use when cancelling requests</param>
         /// <param name="requestConfiguration">Configuration for the request such as headers, query parameters, and middleware options.</param>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
@@ -49,8 +52,11 @@ namespace Line.OpenApi.ChannelAccessToken.Generated.Oauth2.V21.Revoke
             var requestInfo = ToPostRequestInformation(body, requestConfiguration);
             return await RequestAdapter.SendPrimitiveAsync<Stream>(requestInfo, default, cancellationToken).ConfigureAwait(false);
         }
+        /// <summary>
+        /// Revoke channel access token v2.1
+        /// </summary>
         /// <returns>A <see cref="RequestInformation"/></returns>
-        /// <param name="body">The request body</param>
+        /// <param name="body">Request of the revokeChannelTokenByJWT</param>
         /// <param name="requestConfiguration">Configuration for the request such as headers, query parameters, and middleware options.</param>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable

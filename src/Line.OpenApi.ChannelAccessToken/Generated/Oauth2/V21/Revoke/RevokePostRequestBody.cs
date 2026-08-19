@@ -7,12 +7,13 @@ using System.IO;
 using System;
 namespace Line.OpenApi.ChannelAccessToken.Generated.Oauth2.V21.Revoke
 {
+    /// <summary>
+    /// Request of the revokeChannelTokenByJWT
+    /// </summary>
     [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.0.0")]
-    #pragma warning disable CS1591
     public partial class RevokePostRequestBody : IAdditionalDataHolder, IParsable
-    #pragma warning restore CS1591
     {
-        /// <summary>The access_token property</summary>
+        /// <summary>Channel access token</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
         public string? AccessToken { get; set; }
@@ -22,7 +23,7 @@ namespace Line.OpenApi.ChannelAccessToken.Generated.Oauth2.V21.Revoke
 #endif
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
-        /// <summary>The client_id property</summary>
+        /// <summary>Channel ID</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
         public string? ClientId { get; set; }
@@ -30,7 +31,7 @@ namespace Line.OpenApi.ChannelAccessToken.Generated.Oauth2.V21.Revoke
 #else
         public string ClientId { get; set; }
 #endif
-        /// <summary>The client_secret property</summary>
+        /// <summary>Channel Secret</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
         public string? ClientSecret { get; set; }

@@ -4,6 +4,8 @@
 
 ## 現状のカバレッジ
 
+> **上流追従の自動化（2026-08-19 実装済み）:** 上流はタグ/リリースを持たず spec の `info.version` も固定値のため、取り込み世代は上流コミット SHA で管理する。アンカーは `openapi/upstream-manifest.json`（ref＝コミット SHA・取得日・spec 別 LF 正規化 sha256）。週次ワークフロー `.github/workflows/spec-sync.yml` が `scripts/check-spec-drift.ps1` でドリフトを検知 → 追跡 Issue を upsert → `scripts/generate.ps1 -Update` で SHA ピン再生成した**下書き PR を自動作成**（マージは人＋4役ゲート）。詳細は設計 §9。現行アンカー = `de8bd9e`（2026-07-28）。
+
 line-openapi リポジトリの OpenAPI spec は **9 本**。うち **8 本を取り込み済み**（Kiota 生成＋手書きファサード。2026-07-15 のカバレッジ拡充で insight/manage-audience/module/shop を追加）。残り 1 本（module-attach）のみ見送り:
 
 | spec | パッケージ | 状態 |

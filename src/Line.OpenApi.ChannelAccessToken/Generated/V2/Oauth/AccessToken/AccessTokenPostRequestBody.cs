@@ -7,14 +7,15 @@ using System.IO;
 using System;
 namespace Line.OpenApi.ChannelAccessToken.Generated.V2.Oauth.AccessToken
 {
+    /// <summary>
+    /// Request of the issueChannelToken
+    /// </summary>
     [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.0.0")]
-    #pragma warning disable CS1591
     public partial class AccessTokenPostRequestBody : IAdditionalDataHolder, IParsable
-    #pragma warning restore CS1591
     {
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
-        /// <summary>The client_id property</summary>
+        /// <summary>Channel ID.</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
         public string? ClientId { get; set; }
@@ -22,7 +23,7 @@ namespace Line.OpenApi.ChannelAccessToken.Generated.V2.Oauth.AccessToken
 #else
         public string ClientId { get; set; }
 #endif
-        /// <summary>The client_secret property</summary>
+        /// <summary>Channel secret.</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
         public string? ClientSecret { get; set; }
@@ -30,7 +31,7 @@ namespace Line.OpenApi.ChannelAccessToken.Generated.V2.Oauth.AccessToken
 #else
         public string ClientSecret { get; set; }
 #endif
-        /// <summary>The grant_type property</summary>
+        /// <summary>`client_credentials`</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
         public string? GrantType { get; set; }

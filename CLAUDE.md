@@ -103,8 +103,19 @@ dotnet tool restore                        # 初回のみ
 dotnet docfx docs/manual/docfx.json        # metadata + build → docs/manual/_site/（--serve でプレビュー）
 ```
 
-- Kiota CLI は `dotnet tool install --global Microsoft.OpenApi.Kiota` で導入。`generate.ps1` が版ピンを照合し、`channel-access-token.yml` の未引用 `urn:...` を**冪等に引用符化**する（master 再取得時も安全）。
+- Kiota CLI は `dotnet tool install --global Microsoft.OpenApi.Kiota` で導入。`generate.ps1` が版ピンを照合し、`channel-access-token.yml` の未引用 `urn:...` を**冪等に引用符化**する（再取得時も安全）。
 - ビルド/テストは PowerShell 実行が安定。
+
+## 上流仕様追従（spec-sync・実装済み）
+
+上流 `line/line-openapi` は**タグ/リリースを持たず** spec の `info.version` も固定値のため、取り込み世代は**上流コミット SHA** で管理する。設計 §9 に詳細。
+
+- **アンカー = `openapi/upstream-manifest.json`**: 取り込んだ上流コミット `ref`（SHA）・取得日・spec 別 **LF 正規化 sha256** を記録。同梱 `openapi/*.yml` はその ref を正規化した確定スナップショット。現行 ref = `de8bd9e`（2026-07-28）。上流の既定ブランチは **`main`**（`master` は存在しない＝旧 URL は潜在バグ、SHA ピンで解消済み）。
+- **⚠️ CRLF 落とし穴**: 手元 CRLF・上流 LF の生バイト比較は全行誤検知（messaging-api だけで約 11,800 行）。ハッシュ/比較の前に必ず LF 正規化する。`.gitattributes` の `openapi/*.yml text eol=lf` と併用。正規化（LF＋フロー配列内 urn 引用符化）は **`scripts/lib/SpecNormalization.ps1` に一元化**し、取り込み（`generate.ps1`）と検知（`check-spec-drift.ps1`）で共有（二重持ち禁止＝乖離すると永久誤検知）。
+- **検知**: `pwsh scripts/check-spec-drift.ps1`（manifest 基準・純検知・ドリフト時 exit 1・`-Json`/`-FailOnAwareness` あり）。gh 優先・無ければ REST。
+- **再取得＋再生成**: `pwsh scripts/generate.ps1 -Update [-Ref <sha>]`（SHA ピン再取得→正規化→manifest 更新→Kiota 生成）。既定（`-Update` 無し）は同梱 spec を使う再現生成で挙動不変。
+- **週次自動化**: `.github/workflows/spec-sync.yml`（cron＋手動）が 検知→`spec-sync` ラベルの Issue upsert（回復時 close）→再生成→**draft PR** 自動作成。**マージは常に人＋4役ゲート**（自動マージしない）。破壊的変更は公開 API snapshot が捕捉、生成コードのみの追加は PR チェックリストで人手確認。
+- **module-attach.yml**（見送り）は manifest に `imported:false`＋awareness 用ハッシュのみ記録＝変化は検知するが再生成しない。
 
 ## 規約
 

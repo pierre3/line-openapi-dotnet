@@ -7,12 +7,13 @@ using System.IO;
 using System;
 namespace Line.OpenApi.ChannelAccessToken.Generated.Models
 {
+    /// <summary>
+    /// Issued short-lived channel access token
+    /// </summary>
     [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.0.0")]
-    #pragma warning disable CS1591
     public partial class IssueShortLivedChannelAccessTokenResponse : IAdditionalDataHolder, IParsable
-    #pragma warning restore CS1591
     {
-        /// <summary>The access_token property</summary>
+        /// <summary>A short-lived channel access token. Valid for 30 days.Note: Channel access tokens cannot be refreshed.</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
         public string? AccessToken { get; set; }
@@ -22,9 +23,9 @@ namespace Line.OpenApi.ChannelAccessToken.Generated.Models
 #endif
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
-        /// <summary>The expires_in property</summary>
+        /// <summary>Time until channel access token expires in seconds from time the token is issued.</summary>
         public int? ExpiresIn { get; set; }
-        /// <summary>The token_type property</summary>
+        /// <summary>Token type. The value is always `Bearer`.</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
         public string? TokenType { get; set; }

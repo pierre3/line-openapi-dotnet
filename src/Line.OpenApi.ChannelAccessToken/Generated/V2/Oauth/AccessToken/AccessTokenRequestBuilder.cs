@@ -33,8 +33,11 @@ namespace Line.OpenApi.ChannelAccessToken.Generated.V2.Oauth.AccessToken
         public AccessTokenRequestBuilder(string rawUrl, IRequestAdapter requestAdapter) : base(requestAdapter, "{+baseurl}/v2/oauth/accessToken", rawUrl)
         {
         }
+        /// <summary>
+        /// Issue short-lived channel access token
+        /// </summary>
         /// <returns>A <see cref="global::Line.OpenApi.ChannelAccessToken.Generated.Models.IssueShortLivedChannelAccessTokenResponse"/></returns>
-        /// <param name="body">The request body</param>
+        /// <param name="body">Request of the issueChannelToken</param>
         /// <param name="cancellationToken">Cancellation token to use when cancelling requests</param>
         /// <param name="requestConfiguration">Configuration for the request such as headers, query parameters, and middleware options.</param>
         /// <exception cref="global::Line.OpenApi.ChannelAccessToken.Generated.Models.ErrorResponse">When receiving a 400 status code</exception>
@@ -55,8 +58,11 @@ namespace Line.OpenApi.ChannelAccessToken.Generated.V2.Oauth.AccessToken
             };
             return await RequestAdapter.SendAsync<global::Line.OpenApi.ChannelAccessToken.Generated.Models.IssueShortLivedChannelAccessTokenResponse>(requestInfo, global::Line.OpenApi.ChannelAccessToken.Generated.Models.IssueShortLivedChannelAccessTokenResponse.CreateFromDiscriminatorValue, errorMapping, cancellationToken).ConfigureAwait(false);
         }
+        /// <summary>
+        /// Issue short-lived channel access token
+        /// </summary>
         /// <returns>A <see cref="RequestInformation"/></returns>
-        /// <param name="body">The request body</param>
+        /// <param name="body">Request of the issueChannelToken</param>
         /// <param name="requestConfiguration">Configuration for the request such as headers, query parameters, and middleware options.</param>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
