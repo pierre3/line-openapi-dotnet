@@ -9,6 +9,7 @@
 | `Line.OpenApi.Samples.Console` | コンソール | 送信 / LIFF 管理 / トークン発行 / Webhook パース（オフライン） |
 | `Line.OpenApi.Samples.Webhook` | minimal web api | 実 Webhook 受信 → エコー返信（dev トンネルでライブデモ） |
 | `Line.OpenApi.Samples.Login` | minimal web api | LINE Login + OpenID Connect：認可コードフロー（PKCE）→ プロフィール / 友だち関係 |
+| `Line.OpenApi.Samples.Ai` | コンソール | LLM tool-calling：スクリプト化したモデルが `Line.OpenApi.Extensions.AI` のツールを安全ゲート（許可リストポリシー・承認フック）越しに操作 |
 
 > これらのサンプルは `IsPackable=false` で、NuGet パッケージには含まれません。`src/` をプロジェクト参照します。
 
@@ -24,6 +25,8 @@
 | `LINE_PRIVATE_KEY` / `LINE_PRIVATE_KEY_PATH` | RSA 秘密鍵（PEM 本体 / ファイルパス。**ファイルパス推奨**） | Console（トークン） |
 | `LINE_LOGIN_CHANNEL_ID` / `LINE_LOGIN_CHANNEL_SECRET` | LINE Login チャネル ID / シークレット | Login |
 | `LINE_LOGIN_REDIRECT_URI` | コンソール登録のコールバック URL（既定 `http://localhost:5000/callback`） | Login |
+| `LLM_MODEL` / `LLM_API_KEY` | 実モデルでツールを駆動するモデル id ＋ API キー（未設定＝スクリプト） | AI |
+| `LLM_BASE_URL` | OpenAI 互換エンドポイントのベース URL（例 `https://api.groq.com/openai/v1`）。未設定＝OpenAI | AI |
 
 > 秘密鍵は環境変数へインライン投入するとプロセス一覧やクラッシュダンプ経由で漏れうるため、`LINE_PRIVATE_KEY_PATH`（ファイル参照）を推奨します。
 
@@ -142,6 +145,60 @@ dotnet run
 `http://localhost:5000/` を開き **Sign in with LINE** をクリック。LINE で同意すると `/callback` に戻り、userId・表示名・画像・ID トークンの claim・Login チャネルに紐づく公式アカウントの友だち状態が表示されます。
 
 > コンソールサンプルと違い、LINE Login はオフラインでは動きません（資格情報が無いと "disabled" ページのみ。フローは実ブラウザ往復のため）。本サンプルは `AddLineLogin`（DI）を使います。表示内容以外にも、同じ `LoginClient` で `RefreshTokenAsync`・`VerifyAccessTokenAsync`・`GetUserInfoAsync`（OIDC userinfo）が利用できます。
+
+---
+
+## 4. AI ツールエージェント (`Line.OpenApi.Samples.Ai`)
+
+LINE の Messaging 利用シーンを [Microsoft.Extensions.AI](https://learn.microsoft.com/dotnet/ai/)
+の `AIFunction` ツール（`Line.OpenApi.Extensions.AI`）として LLM に公開し、実際の
+`FunctionInvokingChatClient` ループで駆動するコンソールアプリ。本パッケージの安全設計＝送信の
+明示 opt-in・許可リスト `SendPolicy`・human-in-the-loop の `BeforeSend` 承認フック・読み取り検証を
+実演します。
+
+```powershell
+cd samples/Line.OpenApi.Samples.Ai
+dotnet run                     # オフライン：ローカルスタブ transport でゲートは実行、ネットワークには出ない
+```
+
+本サンプルは独立した2軸を持ちます。
+
+- **頭脳（brain）** — 既定は決定的な `ScriptedChatClient`（API キー不要）。`LLM_MODEL` ＋ `LLM_API_KEY` を設定すると実モデルで駆動。
+- **送信（transport）** — 既定はローカルスタブ（ゲートは動くがネットワークに出ない）。`LINE_CHANNEL_ACCESS_TOKEN` ＋ `--send` で実送信。
+
+**スクリプト（既定）** は 3 ステップを再現的に再生します。
+
+1. **ツール検出** — モデルに見えるツールを表示。安全ゲートが引数に**現れない**ことを確認。
+2. **許可された送信** — 許可リストのユーザーへ push → `SendPolicy` が ALLOW → `BeforeSend` が承認を求める（入力をパイプすると自動承認）→ 送信完了。
+3. **拒否された送信** — 許可リスト外へ push → `SendPolicy` が DENY → ツールが `LineSendRefusedException` を送出、それがモデルに返り「送れなかった」と報告。
+
+**実モデル。** `LLM_MODEL` ＋ `LLM_API_KEY` を設定するとチャット REPL が起動し、モデル自身がツール呼び出しを判断します（安全ゲートはまったく同じように効く）。OpenAI と、`LLM_BASE_URL` を指定した任意の OpenAI 互換エンドポイント（Groq / Together / Ollama の OpenAI 口 / vLLM / LM Studio など）で動作。エンドポイントとモデルが tool/function calling に対応している必要があります。
+
+```powershell
+# OpenAI
+$env:LLM_MODEL   = "gpt-4o"
+$env:LLM_API_KEY = "<openai api key>"
+dotnet run
+# You: Uallowed0000000000000000000000000 に会議は10時とLINEして
+
+# 任意の OpenAI 互換エンドポイント（例: Groq）
+$env:LLM_BASE_URL = "https://api.groq.com/openai/v1"
+$env:LLM_MODEL    = "llama-3.3-70b-versatile"
+$env:LLM_API_KEY  = "<groq api key>"
+dotnet run
+```
+
+実送信（どちらの brain でも）:
+
+```powershell
+$env:LINE_CHANNEL_ACCESS_TOKEN = "<channel access token>"
+$env:LINE_TO_USER_ID           = "<許可リストの宛先 userId>"
+dotnet run -- --send
+```
+
+- オフラインは dry-run ではなく**ローカルスタブ transport** を使う（ゲートを実行するため。dry-run はゲートより前で短絡する）。メッセージ本文は `SendPolicy` / `BeforeSend` に渡るため、ログではツール引数を PII として扱うこと。
+- 拒否時はツールが `LineSendRefusedException` を送出。`FunctionInvokingChatClient` がそれを捕捉してエラーをモデルに返す（＝ステップ3 はモデルの返答が表示される）。サンプルには、例外が呼び出し側へ浮上する版/設定向けの防御的 `catch` も用意。実モデルでは既定 `IncludeDetailedErrors=false` のため、拒否の具体理由でなく汎用エラーが渡る点に注意。
+- brain が違うだけで、`AsBuilder().UseFunctionInvocation()` の配線・ツール一覧・ゲートは不変。Semantic Kernel なら同じツールを `kernel.Plugins.AddFromFunctions("Line", tools)` に渡します。`Microsoft.Extensions.AI` / `Microsoft.Extensions.AI.OpenAI` は**サンプルのみ**の参照で、公開パッケージ `Line.OpenApi.Extensions.AI` は Abstractions のみに依存します。
 
 ---
 

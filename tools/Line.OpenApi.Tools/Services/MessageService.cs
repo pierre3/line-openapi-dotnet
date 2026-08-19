@@ -10,7 +10,7 @@ namespace Line.OpenApi.Tools.Services;
 /// (control host via <c>Api</c>, data host via <c>Blob</c>); host routing / BaseUrl handling
 /// (R1) is already solved inside the facade, so this service does not re-implement it.
 /// </summary>
-public sealed class MessageService
+internal sealed class MessageService
 {
     // Clients (and their HttpClients) are memoized per access token so the long-running MCP
     // server does not accumulate handlers/sockets on every call (code gate Medium#1). The facade
@@ -181,29 +181,8 @@ public sealed class MessageService
     }
 }
 
-/// <summary>Outcome of a send operation. Lists returned sent-message ids when the API provides them.</summary>
-public sealed record SendResult(IReadOnlyList<string> SentMessageIds)
-{
-    /// <summary>Result for endpoints that return an empty body on success (multicast/broadcast).</summary>
-    public static readonly SendResult Accepted = new(new List<string>());
-
-    internal static SendResult From(List<SentMessage>? sent) =>
-        new(sent?.Where(s => s.Id is not null).Select(s => s.Id!).ToList() ?? new List<string>());
-}
-
-/// <summary>Outcome of a dry-run message validation: the input parsed to <c>Count</c> messages of the listed types.</summary>
-public sealed record MessageValidationResult(bool DryRun, bool Valid, int Count, IReadOnlyList<string> MessageTypes);
-
-/// <summary>Bot information (non-secret).</summary>
-public sealed record BotInfo(
-    string? UserId, string? BasicId, string? PremiumId, string? DisplayName, string? PictureUrl,
-    string? ChatMode, string? MarkAsReadMode);
-
-/// <summary>Message quota.</summary>
-public sealed record QuotaInfo(string? Type, long? Value);
-
-/// <summary>User profile (non-secret).</summary>
-public sealed record ProfileInfo(string? UserId, string? DisplayName, string? PictureUrl, string? StatusMessage, string? Language);
+// SendResult / MessageValidationResult / BotInfo / QuotaInfo / ProfileInfo are shared source
+// (tools/shared/MessageDtos.cs), compiled into this assembly under the same namespace.
 
 /// <summary>Downloaded content descriptor.</summary>
 public sealed record ContentResult(string Path, long Bytes);

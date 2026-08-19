@@ -156,6 +156,39 @@ foreach ($id in $produced.Keys) {
     }
 }
 
+# --- Extensions.AI dedicated check (design section 3.4) ------------------------
+# The AI package (tools/Line.OpenApi.Extensions.AI) is excluded from the library contract above
+# (ExcludeToolFromPack=true), because unlike the src/** packages it depends on Messaging +
+# Microsoft.Extensions.AI.Abstractions rather than Core only. Verify its exact dependency shape and
+# lib/snupkg layout on its own here.
+$aiProject = "$PSScriptRoot/../tools/Line.OpenApi.Extensions.AI/Line.OpenApi.Extensions.AI.csproj"
+$aiOut = Join-Path $OutputDir 'ai'
+New-Item -ItemType Directory -Path $aiOut -Force | Out-Null
+Write-Host "==> dotnet pack Line.OpenApi.Extensions.AI -> $aiOut"
+dotnet pack $aiProject --configuration $Configuration --output $aiOut
+if ($LASTEXITCODE -ne 0) { throw "dotnet pack (Extensions.AI) failed with exit code $LASTEXITCODE" }
+
+$aiNupkgs = @(Get-ChildItem $aiOut -Filter '*.nupkg')
+if ($aiNupkgs.Count -ne 1) {
+    Fail "Extensions.AI: expected exactly 1 nupkg but found $($aiNupkgs.Count)"
+}
+else {
+    $aiPkg = Read-Package $aiNupkgs[0].FullName
+    if ($aiPkg.Id -ne 'Line.OpenApi.Extensions.AI') { Fail "Extensions.AI: unexpected package id '$($aiPkg.Id)'" }
+    # Exact dependency set: exactly the two public dependencies (design section 3.3). This asserts
+    # the full dependency list, not just the internal Line.OpenApi.* subset.
+    $aiDeps = @(Get-DependencyIds $aiPkg.Nuspec $expectedTfm | Sort-Object)
+    $expectedAiDeps = @('Line.OpenApi.Messaging', 'Microsoft.Extensions.AI.Abstractions') | Sort-Object
+    if (($aiDeps -join ',') -ne ($expectedAiDeps -join ',')) {
+        Fail "Extensions.AI dependencies mismatch. expected [$($expectedAiDeps -join ', ')] but got [$($aiDeps -join ', ')]"
+    }
+    if ($aiPkg.Entries -notcontains 'README.md') { Fail "Extensions.AI must embed README.md (PackageReadmeFile)" }
+    $aiHasLib = @($aiPkg.Entries | Where-Object { $_ -like "lib/$expectedTfm/*.dll" }).Count -gt 0
+    if (-not $aiHasLib) { Fail "Extensions.AI must ship lib/$expectedTfm/*.dll" }
+    $aiSnupkgPath = $aiNupkgs[0].FullName -replace '\.nupkg$', '.snupkg'
+    if (-not (Test-Path $aiSnupkgPath)) { Fail "Extensions.AI must produce a snupkg" }
+}
+
 # --- Report --------------------------------------------------------------------
 if ($errors.Count -gt 0) {
     Write-Host ""
@@ -167,3 +200,4 @@ if ($errors.Count -gt 0) {
 $codeCount = $expectedPackages.Count - 1
 Write-Host ""
 Write-Host "Pack smoke test PASSED: $codeCount code packages (lib + snupkg) + 1 meta package (${metaPackage}: no lib, no snupkg, 3 deps). Internal dependency graph verified." -ForegroundColor Green
+Write-Host "Extensions.AI dedicated check PASSED: Line.OpenApi.Extensions.AI (lib + snupkg, deps = Line.OpenApi.Messaging + Microsoft.Extensions.AI.Abstractions)." -ForegroundColor Green

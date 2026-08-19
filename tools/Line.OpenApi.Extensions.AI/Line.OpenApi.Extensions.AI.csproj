@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- LLM tool-calling adapter: wraps the Messaging use case as Microsoft.Extensions.AI
+       AIFunctions (consumable from Semantic Kernel or any M.E.AI host). Support tier under
+       /tools; published to NuGet on its own cadence (tag ai-v*), separate from the library
+       (v*) and the CLI/MCP tool (tools-v*). Design: docs/LINE-dotnet-AI-plugin-design.md. -->
+  <PropertyGroup>
+    <Description>LINE messaging tools for LLM tool-calling. Exposes the Line.OpenApi.Messaging use case as Microsoft.Extensions.AI AIFunctions (push / multicast / broadcast / reply, plus read-only bot lookups), so an AI agent built on Semantic Kernel or any Microsoft.Extensions.AI host can operate LINE. Sending is opt-in and safe-by-default (read-only unless explicitly enabled), with a send policy and a human-in-the-loop hook.</Description>
+    <PackageTags>LINE;LINE-API;messaging;bot;AI;LLM;tool-calling;function-calling;semantic-kernel;Microsoft.Extensions.AI</PackageTags>
+  </PropertyGroup>
+
+  <!-- Released on its own cadence (tag ai-v*), so it is excluded from the library pack/verify
+       workflows (pack-verify smoke test and the `v*` library release) via the same
+       -p:ExcludeToolFromPack=true switch the CLI/MCP tool uses. Its own release path
+       (release.yml, ai-v*) packs this project directly. See design section 3.4. -->
+  <PropertyGroup Condition="'$(ExcludeToolFromPack)' == 'true'">
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Shared source (not a NuGet package): MessageJson + flat DTOs, compiled into both this
+         project and Line.OpenApi.Tools. The namespace (Line.OpenApi.Tools.Services) is preserved;
+         the types are internal so they do not surface on this package's public API.
+         See design section 3.3. -->
+    <Compile Include="..\shared\*.cs" Link="Shared\%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Exactly two public dependencies (design section 3.3): the Messaging use case and the
+         M.E.AI abstractions (AIFunction / AIFunctionFactory). No implementation/DI packages. -->
+    <ProjectReference Include="..\..\src\Line.OpenApi.Messaging\Line.OpenApi.Messaging.csproj" />
+    <PackageReference Include="Microsoft.Extensions.AI.Abstractions" Version="$(MicrosoftExtensionsAIVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Line.OpenApi.Extensions.AI.Tests" />
+  </ItemGroup>
+
+</Project>

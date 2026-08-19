@@ -300,12 +300,43 @@ line mcp                                   # start as an MCP server
 
 See [`tools/README.md`](https://github.com/pierre3/line-openapi-dotnet/blob/main/tools/README.md) ([日本語](https://github.com/pierre3/line-openapi-dotnet/blob/main/tools/README_ja.md)) for details.
 
+## AI tools (`Line.OpenApi.Extensions.AI`)
+
+`Line.OpenApi.Extensions.AI` wraps the Messaging use case as [Microsoft.Extensions.AI](https://learn.microsoft.com/dotnet/ai/) `AIFunction` tools, so an LLM agent built on Semantic Kernel or any Microsoft.Extensions.AI host can operate LINE **in-process** (this complements the CLI/MCP tool, which runs out-of-process). It depends only on `Line.OpenApi.Messaging` and `Microsoft.Extensions.AI.Abstractions`.
+
+```csharp
+using Line.OpenApi.Extensions.AI;
+using Line.OpenApi.Messaging;
+
+var line = MessagingClient.CreateWithStaticToken("CHANNEL_ACCESS_TOKEN");
+
+// Safe by default: read-only tools only (bot info / quota / profile / message-validate).
+IReadOnlyList<AIFunction> readTools = LineMessagingAiTools.CreateReadOnly(line);
+
+// Sending is explicit opt-in and gated.
+IReadOnlyList<AIFunction> tools = LineMessagingAiTools.Create(line, new LineAiToolOptions
+{
+    EnableSending = true,                 // enables push / multicast / reply (default false)
+    AllowBroadcast = false,               // broadcast = largest blast radius, separate opt-in
+    SendPolicy = (ctx, ct) =>             // bound blast radius (operation / recipients / count)
+        new(ctx.Operation != LineSendOperation.Broadcast),
+    BeforeSend = (ctx, ct) => /* human-in-the-loop / audit; inspect ctx.MessagesJson */ new(true),
+});
+
+// Semantic Kernel consumes Microsoft.Extensions.AI functions directly:
+// kernel.Plugins.AddFromFunctions("Line", tools);
+```
+
+**Safety model.** Sends are off by default; broadcast needs its own opt-in; `SendPolicy` and `BeforeSend` gate every send and are set by you at creation time — they are **never** exposed as tool arguments, so a model cannot flip them. Tool results are non-secret and the channel access token never appears in a result, description, or exception. Rate / cumulative-count limiting is the host pipeline's responsibility. Note that message content is passed to `SendPolicy` / `BeforeSend` and retained on `LineSendContext.MessagesJson` (including on a `LineSendRefusedException`), and read-tool results (profile display name, etc.) flow to your LLM provider — so treat tool arguments and results as potential PII in your logs and audit trail.
+
 ## Samples
 
 Runnable demo apps are included under `samples/` (not part of the NuGet packages). They are **offline by default** and connect to the real API when environment variables are set.
 
 - **`Line.OpenApi.Samples.Console`** — send / LIFF management / token issuance / webhook parsing (`dotnet run -- webhook` works without credentials)
 - **`Line.OpenApi.Samples.Webhook`** — minimal API webhook receiver + echo reply (live demo via a dev tunnel)
+- **`Line.OpenApi.Samples.Login`** — LINE Login + OpenID Connect authorization-code flow (PKCE) with localhost callback
+- **`Line.OpenApi.Samples.Ai`** — LLM tool-calling: a scripted model drives the `Line.OpenApi.Extensions.AI` tools through the safety gates (runs fully offline)
 
 See [`samples/README.md`](https://github.com/pierre3/line-openapi-dotnet/blob/main/samples/README.md) for run steps, environment variables, and dev tunnel setup.
 
@@ -399,7 +430,10 @@ The API reference is auto-generated in English from the XML doc comments on the 
 │   ├── Line.OpenApi.Module/             # Module channels + ModuleClient facade
 │   ├── Line.OpenApi.Shop/               # Mission stickers + ShopClient facade
 │   └── Line.OpenApi.Bot/                # convenience meta-package (dependencies only, no code)
-├── tools/                       # CLI / MCP tool (Line.OpenApi.Tools, command name `line`)
+├── tools/
+│   ├── Line.OpenApi.Tools/              # CLI / MCP tool (command name `line`)
+│   ├── Line.OpenApi.Extensions.AI/      # Microsoft.Extensions.AI tools for LLM tool-calling
+│   └── shared/                          # source shared between Tools and Extensions.AI (not a package)
 ├── samples/                     # bundled demo apps (console / webhook Web API)
 ├── tests/                       # tests for the hand-written surface (signature/receive/routing/DI/snapshot, etc.)
 └── docs/                        # design, review records, user manual (manual/)

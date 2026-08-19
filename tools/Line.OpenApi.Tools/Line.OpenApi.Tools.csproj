@@ -49,6 +49,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Shared source (not a NuGet package): MessageJson + flat DTOs, compiled into both this
+         project and Line.OpenApi.Extensions.AI. The namespace is preserved so Tools is unchanged.
+         See docs/LINE-dotnet-AI-plugin-design.md §3.3. -->
+    <Compile Include="..\shared\*.cs" Link="Shared\%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
     <InternalsVisibleTo Include="Line.OpenApi.Tools.Tests" />
   </ItemGroup>
 

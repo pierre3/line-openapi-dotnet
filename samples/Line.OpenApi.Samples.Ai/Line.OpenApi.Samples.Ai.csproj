@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Line.OpenApi.Samples.Ai</RootNamespace>
+    <AssemblyName>Line.OpenApi.Samples.Ai</AssemblyName>
+    <!-- Samples are never packed or published. This also suppresses the packaging
+         metadata / README include inherited from the root Directory.Build.props. -->
+    <IsPackable>false</IsPackable>
+    <!-- Samples are demo code, not public API surface: no XML doc file needed. -->
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\tools\Line.OpenApi.Extensions.AI\Line.OpenApi.Extensions.AI.csproj" />
+    <!-- The sample drives a real Microsoft.Extensions.AI function-invocation loop
+         (FunctionInvokingChatClient). Only the sample needs the implementation package; the
+         published Line.OpenApi.Extensions.AI depends on the Abstractions only. Pinned in lockstep
+         with the Abstractions version (Directory.Build.props). -->
+    <PackageReference Include="Microsoft.Extensions.AI" Version="$(MicrosoftExtensionsAIVersion)" />
+    <!-- Optional real-provider path: any OpenAI-compatible endpoint (set LLM_* env vars). The
+         OpenAI client's base URL is overridable, so this also covers Groq / Together / Ollama's
+         OpenAI endpoint / vLLM / LM Studio, etc. Sample-only, like the implementation package. -->
+    <PackageReference Include="Microsoft.Extensions.AI.OpenAI" Version="$(MicrosoftExtensionsAIVersion)" />
+  </ItemGroup>
+
+</Project>

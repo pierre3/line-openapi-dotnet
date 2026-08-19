@@ -1,5 +1,11 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 using Line.OpenApi.Messaging.Generated.Api.Models;
 using Microsoft.Kiota.Abstractions.Serialization;
 using Microsoft.Kiota.Serialization.Json;
@@ -11,6 +17,11 @@ namespace Line.OpenApi.Tools.Services;
 /// model. Uses a Kiota JSON parse node factory directly (not the global serialization
 /// registry) so it works regardless of which clients have been constructed.
 /// </summary>
+/// <remarks>
+/// Shared source (compiled into both <c>Line.OpenApi.Tools</c> and
+/// <c>Line.OpenApi.Extensions.AI</c>). The namespace is preserved so the Tools assembly
+/// sees the same types as before; keep it self-contained (no dependency on either consumer).
+/// </remarks>
 internal static class MessageJson
 {
     /// <summary>Parses a JSON array of message objects into generated <see cref="Message"/> instances.</summary>
@@ -29,8 +40,8 @@ internal static class MessageJson
         }
         catch (Exception ex) when (ex is JsonException or FormatException)
         {
-            // Surface malformed input as the tool's own input error (exit code 2) instead of
-            // leaking a raw serializer exception to the caller / MCP client.
+            // Surface malformed input as the shared input-error type instead of leaking a raw
+            // serializer exception. Each consumer maps this to its own contract (Tools: exit code 2).
             throw new MessageInputException($"Message JSON could not be parsed: {ex.Message}", ex);
         }
 
@@ -49,7 +60,7 @@ internal static class MessageJson
     /// <summary>Builds a single-element messages array containing one text message.</summary>
     public static string TextMessagesJson(string text)
     {
-        var escaped = System.Text.Json.JsonSerializer.Serialize(text);
+        var escaped = JsonSerializer.Serialize(text);
         return $"[{{\"type\":\"text\",\"text\":{escaped}}}]";
     }
 
@@ -57,13 +68,17 @@ internal static class MessageJson
     public static string WrapFlex(string flexContentsJson, string altText)
     {
         // The envelope is composed textually so the contents pass through verbatim.
-        var escapedAlt = System.Text.Json.JsonSerializer.Serialize(altText);
+        var escapedAlt = JsonSerializer.Serialize(altText);
         return $"[{{\"type\":\"flex\",\"altText\":{escapedAlt},\"contents\":{flexContentsJson}}}]";
     }
 }
 
-/// <summary>Thrown when message input JSON is missing or malformed. Maps to exit code 2.</summary>
-public sealed class MessageInputException : Exception
+/// <summary>
+/// Thrown when message input JSON is missing or malformed. This is a neutral, consumer-agnostic
+/// input error: Tools maps it to exit code 2, and the AI layer treats it as a validation failure.
+/// Internal to each consuming assembly (not part of any package's public API surface).
+/// </summary>
+internal sealed class MessageInputException : Exception
 {
     public MessageInputException(string message, Exception? innerException = null)
         : base(message, innerException)

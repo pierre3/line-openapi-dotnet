@@ -9,6 +9,7 @@ Demo apps that show how to use the `Line.OpenApi.*` packages. **They run offline
 | `Line.OpenApi.Samples.Console` | Console | Send / LIFF management / token issuance / webhook parsing (offline) |
 | `Line.OpenApi.Samples.Webhook` | minimal web api | Real webhook receiving → echo reply (live demo via a dev tunnel) |
 | `Line.OpenApi.Samples.Login` | minimal web api | LINE Login + OpenID Connect: authorization-code flow (PKCE) → profile / friendship |
+| `Line.OpenApi.Samples.Ai` | Console | LLM tool-calling: a scripted model drives `Line.OpenApi.Extensions.AI` tools through the safety gates (allow-list policy, approval hook) |
 
 > These samples are `IsPackable=false` and are not included in the NuGet packages. They reference `src/` as project references.
 
@@ -24,6 +25,8 @@ Demo apps that show how to use the `Line.OpenApi.*` packages. **They run offline
 | `LINE_PRIVATE_KEY` / `LINE_PRIVATE_KEY_PATH` | RSA private key (PEM body / file path. **File path recommended**) | Console (token) |
 | `LINE_LOGIN_CHANNEL_ID` / `LINE_LOGIN_CHANNEL_SECRET` | LINE Login channel ID / secret | Login |
 | `LINE_LOGIN_REDIRECT_URI` | Callback URL registered in the console (default `http://localhost:5000/callback`) | Login |
+| `LLM_MODEL` / `LLM_API_KEY` | Model id + API key to drive the tools with a real model (unset → scripted) | AI |
+| `LLM_BASE_URL` | Base URL of an OpenAI-compatible endpoint (e.g. `https://api.groq.com/openai/v1`); unset → OpenAI | AI |
 
 > Injecting a private key inline via an environment variable can leak it through the process list or crash dumps, so `LINE_PRIVATE_KEY_PATH` (a file reference) is recommended.
 
@@ -151,6 +154,60 @@ claims, and whether you are a friend of the Official Account linked to the Login
 > shows a "disabled" page (the flow is a live browser round-trip). The sample uses
 > `AddLineLogin` (DI). Beyond what it shows, the same `LoginClient` also offers
 > `RefreshTokenAsync`, `VerifyAccessTokenAsync`, and `GetUserInfoAsync` (OIDC userinfo).
+
+---
+
+## 4. AI tools agent (`Line.OpenApi.Samples.Ai`)
+
+A console app that exposes the LINE Messaging use case to an LLM as
+[Microsoft.Extensions.AI](https://learn.microsoft.com/dotnet/ai/) `AIFunction` tools
+(`Line.OpenApi.Extensions.AI`) and drives them through the real `FunctionInvokingChatClient`
+loop. It demonstrates the package's safety model: opt-in sending, an allow-list `SendPolicy`, a
+human-in-the-loop `BeforeSend` approval hook, and read-only validation.
+
+```powershell
+cd samples/Line.OpenApi.Samples.Ai
+dotnet run                     # offline: local stub transport, gates run, nothing leaves the machine
+```
+
+The sample has two independent axes:
+
+- **Brain** — a deterministic `ScriptedChatClient` (no API key) by default, or a real model when `LLM_MODEL` + `LLM_API_KEY` are set.
+- **Transport** — a local stub by default (gates run, nothing leaves the machine), or real delivery with `LINE_CHANNEL_ACCESS_TOKEN` + `--send`.
+
+**Scripted (default)** plays three steps and is fully reproducible:
+
+1. **Tool discovery** — prints the tools the model sees; note the safety gates are **not** among the arguments.
+2. **Allowed send** — a push to an allow-listed user → `SendPolicy` allows → `BeforeSend` prompts for approval (auto-approved when input is piped) → the send completes.
+3. **Blocked send** — a push to a non-allow-listed user → `SendPolicy` denies → the tool raises `LineSendRefusedException`, which is fed back so the model reports it could not send.
+
+**Real model.** Set `LLM_MODEL` + `LLM_API_KEY` to start a chat REPL where the model itself decides when to call the tools — the safety gates run exactly the same. Works with OpenAI and any OpenAI-compatible endpoint via `LLM_BASE_URL` (Groq / Together / Ollama's OpenAI endpoint / vLLM / LM Studio, …); the endpoint and model must support tool/function calling.
+
+```powershell
+# OpenAI
+$env:LLM_MODEL   = "gpt-4o"
+$env:LLM_API_KEY = "<openai api key>"
+dotnet run
+# You: tell Uallowed0000000000000000000000000 the meeting is at 10:00
+
+# Any OpenAI-compatible endpoint (example: Groq)
+$env:LLM_BASE_URL = "https://api.groq.com/openai/v1"
+$env:LLM_MODEL    = "llama-3.3-70b-versatile"
+$env:LLM_API_KEY  = "<groq api key>"
+dotnet run
+```
+
+Send for real (add to either brain):
+
+```powershell
+$env:LINE_CHANNEL_ACCESS_TOKEN = "<channel access token>"
+$env:LINE_TO_USER_ID           = "<allow-listed recipient userId>"
+dotnet run -- --send
+```
+
+- Offline mode uses a **local stub transport** (not dry-run) precisely so the gates run — dry-run would short-circuit before them. Real message content is passed to `SendPolicy` / `BeforeSend`; treat tool arguments as potential PII in your logs.
+- On a denied send the tool raises `LineSendRefusedException`. `FunctionInvokingChatClient` catches it and feeds the error back to the model (so step 3 shows the model's reply); the sample also has a defensive `catch` for versions/configs where the exception surfaces to the caller instead. With a real model, note that the default `IncludeDetailedErrors=false` hands it a generic error rather than the exact refusal reason.
+- Only the brain differs between modes — the `AsBuilder().UseFunctionInvocation()` wiring, the tool list, and the gates are identical. For Semantic Kernel, pass the same tools to `kernel.Plugins.AddFromFunctions("Line", tools)`. `Microsoft.Extensions.AI` / `Microsoft.Extensions.AI.OpenAI` are referenced by the **sample only**; the published `Line.OpenApi.Extensions.AI` depends on the Abstractions alone.
 
 ---
 

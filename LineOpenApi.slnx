@@ -14,14 +14,17 @@
     <Project Path="src/Line.OpenApi.Shop/Line.OpenApi.Shop.csproj" />
   </Folder>
   <Folder Name="/tools/">
+    <Project Path="tools/Line.OpenApi.Extensions.AI/Line.OpenApi.Extensions.AI.csproj" />
     <Project Path="tools/Line.OpenApi.Tools/Line.OpenApi.Tools.csproj" />
   </Folder>
   <Folder Name="/samples/">
+    <Project Path="samples/Line.OpenApi.Samples.Ai/Line.OpenApi.Samples.Ai.csproj" />
     <Project Path="samples/Line.OpenApi.Samples.Console/Line.OpenApi.Samples.Console.csproj" />
     <Project Path="samples/Line.OpenApi.Samples.Login/Line.OpenApi.Samples.Login.csproj" />
     <Project Path="samples/Line.OpenApi.Samples.Webhook/Line.OpenApi.Samples.Webhook.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Line.OpenApi.Extensions.AI.Tests/Line.OpenApi.Extensions.AI.Tests.csproj" />
     <Project Path="tests/Line.OpenApi.Tools.Tests/Line.OpenApi.Tools.Tests.csproj" />
     <Project Path="tests/Line.OpenApi.Messaging.Webhook.IsolationTests/Line.OpenApi.Messaging.Webhook.IsolationTests.csproj" />
     <Project Path="tests/Line.OpenApi.Tests/Line.OpenApi.Tests.csproj" />
