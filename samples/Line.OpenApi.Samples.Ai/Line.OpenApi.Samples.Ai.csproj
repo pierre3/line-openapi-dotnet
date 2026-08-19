@@ -19,6 +19,10 @@
          published Line.OpenApi.Extensions.AI depends on the Abstractions only. Pinned in lockstep
          with the Abstractions version (Directory.Build.props). -->
     <PackageReference Include="Microsoft.Extensions.AI" Version="$(MicrosoftExtensionsAIVersion)" />
+    <!-- Optional real-provider path: any OpenAI-compatible endpoint (set LLM_* env vars). The
+         OpenAI client's base URL is overridable, so this also covers Groq / Together / Ollama's
+         OpenAI endpoint / vLLM / LM Studio, etc. Sample-only, like the implementation package. -->
+    <PackageReference Include="Microsoft.Extensions.AI.OpenAI" Version="$(MicrosoftExtensionsAIVersion)" />
   </ItemGroup>
 
 </Project>

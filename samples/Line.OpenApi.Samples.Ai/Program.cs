@@ -1,9 +1,11 @@
+using System.ClientModel;
 using System.Text.Json;
 using Line.OpenApi.Extensions.AI;
 using Line.OpenApi.Messaging;
 using Line.OpenApi.Samples.Ai;
 using Microsoft.Extensions.AI;
 using Microsoft.Kiota.Abstractions.Authentication;
+using OpenAI;
 
 using Con = System.Console;
 
@@ -13,20 +15,24 @@ using Con = System.Console;
 // how the safety gates (opt-in sending, an allow-list SendPolicy, a human-in-the-loop BeforeSend
 // hook, and dry-run) behave when a model drives them.
 //
-// Offline by default: with no LINE_CHANNEL_ACCESS_TOKEN the Messaging client runs over a local stub
-// transport (the safety gates run for real, but no request leaves the machine), and the "model" is
-// a deterministic ScriptedChatClient — no API key required. To really send, set
-// LINE_CHANNEL_ACCESS_TOKEN (and optionally LINE_TO_USER_ID) and pass `--send`.
+// Two independent axes:
+//   * The "brain": a deterministic ScriptedChatClient by default (no API key). Set LLM_MODEL +
+//     LLM_API_KEY (and optionally LLM_BASE_URL for any OpenAI-compatible endpoint) to drive the
+//     tools with a real model instead.
+//   * The transport: a local stub by default (the safety gates run for real but nothing leaves the
+//     machine). Set LINE_CHANNEL_ACCESS_TOKEN and pass `--send` to really deliver.
 
 var token = Env("LINE_CHANNEL_ACCESS_TOKEN");
 var allowedUser = Env("LINE_TO_USER_ID") ?? "Uallowed0000000000000000000000000";
 const string blockedUser = "Ublocked0000000000000000000000000";
 var wantSend = args.Contains("--send", StringComparer.OrdinalIgnoreCase);
 var live = token is not null && wantSend;
+using var model = TryCreateModel(out var modelName);  // null => scripted brain
 
 Con.WriteLine("==================================================");
 Con.WriteLine(" LINE OpenApi .NET — AI tools sample");
-Con.WriteLine($" Mode: {(live ? "LIVE (will really send)" : "OFFLINE (local stub transport; gates run, no network)")}");
+Con.WriteLine($" Brain: {(model is not null ? $"LLM ({modelName})" : "SCRIPTED (deterministic, no API key)")}");
+Con.WriteLine($" Send:  {(live ? "LIVE (will really send)" : "OFFLINE (local stub transport; gates run, no network)")}");
 Con.WriteLine("==================================================\n");
 
 // The caller builds the MessagingClient (the same client the non-AI library code uses). Live mode
@@ -66,30 +72,86 @@ var validateResult = await tools.Single(t => t.Name == "line_message_validate")
 Con.WriteLine($"  -> {JsonSerializer.Serialize(validateResult)}\n");
 
 // Part 2 — the model drives the tools through the gates -----------------------
-await RunAgentAsync(
-    "Send the user a note that the meeting is at 10:00.",
-    ScriptedChatClient.ToolCall("call-1", "line_message_push", new Dictionary<string, object?>
-    {
-        ["to"] = allowedUser,
-        ["messagesJson"] = "[{\"type\":\"text\",\"text\":\"Reminder: meeting tomorrow at 10:00.\"}]",
-    }),
-    "Done — I sent the reminder.");
+if (model is not null)
+{
+    // Real LLM: let the model decide which tools to call. The gates run exactly the same.
+    await RunReplAsync(model);
+}
+else
+{
+    // Scripted brain: two fixed conversations that exercise the allow and deny paths.
+    await RunScriptedAsync(
+        "Send the user a note that the meeting is at 10:00.",
+        ScriptedChatClient.ToolCall("call-1", "line_message_push", new Dictionary<string, object?>
+        {
+            ["to"] = allowedUser,
+            ["messagesJson"] = "[{\"type\":\"text\",\"text\":\"Reminder: meeting tomorrow at 10:00.\"}]",
+        }),
+        "Done — I sent the reminder.");
 
-await RunAgentAsync(
-    "Now push the same reminder to an address that is not on the allow-list.",
-    ScriptedChatClient.ToolCall("call-2", "line_message_push", new Dictionary<string, object?>
-    {
-        ["to"] = blockedUser,
-        ["messagesJson"] = "[{\"type\":\"text\",\"text\":\"Reminder: meeting tomorrow at 10:00.\"}]",
-    }),
-    "I could not send it — the destination was refused by the send policy.");
+    await RunScriptedAsync(
+        "Now push the same reminder to an address that is not on the allow-list.",
+        ScriptedChatClient.ToolCall("call-2", "line_message_push", new Dictionary<string, object?>
+        {
+            ["to"] = blockedUser,
+            ["messagesJson"] = "[{\"type\":\"text\",\"text\":\"Reminder: meeting tomorrow at 10:00.\"}]",
+        }),
+        "I could not send it — the destination was refused by the send policy.");
 
-Con.WriteLine("Done. Re-run with LINE_CHANNEL_ACCESS_TOKEN set and `--send` to deliver for real.");
+    Con.WriteLine("Done. Set LLM_MODEL + LLM_API_KEY to drive the tools with a real model, and set");
+    Con.WriteLine("LINE_CHANNEL_ACCESS_TOKEN + `--send` to deliver for real.");
+}
 return 0;
+
+// Chat REPL backed by a real model. The model chooses when to call the LINE tools; every send still
+// passes through SendPolicy + BeforeSend. Empty line exits.
+async Task RunReplAsync(IChatClient chatModel)
+{
+    IChatClient agent = chatModel.AsBuilder().UseFunctionInvocation().Build();
+    var chatOptions = new ChatOptions { Tools = [.. tools] };
+    var history = new List<ChatMessage>
+    {
+        new(ChatRole.System,
+            "You help operate a LINE bot with the provided tools. To message someone, call "
+            + $"line_message_push. The only allow-listed recipient id is '{allowedUser}'. If a send "
+            + "is refused, explain that to the user. Keep replies short."),
+    };
+
+    Con.WriteLine($"Chat with the LINE agent (allow-listed recipient: {allowedUser}). Empty line to quit.");
+    Con.WriteLine($"Try: \"tell {allowedUser} the meeting is at 10:00\"\n");
+    while (true)
+    {
+        Con.Write("You: ");
+        var line = Con.ReadLine();
+        if (string.IsNullOrWhiteSpace(line)) break;
+
+        history.Add(new ChatMessage(ChatRole.User, line));
+        var response = await agent.GetResponseAsync(history, chatOptions);
+        Con.WriteLine($"Assistant: {response.Text}\n");
+        history.AddMessages(response);
+    }
+}
+
+// Builds a real IChatClient from LLM_* env vars, or returns null (scripted mode). Works with OpenAI
+// and any OpenAI-compatible endpoint (LLM_BASE_URL), e.g. Groq / Together / Ollama / vLLM / LM Studio.
+// The endpoint and model must support tool/function calling for the demo to work.
+IChatClient? TryCreateModel(out string? name)
+{
+    name = Env("LLM_MODEL");
+    var apiKey = Env("LLM_API_KEY");
+    if (name is null || apiKey is null) return null;
+
+    var clientOptions = new OpenAIClientOptions();
+    var baseUrl = Env("LLM_BASE_URL");
+    if (baseUrl is not null) clientOptions.Endpoint = new Uri(baseUrl);
+
+    var openAi = new OpenAIClient(new ApiKeyCredential(apiKey), clientOptions);
+    return openAi.GetChatClient(name).AsIChatClient();
+}
 
 // Runs one scripted "conversation" through the real FunctionInvokingChatClient: the model requests a
 // tool, M.E.AI invokes the LINE AIFunction (which runs the gates), then the model replies.
-async Task RunAgentAsync(string userPrompt, ChatMessage toolCallTurn, string finalTurn)
+async Task RunScriptedAsync(string userPrompt, ChatMessage toolCallTurn, string finalTurn)
 {
     Con.WriteLine($"── User: {userPrompt}");
 
