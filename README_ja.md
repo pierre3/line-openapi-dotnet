@@ -321,6 +321,12 @@ LINE Developers Console の設定・dev トンネルの構成・`line` CLI に�
 - チュートリアル（英語）: [`docs/manual/en/`](https://github.com/pierre3/line-companion-bot/blob/main/docs/manual/en/README.md)
 - チュートリアル（日本語）: [`docs/manual/ja/`](https://github.com/pierre3/line-companion-bot/blob/main/docs/manual/ja/README.md)
 
+## ショーケース
+
+このライブラリを使って作られたアプリ:
+
+- **[pierre3/line-hf-bot](https://github.com/pierre3/line-hf-bot)** — Hugging Face モデルで AI チャット・画像生成/編集・動画生成を行う LINE bot（ASP.NET / .NET 10）。`Line.OpenApi.Bot` パッケージ（メッセージ送受信 / Webhook / リッチメニュー）を利用し、Docker イメージで配布。
+
 ## ソースからのビルド
 
 リポジトリルートで:
