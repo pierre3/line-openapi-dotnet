@@ -9,6 +9,7 @@
 | `Line.OpenApi.Samples.Console` | コンソール | 送信 / LIFF 管理 / トークン発行 / Webhook パース（オフライン） |
 | `Line.OpenApi.Samples.Webhook` | minimal web api | 実 Webhook 受信 → エコー返信（dev トンネルでライブデモ） |
 | `Line.OpenApi.Samples.Login` | minimal web api | LINE Login + OpenID Connect：認可コードフロー（PKCE）→ プロフィール / 友だち関係 |
+| `Line.OpenApi.Samples.Ai` | コンソール | LLM tool-calling：スクリプト化したモデルが `Line.OpenApi.Extensions.AI` のツールを安全ゲート（許可リストポリシー・承認フック）越しに操作 |
 
 > これらのサンプルは `IsPackable=false` で、NuGet パッケージには含まれません。`src/` をプロジェクト参照します。
 
@@ -142,6 +143,38 @@ dotnet run
 `http://localhost:5000/` を開き **Sign in with LINE** をクリック。LINE で同意すると `/callback` に戻り、userId・表示名・画像・ID トークンの claim・Login チャネルに紐づく公式アカウントの友だち状態が表示されます。
 
 > コンソールサンプルと違い、LINE Login はオフラインでは動きません（資格情報が無いと "disabled" ページのみ。フローは実ブラウザ往復のため）。本サンプルは `AddLineLogin`（DI）を使います。表示内容以外にも、同じ `LoginClient` で `RefreshTokenAsync`・`VerifyAccessTokenAsync`・`GetUserInfoAsync`（OIDC userinfo）が利用できます。
+
+---
+
+## 4. AI ツールエージェント (`Line.OpenApi.Samples.Ai`)
+
+LINE の Messaging 利用シーンを [Microsoft.Extensions.AI](https://learn.microsoft.com/dotnet/ai/)
+の `AIFunction` ツール（`Line.OpenApi.Extensions.AI`）として LLM に公開し、実際の
+`FunctionInvokingChatClient` ループで駆動するコンソールアプリ。本パッケージの安全設計＝送信の
+明示 opt-in・許可リスト `SendPolicy`・human-in-the-loop の `BeforeSend` 承認フック・読み取り検証を
+実演します。
+
+```powershell
+cd samples/Line.OpenApi.Samples.Ai
+dotnet run                     # オフライン：ローカルスタブ transport でゲートは実行、ネットワークには出ない
+```
+
+「モデル」は決定的な `ScriptedChatClient`（API キー不要）なので再現可能。3 ステップを再生します。
+
+1. **ツール検出** — モデルに見えるツールを表示。安全ゲートが引数に**現れない**ことを確認。
+2. **許可された送信** — 許可リストのユーザーへ push を要求 → `SendPolicy` が ALLOW → `BeforeSend` が承認を求める（入力をパイプすると自動承認）→ 送信完了。
+3. **拒否された送信** — 許可リスト外へ push を要求 → `SendPolicy` が DENY → ツールが `LineSendRefusedException` を送出、それがモデルに返り「送れなかった」と報告。
+
+実送信（PowerShell）:
+
+```powershell
+$env:LINE_CHANNEL_ACCESS_TOKEN = "<channel access token>"
+$env:LINE_TO_USER_ID           = "<許可リストの宛先 userId>"
+dotnet run -- --send
+```
+
+- オフラインは dry-run ではなく**ローカルスタブ transport** を使う（ゲートを実行するため。dry-run はゲートより前で短絡する）。メッセージ本文は `SendPolicy` / `BeforeSend` に渡るため、ログではツール引数を PII として扱うこと。
+- スクリプトの代わりに実 LLM を使うには `ScriptedChatClient` を任意の `IChatClient`（OpenAI / Azure OpenAI / Ollama）に差し替えるだけ（`AsBuilder().UseFunctionInvocation()` の配線とツール一覧は不変）。Semantic Kernel なら同じツールを `kernel.Plugins.AddFromFunctions("Line", tools)` に渡します。
 
 ---
 

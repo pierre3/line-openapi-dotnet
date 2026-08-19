@@ -18,6 +18,7 @@
     <Project Path="tools/Line.OpenApi.Tools/Line.OpenApi.Tools.csproj" />
   </Folder>
   <Folder Name="/samples/">
+    <Project Path="samples/Line.OpenApi.Samples.Ai/Line.OpenApi.Samples.Ai.csproj" />
     <Project Path="samples/Line.OpenApi.Samples.Console/Line.OpenApi.Samples.Console.csproj" />
     <Project Path="samples/Line.OpenApi.Samples.Login/Line.OpenApi.Samples.Login.csproj" />
     <Project Path="samples/Line.OpenApi.Samples.Webhook/Line.OpenApi.Samples.Webhook.csproj" />

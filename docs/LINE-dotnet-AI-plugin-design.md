@@ -193,7 +193,7 @@ LLM に**実ユーザーへの送信を自律実行**させるため、安全機
 1. **G0 設計**（本書）を 4 役ゲートへ。→ 完了（CONCERNS・MUST 反映済み・人の go/no-go = GO）。
 2. **共有ソース化（最小抽出・rev.3）:** `MessageJson`＋平坦 DTO（`SendResult`/`ProfileInfo`/`BotInfo`/`QuotaInfo`/`MessageValidationResult`）を `MessageService.cs` から切り出し `tools/shared/` へ移設、`Line.OpenApi.Tools.csproj` にリンクコンパイル（名前空間維持＝Tools は無改変）。入力例外型を中立化。`MessageService` の操作は Tools に残す。テスト全緑を確認（無改変のため差分小）。
 3. **`Line.OpenApi.Extensions.AI` 実装（初期スコープ）:** `tools/shared/` をリンクコンパイル、`Messaging` へ薄く操作をパススルー、`AIFunction` 注釈＋安全ゲート（§4・§5）。公開 API snapshot・ゲーティングテスト（§6）。3 役ゲート（code/security/test-arch）。
-4. サンプル（`samples/`）にエンドツーエンドのエージェント実例を追加、README で訴求。
+4. サンプル（`samples/`）にエンドツーエンドのエージェント実例を追加、README で訴求。→ **完了**（`samples/Line.OpenApi.Samples.Ai`。スクリプト `IChatClient` を実 `FunctionInvokingChatClient` で駆動、安全ゲートをオフライン実演。README 英日更新）。
 
 ---
 

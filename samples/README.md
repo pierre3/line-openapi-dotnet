@@ -9,6 +9,7 @@ Demo apps that show how to use the `Line.OpenApi.*` packages. **They run offline
 | `Line.OpenApi.Samples.Console` | Console | Send / LIFF management / token issuance / webhook parsing (offline) |
 | `Line.OpenApi.Samples.Webhook` | minimal web api | Real webhook receiving → echo reply (live demo via a dev tunnel) |
 | `Line.OpenApi.Samples.Login` | minimal web api | LINE Login + OpenID Connect: authorization-code flow (PKCE) → profile / friendship |
+| `Line.OpenApi.Samples.Ai` | Console | LLM tool-calling: a scripted model drives `Line.OpenApi.Extensions.AI` tools through the safety gates (allow-list policy, approval hook) |
 
 > These samples are `IsPackable=false` and are not included in the NuGet packages. They reference `src/` as project references.
 
@@ -151,6 +152,39 @@ claims, and whether you are a friend of the Official Account linked to the Login
 > shows a "disabled" page (the flow is a live browser round-trip). The sample uses
 > `AddLineLogin` (DI). Beyond what it shows, the same `LoginClient` also offers
 > `RefreshTokenAsync`, `VerifyAccessTokenAsync`, and `GetUserInfoAsync` (OIDC userinfo).
+
+---
+
+## 4. AI tools agent (`Line.OpenApi.Samples.Ai`)
+
+A console app that exposes the LINE Messaging use case to an LLM as
+[Microsoft.Extensions.AI](https://learn.microsoft.com/dotnet/ai/) `AIFunction` tools
+(`Line.OpenApi.Extensions.AI`) and drives them through the real `FunctionInvokingChatClient`
+loop. It demonstrates the package's safety model: opt-in sending, an allow-list `SendPolicy`, a
+human-in-the-loop `BeforeSend` approval hook, and read-only validation.
+
+```powershell
+cd samples/Line.OpenApi.Samples.Ai
+dotnet run                     # offline: local stub transport, gates run, nothing leaves the machine
+```
+
+The "model" is a deterministic `ScriptedChatClient` (no API key needed), so the run is reproducible.
+It plays three steps:
+
+1. **Tool discovery** — prints the tools the model sees; note the safety gates are **not** among the arguments.
+2. **Allowed send** — the model requests a push to an allow-listed user → `SendPolicy` allows → `BeforeSend` prompts for approval (auto-approved when input is piped) → the send completes.
+3. **Blocked send** — the model requests a push to a non-allow-listed user → `SendPolicy` denies → the tool raises `LineSendRefusedException`, which is fed back so the model reports it could not send.
+
+Send for real (PowerShell):
+
+```powershell
+$env:LINE_CHANNEL_ACCESS_TOKEN = "<channel access token>"
+$env:LINE_TO_USER_ID           = "<allow-listed recipient userId>"
+dotnet run -- --send
+```
+
+- Offline mode uses a **local stub transport** (not dry-run) precisely so the gates run — dry-run would short-circuit before them. Real message content is passed to `SendPolicy` / `BeforeSend`; treat tool arguments as potential PII in your logs.
+- To use a real LLM instead of the scripted client, replace `ScriptedChatClient` with any `IChatClient` (OpenAI / Azure OpenAI / Ollama) — the `AsBuilder().UseFunctionInvocation()` wiring and the tool list are unchanged. For Semantic Kernel, pass the same tools to `kernel.Plugins.AddFromFunctions("Line", tools)`.
 
 ---
 

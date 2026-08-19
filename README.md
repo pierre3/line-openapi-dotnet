@@ -335,6 +335,8 @@ Runnable demo apps are included under `samples/` (not part of the NuGet packages
 
 - **`Line.OpenApi.Samples.Console`** — send / LIFF management / token issuance / webhook parsing (`dotnet run -- webhook` works without credentials)
 - **`Line.OpenApi.Samples.Webhook`** — minimal API webhook receiver + echo reply (live demo via a dev tunnel)
+- **`Line.OpenApi.Samples.Login`** — LINE Login + OpenID Connect authorization-code flow (PKCE) with localhost callback
+- **`Line.OpenApi.Samples.Ai`** — LLM tool-calling: a scripted model drives the `Line.OpenApi.Extensions.AI` tools through the safety gates (runs fully offline)
 
 See [`samples/README.md`](https://github.com/pierre3/line-openapi-dotnet/blob/main/samples/README.md) for run steps, environment variables, and dev tunnel setup.
 
