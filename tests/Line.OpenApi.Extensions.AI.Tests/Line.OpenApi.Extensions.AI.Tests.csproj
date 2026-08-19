@@ -4,6 +4,13 @@
     <IsPackable>false</IsPackable>
     <ImplicitUsings>enable</ImplicitUsings>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <!-- PublicApiSnapshotTests locates its snapshot dir at runtime via [CallerFilePath]. On CI,
+         Directory.Build.props sets ContinuousIntegrationBuild=true, which enables SourceLink
+         deterministic source paths so [CallerFilePath] returns "/_/..." instead of the real path,
+         making Directory.CreateDirectory / file access fail with Permission denied. This project is
+         non-packable (no deterministic build needed), so disable the remap here to get real paths.
+         (Same fix as Line.OpenApi.Tests.csproj.) -->
+    <DeterministicSourcePaths>false</DeterministicSourcePaths>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
