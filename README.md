@@ -32,6 +32,19 @@ The target framework is **`net10.0` only** (netstandard2.0 / .NET Framework are 
 | `Line.OpenApi.Module` [![NuGet](https://img.shields.io/nuget/v/Line.OpenApi.Module.svg)](https://www.nuget.org/packages/Line.OpenApi.Module) | Module channels for partner/agency operation (`ModuleClient` facade = detach, chat control, list attached modules) |
 | `Line.OpenApi.Shop` [![NuGet](https://img.shields.io/nuget/v/Line.OpenApi.Shop.svg)](https://www.nuget.org/packages/Line.OpenApi.Shop) | Mission sticker sending (`ShopClient` facade) |
 | `Line.OpenApi.Bot` [![NuGet](https://img.shields.io/nuget/v/Line.OpenApi.Bot.svg)](https://www.nuget.org/packages/Line.OpenApi.Bot) | Convenience meta-package (optional) = the full Bot set in a single reference (bundles `Messaging` + `Messaging.Webhook` + `ChannelAccessToken`; no code, dependencies only) |
+| `Line.OpenApi.Extensions.AI` [![NuGet](https://img.shields.io/nuget/v/Line.OpenApi.Extensions.AI.svg)](https://www.nuget.org/packages/Line.OpenApi.Extensions.AI) | LLM tool-calling: exposes the Messaging use case as [Microsoft.Extensions.AI](https://learn.microsoft.com/dotnet/ai/) `AIFunction` tools (Semantic Kernel / any M.E.AI host), safe-by-default with opt-in gated sending. Released on its own cadence (tag `ai-v*`). See [`tools/Line.OpenApi.Extensions.AI/README.md`](https://github.com/pierre3/line-openapi-dotnet/blob/main/tools/Line.OpenApi.Extensions.AI/README.md) |
+
+## dotnet tools
+
+A local command-line / MCP tool distributed as a [.NET global tool](https://learn.microsoft.com/dotnet/core/tools/global-tools), released on its own cadence (tag `tools-v*`).
+
+| Tool | Role |
+|---|---|
+| `Line.OpenApi.Tools` [![NuGet](https://img.shields.io/nuget/v/Line.OpenApi.Tools.svg)](https://www.nuget.org/packages/Line.OpenApi.Tools) | CLI / MCP global tool (command `line`) for operating the LINE Platform from your local machine: token management, message send / bot lookup, webhook development, LIFF / rich menu / insight / audience / shop — the same operations both as CLI subcommands and as MCP server tools. See [`tools/README.md`](https://github.com/pierre3/line-openapi-dotnet/blob/main/tools/README.md) |
+
+```sh
+dotnet tool install -g Line.OpenApi.Tools
+```
 
 ## Installation
 

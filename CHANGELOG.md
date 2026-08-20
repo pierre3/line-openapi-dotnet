@@ -7,10 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 日本語版は [`CHANGELOG_ja.md`](CHANGELOG_ja.md) を参照してください。
 
-This repository publishes two independently versioned release lines:
+This repository publishes three independently versioned release lines:
 
 - **Libraries** — the `Line.OpenApi.*` client packages, tagged `v*`.
 - **Tools** — the `Line.OpenApi.Tools` CLI / MCP global tool (command `line`), tagged `tools-v*`.
+- **AI Tools** — the `Line.OpenApi.Extensions.AI` in-process Microsoft.Extensions.AI tools, tagged `ai-v*`.
 
 They evolve on separate cadences, so each has its own version history below.
 
@@ -70,6 +71,20 @@ First stable (GA) release of the client libraries.
 ### 0.1.0-preview - 2026-07-14
 
 - First public release to NuGet.org: `Line.OpenApi.Core`, `.ChannelAccessToken`, `.Messaging`, `.Messaging.Webhook`, `.Liff`, and the `.Bot` meta-package.
+
+---
+
+## AI Tools — `Line.OpenApi.Extensions.AI`
+
+### 1.0.0 - 2026-08-20
+
+First stable release of the in-process AI tools package: the LINE Messaging use case exposed as [Microsoft.Extensions.AI](https://learn.microsoft.com/dotnet/ai/) `AIFunction` tools, usable from Semantic Kernel or any Microsoft.Extensions.AI host.
+
+#### Added
+
+- `LineMessagingAiTools.CreateReadOnly` / `Create` producing the tools: read-only `line_bot_info` / `line_bot_quota` / `line_bot_profile` / `line_message_validate`, plus opt-in `line_message_push` / `line_message_multicast` / `line_message_reply` / `line_message_broadcast`.
+- Safe-by-default sending model via `LineAiToolOptions`: `EnableSending`, `AllowBroadcast`, `DryRun`, a `SendPolicy` blast-radius gate, and a human-in-the-loop `BeforeSend` hook. None of the gates is exposed as a tool argument, so a model cannot flip them.
+- Two dependencies only: `Line.OpenApi.Messaging` and `Microsoft.Extensions.AI.Abstractions`.
 
 ---
 

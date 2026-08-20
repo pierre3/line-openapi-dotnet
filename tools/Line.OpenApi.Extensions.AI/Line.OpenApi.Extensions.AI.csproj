@@ -6,7 +6,22 @@
   <PropertyGroup>
     <Description>LINE messaging tools for LLM tool-calling. Exposes the Line.OpenApi.Messaging use case as Microsoft.Extensions.AI AIFunctions (push / multicast / broadcast / reply, plus read-only bot lookups), so an AI agent built on Semantic Kernel or any Microsoft.Extensions.AI host can operate LINE. Sending is opt-in and safe-by-default (read-only unless explicitly enabled), with a send policy and a human-in-the-loop hook.</Description>
     <PackageTags>LINE;LINE-API;messaging;bot;AI;LLM;tool-calling;function-calling;semantic-kernel;Microsoft.Extensions.AI</PackageTags>
+
+    <!-- Independent release cadence from the library and CLI/MCP packages (tag ai-v*).
+         Pinned here so the shared Directory.Build.props default does not drive this package's
+         version; the release tag overrides it at pack time. -->
+    <Version>1.0.0</Version>
+
+    <!-- Ship this package's own README on NuGet instead of the repository-root library README.
+         PackRootReadme=false opts out of the root README include in Directory.Build.props. -->
+    <PackRootReadme>false</PackRootReadme>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Package-specific README (English), embedded via PackageReadmeFile above. -->
+    <None Include="README.md" Pack="true" PackagePath="\" Visible="false" />
+  </ItemGroup>
 
   <!-- Released on its own cadence (tag ai-v*), so it is excluded from the library pack/verify
        workflows (pack-verify smoke test and the `v*` library release) via the same

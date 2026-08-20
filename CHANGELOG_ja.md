@@ -7,10 +7,11 @@
 
 English version: [`CHANGELOG.md`](CHANGELOG.md)
 
-本リポジトリは 2 系統を独立採番で公開しています:
+本リポジトリは 3 系統を独立採番で公開しています:
 
 - **ライブラリ** — `Line.OpenApi.*` クライアントパッケージ群。タグ `v*`。
 - **ツール** — `Line.OpenApi.Tools` CLI / MCP グローバルツール（コマンド `line`）。タグ `tools-v*`。
+- **AI ツール** — `Line.OpenApi.Extensions.AI` アプリ内蔵 Microsoft.Extensions.AI ツール。タグ `ai-v*`。
 
 それぞれ別サイクルで進むため、以下でバージョン履歴を分けて記載します。
 
@@ -70,6 +71,20 @@ dev トンネルの再起動時に LINE Developers コンソールへ URL を貼
 ### 0.1.0-preview - 2026-07-14
 
 - NuGet.org への初公開: `Line.OpenApi.Core`・`.ChannelAccessToken`・`.Messaging`・`.Messaging.Webhook`・`.Liff`、およびメタパッケージ `.Bot`。
+
+---
+
+## AI ツール — `Line.OpenApi.Extensions.AI`
+
+### 1.0.0 - 2026-08-20
+
+アプリ内蔵 AI ツールパッケージの初の安定版リリース。LINE の Messaging 利用シーンを [Microsoft.Extensions.AI](https://learn.microsoft.com/dotnet/ai/) の `AIFunction` ツールとして公開し、Semantic Kernel や任意の Microsoft.Extensions.AI ホストから利用できます。
+
+#### 追加
+
+- `LineMessagingAiTools.CreateReadOnly` / `Create` によるツール生成: 読み取り専用 `line_bot_info` / `line_bot_quota` / `line_bot_profile` / `line_message_validate`、および opt-in の `line_message_push` / `line_message_multicast` / `line_message_reply` / `line_message_broadcast`。
+- `LineAiToolOptions` による既定安全な送信モデル: `EnableSending`・`AllowBroadcast`・`DryRun`、射程制限の `SendPolicy` ゲート、human-in-the-loop の `BeforeSend` フック。いずれのゲートもツール引数には出さないため、モデルは反転できません。
+- 依存は 2 本のみ: `Line.OpenApi.Messaging` と `Microsoft.Extensions.AI.Abstractions`。
 
 ---
 

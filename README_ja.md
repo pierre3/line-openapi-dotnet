@@ -32,6 +32,19 @@ LINE 公開 OpenAPI 仕様から [Kiota](https://learn.microsoft.com/openapi/kio
 | `Line.OpenApi.Module` [![NuGet](https://img.shields.io/nuget/v/Line.OpenApi.Module.svg)](https://www.nuget.org/packages/Line.OpenApi.Module) | パートナー／代理店運用向けモジュールチャネル（`ModuleClient` ファサード＝detach・chat control・attach 済みモジュール一覧） |
 | `Line.OpenApi.Shop` [![NuGet](https://img.shields.io/nuget/v/Line.OpenApi.Shop.svg)](https://www.nuget.org/packages/Line.OpenApi.Shop) | ミッションスタンプ送信（`ShopClient` ファサード） |
 | `Line.OpenApi.Bot` [![NuGet](https://img.shields.io/nuget/v/Line.OpenApi.Bot.svg)](https://www.nuget.org/packages/Line.OpenApi.Bot) | 便宜メタパッケージ（任意）＝Bot 一式を 1 参照で導入（`Messaging` + `Messaging.Webhook` + `ChannelAccessToken` を束ねる。コードなし・依存束ねのみ） |
+| `Line.OpenApi.Extensions.AI` [![NuGet](https://img.shields.io/nuget/v/Line.OpenApi.Extensions.AI.svg)](https://www.nuget.org/packages/Line.OpenApi.Extensions.AI) | LLM tool-calling：Messaging 利用シーンを [Microsoft.Extensions.AI](https://learn.microsoft.com/dotnet/ai/) の `AIFunction` ツールとして公開（Semantic Kernel／任意の M.E.AI ホスト）。既定で安全・送信は opt-in でゲート付き。独立採番（タグ `ai-v*`）。[`tools/Line.OpenApi.Extensions.AI/README_ja.md`](https://github.com/pierre3/line-openapi-dotnet/blob/main/tools/Line.OpenApi.Extensions.AI/README_ja.md) 参照 |
+
+## dotnet ツール
+
+ローカル用のコマンドライン／MCP ツール。[.NET グローバルツール](https://learn.microsoft.com/dotnet/core/tools/global-tools)として配布し、独立採番（タグ `tools-v*`）で公開します。
+
+| ツール | 役割 |
+|---|---|
+| `Line.OpenApi.Tools` [![NuGet](https://img.shields.io/nuget/v/Line.OpenApi.Tools.svg)](https://www.nuget.org/packages/Line.OpenApi.Tools) | LINE プラットフォームをローカル PC から操作する CLI／MCP グローバルツール（コマンド `line`）：トークン管理・メッセージ送信／Bot 照会・Webhook 開発支援・LIFF／リッチメニュー／insight／audience／shop。同じ機能を CLI サブコマンドと MCP サーバツールの両方で提供。[`tools/README_ja.md`](https://github.com/pierre3/line-openapi-dotnet/blob/main/tools/README_ja.md) 参照 |
+
+```sh
+dotnet tool install -g Line.OpenApi.Tools
+```
 
 ## インストール
 
