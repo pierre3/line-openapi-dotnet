@@ -25,14 +25,47 @@ using Con = System.Console;
 var token = Env("LINE_CHANNEL_ACCESS_TOKEN");
 var allowedUser = Env("LINE_TO_USER_ID") ?? "Uallowed0000000000000000000000000";
 const string blockedUser = "Ublocked0000000000000000000000000";
-var wantSend = args.Contains("--send", StringComparer.OrdinalIgnoreCase);
+
+bool Flag(string name) => args.Contains(name, StringComparer.OrdinalIgnoreCase);
+
+if (Flag("--help") || Flag("-h"))
+{
+    PrintUsage();
+    return 0;
+}
+
+// Transport axis (independent of the gates): --send delivers for real, otherwise a local stub.
+var wantSend = Flag("--send");
 var live = token is not null && wantSend;
+
+// Safety-gate axis — chosen here at startup by the developer/operator via flags (see --help). These
+// are NOT tool arguments, so the model cannot change them regardless of how they are set; exposing
+// them as command-line flags is just as safe as hard-coding them (a human sets both at startup).
+var readOnly = Flag("--read-only");
+var noPolicy = Flag("--no-policy");
+var noApproval = Flag("--no-approval");
+var allowBroadcast = Flag("--allow-broadcast");
+var dryRun = Flag("--dry-run");
+
 using var model = TryCreateModel(out var modelName);  // null => scripted brain
+
+// The safety gates. All are set here, by the developer (from the flags above) — none is exposed as
+// a tool argument, so the model cannot flip them whatever the flags are.
+var options = new LineAiToolOptions
+{
+    EnableSending = !readOnly,                                          // --read-only turns sending off
+    AllowBroadcast = !readOnly && allowBroadcast,                      // --allow-broadcast (needs sending)
+    DryRun = dryRun,                                                   // --dry-run: validate only, no send
+    SendPolicy = (!readOnly && !noPolicy) ? AllowListPolicy : null,    // --no-policy drops the allow-list
+    BeforeSend = (!readOnly && !noApproval) ? ApproveOnConsole : null, // --no-approval drops the prompt
+};
 
 Con.WriteLine("==================================================");
 Con.WriteLine(" LINE OpenApi .NET — AI tools sample");
 Con.WriteLine($" Brain: {(model is not null ? $"LLM ({modelName})" : "SCRIPTED (deterministic, no API key)")}");
 Con.WriteLine($" Send:  {(live ? "LIVE (will really send)" : "OFFLINE (local stub transport; gates run, no network)")}");
+Con.WriteLine($" Gates: {DescribeGates(options)}");
+Con.WriteLine(" (run with --help to change the gates)");
 Con.WriteLine("==================================================\n");
 
 // The caller builds the MessagingClient (the same client the non-AI library code uses). Live mode
@@ -41,15 +74,6 @@ Con.WriteLine("==================================================\n");
 var messagingClient = live
     ? MessagingClient.CreateWithStaticToken(token!)
     : new MessagingClient(new AnonymousAuthenticationProvider(), new HttpClient(new StubTransport()));
-
-// The safety gates. All are set here, by the developer — none is exposed as a tool argument, so the
-// model cannot flip them.
-var options = new LineAiToolOptions
-{
-    EnableSending = true,             // opt in to push/multicast/reply (broadcast stays off)
-    SendPolicy = AllowListPolicy,     // structural gate: only allow-listed destinations
-    BeforeSend = ApproveOnConsole,    // human-in-the-loop: inspect content before it goes out
-};
 
 var tools = LineMessagingAiTools.Create(messagingClient, options);
 
@@ -79,27 +103,47 @@ if (model is not null)
 }
 else
 {
-    // Scripted brain: two fixed conversations that exercise the allow and deny paths.
-    await RunScriptedAsync(
-        "Send the user a note that the meeting is at 10:00.",
-        ScriptedChatClient.ToolCall("call-1", "line_message_push", new Dictionary<string, object?>
-        {
-            ["to"] = allowedUser,
-            ["messagesJson"] = "[{\"type\":\"text\",\"text\":\"Reminder: meeting tomorrow at 10:00.\"}]",
-        }),
-        "Done — I sent the reminder.");
+    // Scripted brain: fixed conversations that exercise the allow and deny paths. Which ones run
+    // depends on the gate flags, so the demo stays honest about what the current gates actually do.
+    if (!options.EnableSending)
+    {
+        Con.WriteLine("Sending is off (--read-only): only read/validate tools exist, so the send");
+        Con.WriteLine("scenarios are skipped. Try line_message_validate above, or drop --read-only.\n");
+    }
+    else
+    {
+        // Allowed path: a push to the allow-listed user.
+        await RunScriptedAsync(
+            "Send the user a note that the meeting is at 10:00.",
+            ScriptedChatClient.ToolCall("call-1", "line_message_push", new Dictionary<string, object?>
+            {
+                ["to"] = allowedUser,
+                ["messagesJson"] = "[{\"type\":\"text\",\"text\":\"Reminder: meeting tomorrow at 10:00.\"}]",
+            }),
+            "Done — I sent the reminder.");
 
-    await RunScriptedAsync(
-        "Now push the same reminder to an address that is not on the allow-list.",
-        ScriptedChatClient.ToolCall("call-2", "line_message_push", new Dictionary<string, object?>
+        // Denied path is only meaningful when a policy will actually be evaluated.
+        if (options.SendPolicy is not null && !options.DryRun)
         {
-            ["to"] = blockedUser,
-            ["messagesJson"] = "[{\"type\":\"text\",\"text\":\"Reminder: meeting tomorrow at 10:00.\"}]",
-        }),
-        "I could not send it — the destination was refused by the send policy.");
+            await RunScriptedAsync(
+                "Now push the same reminder to an address that is not on the allow-list.",
+                ScriptedChatClient.ToolCall("call-2", "line_message_push", new Dictionary<string, object?>
+                {
+                    ["to"] = blockedUser,
+                    ["messagesJson"] = "[{\"type\":\"text\",\"text\":\"Reminder: meeting tomorrow at 10:00.\"}]",
+                }),
+                "I could not send it — the destination was refused by the send policy.");
+        }
+        else
+        {
+            var why = options.DryRun ? "--dry-run bypasses the policy" : "--no-policy removed the allow-list";
+            Con.WriteLine($"(Deny scenario skipped: {why}, so no destination would be refused.)\n");
+        }
+    }
 
-    Con.WriteLine("Done. Set LLM_MODEL + LLM_API_KEY to drive the tools with a real model, and set");
-    Con.WriteLine("LINE_CHANNEL_ACCESS_TOKEN + `--send` to deliver for real.");
+    Con.WriteLine("Done. Use --help to change the gates (--read-only / --no-policy / --no-approval /");
+    Con.WriteLine("--allow-broadcast / --dry-run). Set LLM_MODEL + LLM_API_KEY to drive a real model, and");
+    Con.WriteLine("LINE_CHANNEL_ACCESS_TOKEN + --send to deliver for real.");
 }
 return 0;
 
@@ -206,6 +250,41 @@ ValueTask<bool> ApproveOnConsole(LineSendContext ctx, CancellationToken ct)
     Con.Write("   [approve] send it? [y/N] ");
     var yes = string.Equals(Con.ReadLine()?.Trim(), "y", StringComparison.OrdinalIgnoreCase);
     return new ValueTask<bool>(yes);
+}
+
+// One-line summary of the effective gate configuration for the banner.
+static string DescribeGates(LineAiToolOptions o)
+{
+    if (!o.EnableSending) return "sending=OFF (read-only: only read/validate tools)";
+    return string.Join("  ", new[]
+    {
+        "sending=ON",
+        $"policy={(o.SendPolicy is not null ? "allow-list" : "none")}",
+        $"approval={(o.BeforeSend is not null ? "console" : "none")}",
+        $"broadcast={(o.AllowBroadcast ? "ON" : "OFF")}",
+        $"dry-run={(o.DryRun ? "ON" : "OFF")}",
+    });
+}
+
+// Usage / help text (printed for --help or -h). The gate flags below are set by the human at
+// startup; they are never tool arguments, so the model cannot flip them however they are set.
+static void PrintUsage()
+{
+    Con.WriteLine("LINE OpenApi .NET — AI tools sample\n");
+    Con.WriteLine("Usage: dotnet run -- [options]\n");
+    Con.WriteLine("Transport (independent of the safety gates):");
+    Con.WriteLine("  --send             Deliver for real via the LINE API (needs LINE_CHANNEL_ACCESS_TOKEN).");
+    Con.WriteLine("                     Without it, an offline stub transport is used and the gates still run.\n");
+    Con.WriteLine("Safety gates (default: sending on, allow-list policy, console approval, broadcast off):");
+    Con.WriteLine("  --read-only        Produce only read/validate tools; no send tool at all.");
+    Con.WriteLine("  --no-policy        Drop the allow-list SendPolicy (any destination the model picks is allowed).");
+    Con.WriteLine("  --no-approval      Drop the human-in-the-loop BeforeSend approval prompt.");
+    Con.WriteLine("  --allow-broadcast  Also expose the broadcast tool (sends to every friend of the bot).");
+    Con.WriteLine("  --dry-run          Send tools validate only and never contact the API (skips policy/approval).");
+    Con.WriteLine("  -h, --help         Show this help.\n");
+    Con.WriteLine("Environment:");
+    Con.WriteLine("  LLM_MODEL + LLM_API_KEY (+ optional LLM_BASE_URL)  Drive a real model; unset = scripted brain.");
+    Con.WriteLine("  LINE_TO_USER_ID                                   The allow-listed recipient userId.");
 }
 
 static string? Env(string name)

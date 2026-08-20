@@ -339,6 +339,29 @@ IReadOnlyList<AIFunction> tools = LineMessagingAiTools.Create(line, new LineAiTo
 
 **Tool names** mirror the MCP tools (`line_message_push`, `line_bot_profile`, …). **Safety gates** (`EnableSending` / `AllowBroadcast` / `SendPolicy` / `BeforeSend`) are set by you at creation time and are **never** exposed as tool arguments, so a model cannot flip them. Sends are off by default; broadcast needs its own opt-in; results are non-secret. Rate / cumulative-count limiting is the host pipeline's responsibility, and message content / read-tool results flow to your LLM provider — treat tool arguments as potential PII in your logs.
 
+### Tools published by `Line.OpenApi.Extensions.AI`
+
+The read/validate tools are always produced; the send tools are produced only when the matching
+`LineAiToolOptions` gate is set. The "Arguments" column is the *whole* argument list a model sees —
+the safety gates are not among them.
+
+| Tool | Arguments | Kind | Produced when |
+|---|---|---|---|
+| `line_bot_info` | *(none)* | read | Always |
+| `line_bot_quota` | *(none)* | read | Always |
+| `line_bot_profile` | `userId` | read | Always |
+| `line_message_validate` | `messagesJson` | validate (never sends) | Always |
+| `line_message_push` | `to`, `messagesJson` | send | `EnableSending = true` |
+| `line_message_multicast` | `to`, `messagesJson` | send | `EnableSending = true` |
+| `line_message_reply` | `replyToken`, `messagesJson` | send | `EnableSending = true` |
+| `line_message_broadcast` | `messagesJson` | send (all friends) | `EnableSending = true` **and** `AllowBroadcast = true` |
+
+> `CreateReadOnly(client)` produces exactly the four "Always" rows. `DryRun = true` does not change
+> which tools are produced — the send tools are still present but only validate the payload and never
+> contact the API (so `SendPolicy` / `BeforeSend` are not evaluated). `SendPolicy` / `BeforeSend`
+> likewise never change the tool list; they can refuse an individual send at call time
+> (`LineSendRefusedException`).
+
 Released on its own cadence (tag `ai-v*`), separate from this CLI/MCP tool (`tools-v*`).
 
 For a runnable end-to-end example (a scripted **or** real model driving the tools through the gates, offline by default), see [`samples/Line.OpenApi.Samples.Ai`](https://github.com/pierre3/line-openapi-dotnet/blob/main/samples/README.md#4-ai-tools-agent-lineopenapisamplesai).

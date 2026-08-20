@@ -339,6 +339,23 @@ IReadOnlyList<AIFunction> tools = LineMessagingAiTools.Create(line, new LineAiTo
 
 **ツール名**は MCP ツールと揃えています（`line_message_push`・`line_bot_profile` 等）。**安全ゲート**（`EnableSending` / `AllowBroadcast` / `SendPolicy` / `BeforeSend`）は生成時に開発者が設定し、**ツール引数には一切出ません**＝モデルからは変更不可。送信は既定オフ、broadcast は独立 opt-in、戻り値は非機密。レート / 累積回数の制限はホスト側パイプラインの責務で、メッセージ本文や read ツールの戻り値は LLM プロバイダに渡るため、ログではツール引数を PII として扱ってください。
 
+### `Line.OpenApi.Extensions.AI` が公開するツール
+
+read/validate 系は常に生成され、send 系は対応する `LineAiToolOptions` のゲートを設定したときだけ生成されます。「引数」列はモデルに見える*全*引数で、安全ゲートはそこに含まれません。
+
+| ツール | 引数 | 種別 | 生成される条件 |
+|---|---|---|---|
+| `line_bot_info` | *(なし)* | read | 常に |
+| `line_bot_quota` | *(なし)* | read | 常に |
+| `line_bot_profile` | `userId` | read | 常に |
+| `line_message_validate` | `messagesJson` | 検証（送信しない） | 常に |
+| `line_message_push` | `to`, `messagesJson` | send | `EnableSending = true` |
+| `line_message_multicast` | `to`, `messagesJson` | send | `EnableSending = true` |
+| `line_message_reply` | `replyToken`, `messagesJson` | send | `EnableSending = true` |
+| `line_message_broadcast` | `messagesJson` | send（全友だち） | `EnableSending = true` **かつ** `AllowBroadcast = true` |
+
+> `CreateReadOnly(client)` は上表の「常に」の4行だけを生成します。`DryRun = true` は生成されるツールの顔ぶれを変えません＝send 系ツールは存在しますが、ペイロードを検証するだけで API には接触しません（そのため `SendPolicy` / `BeforeSend` も評価されません）。`SendPolicy` / `BeforeSend` も同様にツール一覧を変えず、呼び出し時に個別の送信を拒否できるだけです（`LineSendRefusedException`）。
+
 リリースはこの CLI/MCP ツール（`tools-v*`）とは別サイクル（タグ `ai-v*`）です。
 
 スクリプト**または**実モデルがツールをゲート越しに駆動する動作例（オフライン既定）は [`samples/Line.OpenApi.Samples.Ai`](https://github.com/pierre3/line-openapi-dotnet/blob/main/samples/README_ja.md#4-ai-ツールエージェント-lineopenapisamplesai) を参照。

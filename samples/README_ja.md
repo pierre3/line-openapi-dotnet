@@ -156,15 +156,35 @@ LINE の Messaging 利用シーンを [Microsoft.Extensions.AI](https://learn.mi
 明示 opt-in・許可リスト `SendPolicy`・human-in-the-loop の `BeforeSend` 承認フック・読み取り検証を
 実演します。
 
+### 4-1. まず動かす（オフライン・準備不要）
+
 ```powershell
 cd samples/Line.OpenApi.Samples.Ai
 dotnet run                     # オフライン：ローカルスタブ transport でゲートは実行、ネットワークには出ない
 ```
 
-本サンプルは独立した2軸を持ちます。
+API キーも LINE トークンもネットワークも不要で、一連の動きをそのまま確認できます。
 
-- **頭脳（brain）** — 既定は決定的な `ScriptedChatClient`（API キー不要）。`LLM_MODEL` ＋ `LLM_API_KEY` を設定すると実モデルで駆動。
-- **送信（transport）** — 既定はローカルスタブ（ゲートは動くがネットワークに出ない）。`LINE_CHANNEL_ACCESS_TOKEN` ＋ `--send` で実送信。
+### 4-2. 変えられるもの・変え方
+
+すべて実行時に切り替えられます（フラグまたは環境変数）。一覧は `dotnet run -- --help` で確認できます。安全ゲートはそれぞれ専用フラグを持ち、既定は安全側の姿勢（送信 ON・許可リストポリシー・コンソール承認・broadcast OFF）です。
+
+| 対象 | 変え方 | 既定 |
+|---|---|---|
+| **頭脳** — スクリプト vs 実 LLM | `LLM_MODEL` ＋ `LLM_API_KEY`（任意で `LLM_BASE_URL`）を設定 | スクリプト（決定的・キー不要） |
+| **送信経路** — ローカルスタブ vs 実送信 | `--send` を渡し **かつ** `LINE_CHANNEL_ACCESS_TOKEN` を設定 | オフラインスタブ（ゲートは動くが送信しない） |
+| **許可宛先** | `LINE_TO_USER_ID` を設定 | プレースホルダの `Uallowed…` id |
+| **送信の可否** | `--read-only` で読み取り/検証ツールのみに（送信ツールなし） | 送信 ON |
+| **許可リストポリシー** | `--no-policy` で `SendPolicy` を外す（任意の宛先を許可） | 許可リストポリシー |
+| **承認フック** | `--no-approval` で human-in-the-loop の `BeforeSend` プロンプトを外す | コンソール承認 |
+| **broadcast** | `--allow-broadcast` で broadcast ツールも公開 | broadcast OFF |
+| **dry-run** | `--dry-run` で送信ツールを検証のみ（API 非接触）に | dry-run OFF |
+
+起動時のバナーに実効ゲート構成が表示されます（`Gates: sending=ON  policy=allow-list …`）。
+
+> **ゲートをフラグで指定しても、ソースに直書きするのと安全性は同じです** — どちらも起動時に人間が設定し、モデルは到達できません。本当のプロンプトインジェクション対策は**別の性質**で、ゲートを LLM に見えるツール引数として出さないこと（4-3 でツールスキーマを表示して確認できます）。そのため、たとえ注入された指示に従うモデルでも、開発者がゲートをどう設定したかによらず、ツール呼び出しでゲートを反転できません。内部的には各フラグが `LineMessagingAiTools.Create(...)` に渡す前の `LineAiToolOptions` のフィールドを設定するだけです（`--read-only` は `LineMessagingAiTools.CreateReadOnly` に対応）。オプションの詳細はパッケージ README を参照。
+
+### 4-3. スクリプト頭脳（既定）
 
 **スクリプト（既定）** は 3 ステップを再現的に再生します。
 
@@ -172,7 +192,9 @@ dotnet run                     # オフライン：ローカルスタブ transpo
 2. **許可された送信** — 許可リストのユーザーへ push → `SendPolicy` が ALLOW → `BeforeSend` が承認を求める（入力をパイプすると自動承認）→ 送信完了。
 3. **拒否された送信** — 許可リスト外へ push → `SendPolicy` が DENY → ツールが `LineSendRefusedException` を送出、それがモデルに返り「送れなかった」と報告。
 
-**実モデル。** `LLM_MODEL` ＋ `LLM_API_KEY` を設定するとチャット REPL が起動し、モデル自身がツール呼び出しを判断します（安全ゲートはまったく同じように効く）。OpenAI と、`LLM_BASE_URL` を指定した任意の OpenAI 互換エンドポイント（Groq / Together / Ollama の OpenAI 口 / vLLM / LM Studio など）で動作。エンドポイントとモデルが tool/function calling に対応している必要があります。
+### 4-4. 実モデル（チャット REPL）
+
+`LLM_MODEL` ＋ `LLM_API_KEY` を設定するとチャット REPL が起動し、モデル自身がツール呼び出しを判断します（安全ゲートはまったく同じように効く）。OpenAI と、`LLM_BASE_URL` を指定した任意の OpenAI 互換エンドポイント（Groq / Together / Ollama の OpenAI 口 / vLLM / LM Studio など）で動作。エンドポイントとモデルが tool/function calling に対応している必要があります。4-5 を行わない限りオフライン（スタブ transport）のままです。
 
 ```powershell
 # OpenAI
@@ -188,7 +210,9 @@ $env:LLM_API_KEY  = "<groq api key>"
 dotnet run
 ```
 
-実送信（どちらの brain でも）:
+### 4-5. 実送信（ライブ配信）
+
+`--send` は送信経路をローカルスタブから実 LINE API に切り替えます。どちらの頭脳とも併用可。実メッセージが実際に飛ぶのは `SendPolicy` が宛先を許可し **かつ** `BeforeSend` のプロンプトで承認した場合だけなので、`LINE_TO_USER_ID` には本当に送りたい宛先を設定してください。
 
 ```powershell
 $env:LINE_CHANNEL_ACCESS_TOKEN = "<channel access token>"

@@ -165,15 +165,44 @@ A console app that exposes the LINE Messaging use case to an LLM as
 loop. It demonstrates the package's safety model: opt-in sending, an allow-list `SendPolicy`, a
 human-in-the-loop `BeforeSend` approval hook, and read-only validation.
 
+### 4-1. Run it (offline, no setup)
+
 ```powershell
 cd samples/Line.OpenApi.Samples.Ai
 dotnet run                     # offline: local stub transport, gates run, nothing leaves the machine
 ```
 
-The sample has two independent axes:
+That is all you need to see the whole thing work — no API key, no LINE token, no network.
 
-- **Brain** — a deterministic `ScriptedChatClient` (no API key) by default, or a real model when `LLM_MODEL` + `LLM_API_KEY` are set.
-- **Transport** — a local stub by default (gates run, nothing leaves the machine), or real delivery with `LINE_CHANNEL_ACCESS_TOKEN` + `--send`.
+### 4-2. What you can change — and how
+
+Everything is switchable at run time — via a flag or environment variables. Run `dotnet run -- --help`
+for the full list. The safety gates each have their own flag; the defaults are the safe posture
+(sending on, allow-list policy, console approval, broadcast off).
+
+| What | How to change it | Default |
+|---|---|---|
+| **Brain** — scripted vs. a real LLM | Set `LLM_MODEL` + `LLM_API_KEY` (+ optional `LLM_BASE_URL`) | Scripted (deterministic, no key) |
+| **Transport** — local stub vs. real delivery | Pass `--send` **and** set `LINE_CHANNEL_ACCESS_TOKEN` | Offline stub (gates run, nothing sent) |
+| **Allow-listed recipient** | Set `LINE_TO_USER_ID` | A placeholder `Uallowed…` id |
+| **Sending on/off** | `--read-only` produces only read/validate tools (no send tool) | Sending on |
+| **Allow-list policy** | `--no-policy` drops the `SendPolicy` (any destination is allowed) | Allow-list policy |
+| **Approval hook** | `--no-approval` drops the human-in-the-loop `BeforeSend` prompt | Console approval |
+| **Broadcast** | `--allow-broadcast` also exposes the broadcast tool | Broadcast off |
+| **Dry-run** | `--dry-run` makes send tools validate only, never contacting the API | Dry-run off |
+
+The banner printed at startup shows the effective gate configuration (`Gates: sending=ON  policy=allow-list …`).
+
+> **Setting a gate via a flag is just as safe as hard-coding it — both are set by the human at
+> startup, and neither is reachable by the model.** The genuine prompt-injection defense is a
+> *separate* property: the gates are never exposed as LLM-visible tool arguments (step 4-3 prints
+> the tool schemas to prove it), so a model — even one following an injected instruction — cannot
+> flip them through a tool call, no matter how you (the developer) chose to set them. Under the hood
+> each flag just sets a field on `LineAiToolOptions` before it is passed to
+> `LineMessagingAiTools.Create(...)` (`--read-only` maps to `LineMessagingAiTools.CreateReadOnly`).
+> See the package README for the full options reference.
+
+### 4-3. Scripted brain (the default)
 
 **Scripted (default)** plays three steps and is fully reproducible:
 
@@ -181,7 +210,9 @@ The sample has two independent axes:
 2. **Allowed send** — a push to an allow-listed user → `SendPolicy` allows → `BeforeSend` prompts for approval (auto-approved when input is piped) → the send completes.
 3. **Blocked send** — a push to a non-allow-listed user → `SendPolicy` denies → the tool raises `LineSendRefusedException`, which is fed back so the model reports it could not send.
 
-**Real model.** Set `LLM_MODEL` + `LLM_API_KEY` to start a chat REPL where the model itself decides when to call the tools — the safety gates run exactly the same. Works with OpenAI and any OpenAI-compatible endpoint via `LLM_BASE_URL` (Groq / Together / Ollama's OpenAI endpoint / vLLM / LM Studio, …); the endpoint and model must support tool/function calling.
+### 4-4. Real model (chat REPL)
+
+Set `LLM_MODEL` + `LLM_API_KEY` to start a chat REPL where the model itself decides when to call the tools — the safety gates run exactly the same. Works with OpenAI and any OpenAI-compatible endpoint via `LLM_BASE_URL` (Groq / Together / Ollama's OpenAI endpoint / vLLM / LM Studio, …); the endpoint and model must support tool/function calling. Still offline (stub transport) unless you also do step 4-5.
 
 ```powershell
 # OpenAI
@@ -197,7 +228,11 @@ $env:LLM_API_KEY  = "<groq api key>"
 dotnet run
 ```
 
-Send for real (add to either brain):
+### 4-5. Send for real (live delivery)
+
+`--send` switches the transport from the local stub to the real LINE API. Combine it with either
+brain. A real message goes out only if the `SendPolicy` allows the destination **and** you approve
+it at the `BeforeSend` prompt — so set `LINE_TO_USER_ID` to a recipient you actually want to message.
 
 ```powershell
 $env:LINE_CHANNEL_ACCESS_TOKEN = "<channel access token>"
