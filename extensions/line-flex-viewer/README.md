@@ -96,12 +96,12 @@ returned) and `LINE_FLEX_MCP_STATE_DIR` (where the current preview content is sa
 
 ## What the preview supports
 
-Containers `bubble` (nano–giga) and `carousel`; the `header` / `hero` / `body` / `footer`
-blocks with their `styles`; and components `box` (horizontal / vertical / baseline), `text`,
-`span`, `image`, `button`, `icon`, `separator`, `filler`, and `video`. Most layout and style
-properties are honored — `flex`, `spacing`, `margin`, padding, borders, `cornerRadius`,
-`justifyContent`, `alignItems`, `position` / `offset`, `gravity`, `align`, `wrap`, `maxLines`,
-`aspectRatio` / `aspectMode`, and so on.
+| Category | Supported |
+| --- | --- |
+| **Containers** | `bubble` (sizes `nano`–`giga`), `carousel` |
+| **Blocks** | `header`, `hero`, `body`, `footer` — including their `styles` |
+| **Components** | `box` (`horizontal` / `vertical` / `baseline`), `text`, `span`, `image`, `button`, `icon`, `separator`, `filler`, `video` |
+| **Layout & style props** | `flex`, `spacing`, `margin`, padding, borders, `cornerRadius`, `justifyContent`, `alignItems`, `position` / `offset`, `gravity`, `align`, `wrap`, `maxLines`, `aspectRatio` / `aspectMode`, and more |
 
 > The preview is a **CSS approximation** of LINE's renderer. Sizes follow LINE's documented
 > scale, but exact pixels may differ slightly from the LINE app. Use it to get the design

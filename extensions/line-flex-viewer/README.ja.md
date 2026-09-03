@@ -94,11 +94,12 @@ claude mcp add line-flex-viewer -- node <REPO>/extensions/line-flex-viewer/mcp/s
 
 ## プレビューの対応範囲
 
-コンテナは `bubble`（nano〜giga）と `carousel`。ブロックは `header` / `hero` / `body` / `footer`
-（`styles` 込み）。コンポーネントは `box`（horizontal / vertical / baseline）、`text`、`span`、
-`image`、`button`、`icon`、`separator`、`filler`、`video`。レイアウトやスタイルの多くに対応します
-（`flex`、`spacing`、`margin`、padding、borders、`cornerRadius`、`justifyContent`、`alignItems`、
-`position` / `offset`、`gravity`、`align`、`wrap`、`maxLines`、`aspectRatio` / `aspectMode` など）。
+| 分類 | 対応するもの |
+| --- | --- |
+| **コンテナ** | `bubble`（サイズ `nano`〜`giga`）、`carousel` |
+| **ブロック** | `header`・`hero`・`body`・`footer`（`styles` 込み） |
+| **コンポーネント** | `box`（`horizontal` / `vertical` / `baseline`）、`text`、`span`、`image`、`button`、`icon`、`separator`、`filler`、`video` |
+| **レイアウト／スタイル** | `flex`、`spacing`、`margin`、padding、borders、`cornerRadius`、`justifyContent`、`alignItems`、`position` / `offset`、`gravity`、`align`、`wrap`、`maxLines`、`aspectRatio` / `aspectMode` など |
 
 > プレビューは LINE のレンダラを **CSS で近似**したものです。サイズは LINE の資料に沿っていますが、
 > 厳密なピクセル値は LINE アプリと多少ずれることがあります。まずここで見た目を固め、最終確認は
