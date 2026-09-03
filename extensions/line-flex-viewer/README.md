@@ -20,7 +20,7 @@ The same renderer is reused three ways:
    renders it instantly.
 3. You tweak the JSON directly in the panel editor (live re-render + auto-save).
 4. The agent reads your edits back with **`get_content`** and continues iterating.
-5. Publish/share the extension via a private gist (see below).
+5. Install/share the extension directly from this repo (see below).
 
 ## Canvas actions (agent-facing)
 
@@ -74,7 +74,7 @@ which runs 100% client-side (no server, no agent) and reuses the same renderer:
 - **Or serve statically** (recommended; some browsers restrict `file://`):
 
   ```bash
-  cd .github/extensions/line-flex-viewer/web
+  cd extensions/line-flex-viewer/web
   python -m http.server 8791          # → http://127.0.0.1:8791/standalone.html
   # or: npx serve .
   ```
@@ -123,7 +123,7 @@ absolute path where you placed this repository.
   "mcpServers": {
     "line-flex-viewer": {
       "command": "node",
-      "args": ["<REPO>/.github/extensions/line-flex-viewer/mcp/server.mjs"]
+      "args": ["<REPO>/extensions/line-flex-viewer/mcp/server.mjs"]
     }
   }
 }
@@ -132,7 +132,7 @@ absolute path where you placed this repository.
 **Claude Code** — register via the CLI:
 
 ```bash
-claude mcp add line-flex-viewer -- node <REPO>/.github/extensions/line-flex-viewer/mcp/server.mjs
+claude mcp add line-flex-viewer -- node <REPO>/extensions/line-flex-viewer/mcp/server.mjs
 ```
 
 Once registered, ask Claude to "preview this Flex Message" and `preview_flex_message`
@@ -150,8 +150,20 @@ can read your edits back with `get_flex_content`.
 > **Not interested in MCP?** The standalone browser preview above works entirely on
 > its own. The MCP server is for when you want to automate the "AI ↔ preview" loop.
 
-## Publish / share
+## Install / share
 
-This folder includes `copilot-extension.json`, so it can be shared as a private gist
-from the command palette ("Share extension as gist…") or the `share_extension` tool,
-and installed elsewhere with "Install extension from gist…" / `install_extension`.
+This is a public repo, so the primary way to install the extension is **directly from
+the repo folder URL** — no gist required:
+
+```
+install_extension https://github.com/pierre3/line-openapi-dotnet/tree/main/extensions/line-flex-viewer
+```
+
+This preserves the subdirectory layout (`mcp/`, `web/`) and picks up
+`copilot-extension.json` automatically. You can also just use the bundled
+`mcp/server.mjs` from Claude Desktop/Code, or open `web/standalone.html` in any browser.
+
+Alternatively, because the folder includes `copilot-extension.json`, it can still be
+shared as a private gist from the command palette ("Share extension as gist…") or the
+`share_extension` tool, and installed elsewhere with "Install extension from gist…" /
+`install_extension`.

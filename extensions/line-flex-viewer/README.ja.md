@@ -19,7 +19,7 @@ Copilot CLI の **Canvas 拡張**です。
 2. エージェントが **`set_content`** アクションで Canvas に push すると、パネルが即座に描画。
 3. パネルのエディタで JSON を直接調整（ライブ再描画＋自動保存）。
 4. エージェントが **`get_content`** で編集結果を読み戻し、反復を続ける。
-5. 拡張をプライベート gist で公開／共有（下記参照）。
+5. 拡張をこのリポジトリから直接インストール／共有（下記参照）。
 
 ## Canvas アクション（エージェント向け）
 
@@ -73,7 +73,7 @@ standalone ページを利用します。
 - **または静的配信**（推奨。一部ブラウザは `file://` を制限）:
 
   ```bash
-  cd .github/extensions/line-flex-viewer/web
+  cd extensions/line-flex-viewer/web
   python -m http.server 8791          # → http://127.0.0.1:8791/standalone.html
   # または: npx serve .
   ```
@@ -119,7 +119,7 @@ Windows: `%APPDATA%\Claude\`）に追記:
   "mcpServers": {
     "line-flex-viewer": {
       "command": "node",
-      "args": ["<REPO>/.github/extensions/line-flex-viewer/mcp/server.mjs"]
+      "args": ["<REPO>/extensions/line-flex-viewer/mcp/server.mjs"]
     }
   }
 }
@@ -128,7 +128,7 @@ Windows: `%APPDATA%\Claude\`）に追記:
 **Claude Code** — CLI で登録:
 
 ```bash
-claude mcp add line-flex-viewer -- node <REPO>/.github/extensions/line-flex-viewer/mcp/server.mjs
+claude mcp add line-flex-viewer -- node <REPO>/extensions/line-flex-viewer/mcp/server.mjs
 ```
 
 登録後、Claude に「この Flex Message をプレビューして」と頼めば `preview_flex_message` が呼ばれ、
@@ -146,8 +146,19 @@ claude mcp add line-flex-viewer -- node <REPO>/.github/extensions/line-flex-view
 > **MCP に興味がない場合**は、上記「Copilot App 不要のブラウザプレビュー（standalone）」だけでも
 > ブラウザ単体で完結します。MCP サーバは「AI ↔ プレビュー」を自動連携したいとき向けです。
 
-## 公開／共有
+## インストール／共有
 
-このフォルダには `copilot-extension.json` が含まれているため、コマンドパレットの
-「Share extension as gist…」または `share_extension` ツールでプライベート gist として共有でき、
-別環境で「Install extension from gist…」／ `install_extension` からインストールできます。
+これは公開リポジトリなので、拡張のインストールは**リポジトリのフォルダ URL から直接**行うのが
+基本です（gist は不要）:
+
+```
+install_extension https://github.com/pierre3/line-openapi-dotnet/tree/main/extensions/line-flex-viewer
+```
+
+サブディレクトリ構成（`mcp/`・`web/`）を保ったまま取得し、`copilot-extension.json` も自動で認識されます。
+Claude Desktop/Code から同梱の `mcp/server.mjs` を使う、任意のブラウザで `web/standalone.html` を開く、
+という方法もあります。
+
+なお、このフォルダには `copilot-extension.json` が含まれているため、コマンドパレットの
+「Share extension as gist…」または `share_extension` ツールでプライベート gist として共有し、
+別環境で「Install extension from gist…」／ `install_extension` からインストールすることも引き続き可能です。
