@@ -46,7 +46,7 @@ Behind the scenes the agent uses three actions: `set_content` (show/replace the 
 
 ### 2. The `line` MCP tool (Line.OpenApi.Tools)
 
-If you're already using the [`Line.OpenApi.Tools`](https://github.com/pierre3/line-openapi-dotnet/tree/main/tools/Line.OpenApi.Tools)
+If you're already using the [`Line.OpenApi.Tools`](https://github.com/pierre3/line-openapi-dotnet/tree/main/tools)
 `line` command-line / MCP tool, the same renderer is built in as the `line_flex_*` tools —
 no separate install. Your AI agent calls `line_flex_preview` and the preview opens in your
 browser, updating live as you iterate; `line_flex_get_content` reads your in-browser edits

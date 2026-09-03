@@ -44,7 +44,7 @@ install_extension https://github.com/pierre3/line-openapi-dotnet/tree/main/exten
 
 ### 2. Line.OpenApi.Tools の MCP（`line_flex_*`）
 
-すでに [`Line.OpenApi.Tools`](https://github.com/pierre3/line-openapi-dotnet/tree/main/tools/Line.OpenApi.Tools) の `line` コマンドライン／
+すでに [`Line.OpenApi.Tools`](https://github.com/pierre3/line-openapi-dotnet/tree/main/tools) の `line` コマンドライン／
 MCP ツールを使っているなら、同じレンダラが `line_flex_*` ツールとして組み込まれています（別途の
 インストールは不要）。エージェントが `line_flex_preview` を呼ぶとブラウザにプレビューが開き、編集の
 たびにその場で更新されます。ブラウザで加えた編集は `line_flex_get_content` で読み戻せます。詳しくは
