@@ -313,19 +313,21 @@ line mcp                                   # start as an MCP server
 
 See [`tools/README.md`](https://github.com/pierre3/line-openapi-dotnet/blob/main/tools/README.md) ([日本語](https://github.com/pierre3/line-openapi-dotnet/blob/main/tools/README_ja.md)) for details.
 
-### LINE Flex Message viewer (Copilot canvas extension)
+## LINE Flex Message viewer
 
-Preview a LINE Flex Message in a live, LINE-faithful browser view. The `line` MCP tool exposes this
-as `line_flex_*` (read-only-safe, no LINE API / secrets). The **same** renderer also ships as a
-Copilot CLI canvas extension — install it from this repo:
+Preview a LINE Flex Message in a live, LINE-faithful browser view while you build it, adjusting
+colors and spacing in the browser and reading the result back before you send. No LINE account,
+API key, or network access is involved — the preview renders entirely on your machine. The same
+renderer is available two ways:
 
-```
-install_extension https://github.com/pierre3/line-openapi-dotnet/tree/main/extensions/line-flex-viewer
-```
+- **From the `line` MCP tool** — the `line_flex_*` tools (`line_flex_preview` / `line_flex_get_content` / `line_flex_validate` / `line_flex_open`). They touch no LINE API and no secrets, so they work even under `--read-only`. This is the recommended path for Claude Desktop / Claude Code and other MCP clients. See [`tools/README.md`](https://github.com/pierre3/line-openapi-dotnet/blob/main/tools/README.md).
+- **As a Copilot App canvas extension** — install it straight from this repo:
 
-A bundled zero-dependency `mcp/server.mjs` is also available as an alternative for Claude
-Desktop/Code when you aren't using the `line` tool. See
-[`extensions/line-flex-viewer/`](https://github.com/pierre3/line-openapi-dotnet/tree/main/extensions/line-flex-viewer).
+  ```
+  install_extension https://github.com/pierre3/line-openapi-dotnet/tree/main/extensions/line-flex-viewer
+  ```
+
+  A bundled zero-dependency Node MCP server is also included as an alternative for MCP clients when you aren't using the `line` tool. See [`extensions/line-flex-viewer/`](https://github.com/pierre3/line-openapi-dotnet/tree/main/extensions/line-flex-viewer).
 
 ## AI tools (`Line.OpenApi.Extensions.AI`)
 
