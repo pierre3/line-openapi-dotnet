@@ -30,7 +30,8 @@ internal static class McpServerHost
         var mcp = builder.Services
             .AddMcpServer()
             .WithStdioServerTransport()
-            .WithTools<ReadTools>();
+            .WithTools<ReadTools>()
+            .WithTools<FlexPreviewTools>();
 
         if (!readOnly)
         {

@@ -14,7 +14,7 @@
 
     <!-- Independent release cadence from the library packages (spec §7):
          the tool depends on evolving tooling and is versioned/tagged (tools-v*) on its own. -->
-    <Version>1.1.0</Version>
+    <Version>1.2.0</Version>
 
     <!-- Application, not public API surface: no XML doc file. -->
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
@@ -75,6 +75,15 @@
     <EmbeddedResource Include="..\..\openapi\messaging-api.yml">
       <LogicalName>Line.OpenApi.Tools.messaging-api.yml</LogicalName>
     </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Browser renderer + viewer served by Services/FlexPreviewService.cs (line_flex_* tools). -->
+    <EmbeddedResource Include="web\viewer.html"><LogicalName>Line.OpenApi.Tools.web.viewer.html</LogicalName></EmbeddedResource>
+    <EmbeddedResource Include="web\viewer.js"><LogicalName>Line.OpenApi.Tools.web.viewer.js</LogicalName></EmbeddedResource>
+    <EmbeddedResource Include="web\renderer.js"><LogicalName>Line.OpenApi.Tools.web.renderer.js</LogicalName></EmbeddedResource>
+    <EmbeddedResource Include="web\flex.css"><LogicalName>Line.OpenApi.Tools.web.flex.css</LogicalName></EmbeddedResource>
+    <EmbeddedResource Include="web\samples.js"><LogicalName>Line.OpenApi.Tools.web.samples.js</LogicalName></EmbeddedResource>
   </ItemGroup>
 
 </Project>

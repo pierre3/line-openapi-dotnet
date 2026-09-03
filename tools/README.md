@@ -252,26 +252,153 @@ line mcp --allow-remote-replay # allow non-loopback destinations for webhook rep
 
 ### Tool list
 
-CLI commands are exposed as `line_<area>_<verb>` (except `webhook listen`).
+CLI commands are exposed as `line_<area>_<verb>` (except `webhook listen`). In the tables below, a
+**✓** in *Read-only* means the tool is available even under `--read-only`; **✗** means it mutates
+state and is excluded under `--read-only`.
 
-- Read-only (available even under `--read-only`): `line_message_schema` / `line_richmenu_schema` / `line_richmenu_list` / `line_richmenu_get` / `line_richmenu_get_default` / `line_richmenu_id_of_user` / `line_insight_demographic` / `line_insight_deliveries` / `line_insight_followers` / `line_insight_events` / `line_insight_per_unit` / `line_insight_richmenu_summary` / `line_insight_richmenu_daily` / `line_audience_list` / `line_audience_get` / `line_bot_info` / `line_bot_quota` / `line_bot_quota_consumption` / `line_bot_profile` / `line_liff_list` / `line_token_verify` / `line_webhook_verify` / `line_webhook_get_endpoint` / `line_webhook_test_endpoint` / `line_ping`
-- Mutating (excluded under `--read-only`): `line_message_push` / `line_message_multicast` / `line_message_broadcast` / `line_message_reply` / `line_richmenu_create` / `line_richmenu_delete` / `line_richmenu_set_default` / `line_richmenu_cancel_default` / `line_richmenu_link` / `line_richmenu_unlink` / `line_audience_create` / `line_audience_add_users` / `line_audience_delete` / `line_shop_mission` / `line_liff_add` / `line_liff_update` / `line_liff_update_url` / `line_liff_delete` / `line_token_issue` / `line_token_revoke` / `line_webhook_replay` / `line_webhook_set_endpoint`
+#### General
 
-> Audience by-file uploads (`upload-file` / `add-file`) are **CLI-only** — binary/file input is impractical over MCP, so `line_audience_create` directs you to the CLI for file uploads.
+| Tool | Summary | Read-only |
+| --- | --- | :---: |
+| `line_ping` | Health check; returns `"pong"`. | ✓ |
+
+#### Messaging
+
+| Tool | Summary | Read-only |
+| --- | --- | :---: |
+| `line_message_schema` | JSON Schema for message objects (build flex/template). | ✓ |
+| `line_message_push` | Send a push message to a user/group/room. | ✗ |
+| `line_message_multicast` | Send a message to multiple users. | ✗ |
+| `line_message_broadcast` | Send a message to all friends of the bot. | ✗ |
+| `line_message_reply` | Send a reply using a reply token. | ✗ |
+
+#### Flex Message preview
+
+| Tool | Summary | Read-only |
+| --- | --- | :---: |
+| `line_flex_preview` | Render Flex JSON in a live browser preview. | ✓ |
+| `line_flex_get_content` | Read the JSON shown, including your browser edits. | ✓ |
+| `line_flex_validate` | Structurally validate Flex JSON. | ✓ |
+| `line_flex_open` | Reopen the preview tab. | ✓ |
+
+#### Bot
+
+| Tool | Summary | Read-only |
+| --- | --- | :---: |
+| `line_bot_info` | Bot info (userId, basicId, displayName, chat mode). | ✓ |
+| `line_bot_quota` | Monthly message quota limit. | ✓ |
+| `line_bot_quota_consumption` | This month's message consumption count. | ✓ |
+| `line_bot_profile` | A user's profile by user id. | ✓ |
+
+#### Rich menu
+
+| Tool | Summary | Read-only |
+| --- | --- | :---: |
+| `line_richmenu_schema` | JSON Schema for a rich menu object. | ✓ |
+| `line_richmenu_list` | List the channel's rich menus. | ✓ |
+| `line_richmenu_get` | Get a rich menu by id. | ✓ |
+| `line_richmenu_get_default` | Get the default rich menu id. | ✓ |
+| `line_richmenu_id_of_user` | Get the rich menu linked to a user. | ✓ |
+| `line_richmenu_create` | Create a rich menu (`dryRun` validates only). | ✗ |
+| `line_richmenu_delete` | Delete a rich menu. | ✗ |
+| `line_richmenu_set_default` | Set the default rich menu for all users. | ✗ |
+| `line_richmenu_cancel_default` | Cancel the default rich menu. | ✗ |
+| `line_richmenu_link` | Link a rich menu to a user. | ✗ |
+| `line_richmenu_unlink` | Unlink the rich menu from a user. | ✗ |
+
+> Image upload is **CLI-only** (`line richmenu image <id> --file menu.png`); binary input is impractical over MCP.
+
+#### Insight
+
+| Tool | Summary | Read-only |
+| --- | --- | :---: |
+| `line_insight_demographic` | Friends' demographic attributes. | ✓ |
+| `line_insight_deliveries` | Number of messages sent on a date. | ✓ |
+| `line_insight_followers` | Number of followers as of a date. | ✓ |
+| `line_insight_events` | Open/click stats of a message by request id. | ✓ |
+| `line_insight_per_unit` | Stats for a custom aggregation unit over a period. | ✓ |
+| `line_insight_richmenu_summary` | Aggregate rich-menu display/click stats. | ✓ |
+| `line_insight_richmenu_daily` | Daily rich-menu display/click stats. | ✓ |
+
+#### Manage Audience
+
+| Tool | Summary | Read-only |
+| --- | --- | :---: |
+| `line_audience_list` | List audience groups (paginated). | ✓ |
+| `line_audience_get` | Get an audience group and its jobs. | ✓ |
+| `line_audience_create` | Create an audience group with initial user IDs. | ✗ |
+| `line_audience_add_users` | Add user IDs to an audience group. | ✗ |
+| `line_audience_delete` | Delete an audience group. | ✗ |
+
+> By-file uploads (`upload-file` / `add-file`) are **CLI-only**; binary/file input is impractical over MCP.
+
+#### Shop
+
+| Tool | Summary | Read-only |
+| --- | --- | :---: |
+| `line_shop_mission` | Send a mission sticker to a user. | ✗ |
+
+#### LIFF
+
+| Tool | Summary | Read-only |
+| --- | --- | :---: |
+| `line_liff_list` | List registered LIFF apps. | ✓ |
+| `line_liff_add` | Add a LIFF app. | ✗ |
+| `line_liff_update` | Update a LIFF app. | ✗ |
+| `line_liff_update_url` | Update only a LIFF app's endpoint URL. | ✗ |
+| `line_liff_delete` | Delete a LIFF app. | ✗ |
+
+#### Token
+
+| Tool | Summary | Read-only |
+| --- | --- | :---: |
+| `line_token_verify` | Verify a token's validity/lifetime (does not return the token). | ✓ |
+| `line_token_issue` | Issue a token and store it in the profile. | ✗ |
+| `line_token_revoke` | Revoke a token. | ✗ |
+
+#### Webhook
+
+| Tool | Summary | Read-only |
+| --- | --- | :---: |
+| `line_webhook_verify` | Verify a payload signature and summarize its events. | ✓ |
+| `line_webhook_get_endpoint` | Get the configured webhook endpoint URL. | ✓ |
+| `line_webhook_test_endpoint` | Ask LINE to send a test event; report reachability. | ✓ |
+| `line_webhook_replay` | POST a payload to a local URL for debugging. | ✗ |
+| `line_webhook_set_endpoint` | Set the channel's webhook endpoint URL. | ✗ |
 
 > **Rich menu dev cycle across MCP + CLI:** assemble the menu with the agent (`line_richmenu_schema` → build JSON → `line_richmenu_create` with `dryRun=true` to validate, then create), then upload the image with the **CLI** (`line richmenu image <id> --file menu.png`) — binary upload is impractical over MCP, so it is intentionally CLI-only — and finally `line_richmenu_set_default` / `line_richmenu_link` and check on your device.
 
 Each tool accepts an optional `profile` argument; credentials are resolved from the profile.
 
+### Flex Message preview (`line_flex_*`)
+
+Preview a LINE Flex Message in a live, LINE-faithful browser view while you build it. The AI renders
+your JSON with `line_flex_preview`; a loopback web page opens and updates in place as you iterate.
+Adjust colors/spacing directly in the browser, then read them back with `line_flex_get_content`
+before sending. No LINE API calls or credentials are involved, so these tools are available under
+`--read-only`.
+
+- `line_flex_preview` — render Flex JSON and open/update the preview → `{ ok, url, valid, warnings, opened }`
+- `line_flex_get_content` — get the JSON currently shown, including your browser edits → `{ content }`
+- `line_flex_validate` — structurally validate Flex JSON → `{ valid, warnings }`
+- `line_flex_open` — reopen the preview tab → `{ ok, url }`
+
+Env: `LINE_FLEX_MCP_NO_OPEN` (URL only, no auto-open), `LINE_FLEX_MCP_STATE_DIR` (state location).
+
+The same browser renderer is also available as a Copilot App canvas extension (with a bundled
+zero-dependency Node MCP server as an alternative for Claude Desktop/Code) — see
+`extensions/line-flex-viewer/`.
+
 ### Building messages with an AI agent (flex / template)
 
-A primary MCP use case is a **build → validate → send-and-see** loop: have the agent assemble a rich message, type-check it, then push it to your own device to check the appearance, and iterate. Two aids make this reliable:
+A primary MCP use case is a **build → preview → adjust → send** loop: the agent assembles a rich message, you see it rendered exactly like the LINE app, tweak it, and send once it looks right. Three tools make this reliable:
 
-- **`line_message_schema(type)`** returns the JSON Schema for LINE message objects so the agent can build a *shape-valid* `messagesJson`. `type` is one of `all` / `flex` / `template` / `imagemap` / `quickReply` / `action` (default `flex`). It is a read-only tool (available under `--read-only`) and returns no secrets. The schema is extracted from the same OpenAPI spec Kiota generates from, so it never drifts from the models; references are kept (`$ref` + `$defs`) rather than inlined because `FlexBox` is self-recursive.
+- **`line_message_schema(type)`** returns the JSON Schema for LINE message objects so the agent builds a *shape-valid* message. `type` is one of `all` / `flex` / `template` / `imagemap` / `quickReply` / `action` (default `flex`); it is read-only and returns no secrets. The schema is built from the same OpenAPI spec Kiota generates the client from, so it always matches the models. Types are emitted as named definitions (JSON Schema's `$defs`) that reference each other by pointer (`$ref`) instead of being expanded inline — necessary because a Flex `box` can contain other `box`es (it is self-recursive), so inlining every reference would nest forever.
   - Simple messages (text / image / video / audio / location / sticker) are trivial and shown inline in the send-tool descriptions — you usually only need the schema for **flex** or **template**.
-- **`dryRun: true`** on the send tools (`line_message_push` / `multicast` / `broadcast` / `reply`) parses and shape-checks the messages and returns their parsed types **without sending** (no API call, no credentials required). Use it as a safety check before an actual send.
+- **`line_flex_preview`** renders the Flex JSON in a live, LINE-faithful browser view (see the section above). Rather than guessing from raw JSON, you *see* the bubble/carousel, adjust colors and spacing right in the browser, and the agent reads your changes back with **`line_flex_get_content`**. No credentials involved.
+- **`dryRun: true`** on the send tools (`line_message_push` / `multicast` / `broadcast` / `reply`) parses and shape-checks the messages and returns their parsed types **without sending** (no API call, no credentials required). A final safety check before the real send.
 
-Typical flow: `line_message_schema type=flex` → build the Flex JSON → `line_message_push ... dryRun=true` (validate) → `line_message_push ...` (send to your own userId) → check on your device.
+Typical flow: `line_message_schema type=flex` → build the Flex JSON → `line_flex_preview` (see it, tweak in the browser) → `line_flex_get_content` (pick up your edits) → `line_message_push ... dryRun=true` (validate) → `line_message_push ...` (send to your own userId).
 
 ### Security design (MCP)
 

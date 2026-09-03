@@ -313,6 +313,21 @@ line mcp                                   # MCP サーバとして起動
 
 詳細は [`tools/README.md`](https://github.com/pierre3/line-openapi-dotnet/blob/main/tools/README.md)（[日本語](https://github.com/pierre3/line-openapi-dotnet/blob/main/tools/README_ja.md)）を参照してください。
 
+## LINE Flex Message ビューア
+
+LINE Flex Message を、LINE アプリに近い見た目でブラウザにライブプレビューしながら構築できます。色や
+余白をブラウザ上で調整し、その結果を送信前に読み戻せます。LINE アカウントや API キー、ネットワーク
+接続は不要で、プレビューはすべて手元の PC で動きます。同じレンダラを 2 通りの方法で使えます。
+
+- **`line` MCP ツールから** — `line_flex_*` ツール（`line_flex_preview` / `line_flex_get_content` / `line_flex_validate` / `line_flex_open`）。LINE API もシークレットも使わないため `--read-only` でも利用できます。Claude Desktop / Claude Code などの MCP クライアントではこれが基本の使い方です。詳細は [`tools/README.md`](https://github.com/pierre3/line-openapi-dotnet/blob/main/tools/README_ja.md) を参照してください。
+- **Copilot App の canvas 拡張として** — このリポジトリのフォルダ URL から直接導入できます。
+
+  ```
+  install_extension https://github.com/pierre3/line-openapi-dotnet/tree/main/extensions/line-flex-viewer
+  ```
+
+  `line` ツールを使わない場合の代替として、依存パッケージのない Node MCP サーバも同梱しています。詳細は [`extensions/line-flex-viewer/`](https://github.com/pierre3/line-openapi-dotnet/tree/main/extensions/line-flex-viewer) を参照してください。
+
 ## AI ツール（`Line.OpenApi.Extensions.AI`）
 
 `Line.OpenApi.Extensions.AI` は Messaging 利用シーンを [Microsoft.Extensions.AI](https://learn.microsoft.com/dotnet/ai/) の `AIFunction` ツールとしてラップし、Semantic Kernel や任意の Microsoft.Extensions.AI ホストから LLM エージェントが LINE を **アプリ内 in-process** で操作できるようにします（別プロセスで動く上記 CLI/MCP ツールを補完する関係です）。依存は `Line.OpenApi.Messaging` と `Microsoft.Extensions.AI.Abstractions` の 2 本のみです。

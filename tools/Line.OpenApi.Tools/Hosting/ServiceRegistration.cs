@@ -30,6 +30,9 @@ internal static class ServiceRegistration
         // Singleton so the embedded ~190 KB spec is parsed once and the schema map is cached.
         services.AddSingleton<MessageSchemaService>();
 
+        // Local Flex Message preview server (loopback HTTP + SSE). No LINE API / secrets.
+        services.AddSingleton<FlexPreviewService>();
+
         // CLI adapter helper (credential resolution + exit-code mapping).
         services.AddSingleton<CliRuntime>();
 

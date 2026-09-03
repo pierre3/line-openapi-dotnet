@@ -252,26 +252,152 @@ line mcp --allow-remote-replay # webhook replay の非ループバック宛先�
 
 ### ツール一覧
 
-CLI コマンドを `line_<area>_<verb>` の名前で公開します（`webhook listen` を除く）。
+CLI コマンドを `line_<area>_<verb>` の名前で公開します（`webhook listen` を除く）。下表の
+*Read-only* 列は、**✓** = `--read-only` でも使えるツール、**✗** = 状態を変更するため `--read-only`
+では除外されるツールを表します。
 
-- 読み取り系（`--read-only` でもこれらは有効）: `line_message_schema` / `line_richmenu_schema` / `line_richmenu_list` / `line_richmenu_get` / `line_richmenu_get_default` / `line_richmenu_id_of_user` / `line_insight_demographic` / `line_insight_deliveries` / `line_insight_followers` / `line_insight_events` / `line_insight_per_unit` / `line_insight_richmenu_summary` / `line_insight_richmenu_daily` / `line_audience_list` / `line_audience_get` / `line_bot_info` / `line_bot_quota` / `line_bot_quota_consumption` / `line_bot_profile` / `line_liff_list` / `line_token_verify` / `line_webhook_verify` / `line_webhook_get_endpoint` / `line_webhook_test_endpoint` / `line_ping`
-- 変更系（`--read-only` では除外）: `line_message_push` / `line_message_multicast` / `line_message_broadcast` / `line_message_reply` / `line_richmenu_create` / `line_richmenu_delete` / `line_richmenu_set_default` / `line_richmenu_cancel_default` / `line_richmenu_link` / `line_richmenu_unlink` / `line_audience_create` / `line_audience_add_users` / `line_audience_delete` / `line_shop_mission` / `line_liff_add` / `line_liff_update` / `line_liff_update_url` / `line_liff_delete` / `line_token_issue` / `line_token_revoke` / `line_webhook_replay` / `line_webhook_set_endpoint`
+#### 全般
 
-> オーディエンスのファイルアップロード（`upload-file` / `add-file`）は **CLI 専用**です（バイナリ/ファイルは MCP で扱いにくいため）。`line_audience_create` の説明からファイルアップロードは CLI へ誘導します。
+| ツール名 | 概要 | Read-only |
+| --- | --- | :---: |
+| `line_ping` | 疎通確認。`"pong"` を返す。 | ✓ |
+
+#### メッセージ
+
+| ツール名 | 概要 | Read-only |
+| --- | --- | :---: |
+| `line_message_schema` | メッセージオブジェクトの JSON Schema（flex/template の組み立て用）。 | ✓ |
+| `line_message_push` | ユーザー／グループ／ルームへプッシュ送信。 | ✗ |
+| `line_message_multicast` | 複数ユーザーへ送信。 | ✗ |
+| `line_message_broadcast` | 友だち全員へ送信。 | ✗ |
+| `line_message_reply` | リプライトークンで応答メッセージを送信。 | ✗ |
+
+#### Flex Message プレビュー
+
+| ツール名 | 概要 | Read-only |
+| --- | --- | :---: |
+| `line_flex_preview` | Flex JSON をブラウザにライブプレビュー。 | ✓ |
+| `line_flex_get_content` | 表示中の JSON を取得（ブラウザでの編集も含む）。 | ✓ |
+| `line_flex_validate` | Flex JSON を構造的に検証。 | ✓ |
+| `line_flex_open` | プレビュータブを開き直す。 | ✓ |
+
+#### Bot
+
+| ツール名 | 概要 | Read-only |
+| --- | --- | :---: |
+| `line_bot_info` | Bot の情報（userId・basicId・表示名・チャットモード）。 | ✓ |
+| `line_bot_quota` | 月間メッセージ上限。 | ✓ |
+| `line_bot_quota_consumption` | 当月のメッセージ消費数。 | ✓ |
+| `line_bot_profile` | user id からユーザープロフィールを取得。 | ✓ |
+
+#### リッチメニュー
+
+| ツール名 | 概要 | Read-only |
+| --- | --- | :---: |
+| `line_richmenu_schema` | リッチメニューオブジェクトの JSON Schema。 | ✓ |
+| `line_richmenu_list` | チャネルのリッチメニュー一覧。 | ✓ |
+| `line_richmenu_get` | id を指定してリッチメニューを取得。 | ✓ |
+| `line_richmenu_get_default` | 既定リッチメニューの id を取得。 | ✓ |
+| `line_richmenu_id_of_user` | ユーザーに紐づくリッチメニュー id を取得。 | ✓ |
+| `line_richmenu_create` | リッチメニューを作成（`dryRun` は検証のみ）。 | ✗ |
+| `line_richmenu_delete` | リッチメニューを削除。 | ✗ |
+| `line_richmenu_set_default` | 全ユーザーの既定リッチメニューに設定。 | ✗ |
+| `line_richmenu_cancel_default` | 既定リッチメニューを解除。 | ✗ |
+| `line_richmenu_link` | ユーザーにリッチメニューを紐づけ。 | ✗ |
+| `line_richmenu_unlink` | ユーザーからリッチメニューの紐づけを解除。 | ✗ |
+
+> 画像アップロードは **CLI 専用**です（`line richmenu image <id> --file menu.png`）。バイナリは MCP で扱いにくいため。
+
+#### Insight
+
+| ツール名 | 概要 | Read-only |
+| --- | --- | :---: |
+| `line_insight_demographic` | 友だちの属性（性別・年代・地域など）。 | ✓ |
+| `line_insight_deliveries` | 指定日に送信したメッセージ数。 | ✓ |
+| `line_insight_followers` | 指定日時点の友だち数。 | ✓ |
+| `line_insight_events` | request id 指定でメッセージの開封／クリック統計。 | ✓ |
+| `line_insight_per_unit` | 集計ユニット単位・期間の統計。 | ✓ |
+| `line_insight_richmenu_summary` | リッチメニューの表示／クリック統計（期間集計）。 | ✓ |
+| `line_insight_richmenu_daily` | リッチメニューの表示／クリック統計（日別）。 | ✓ |
+
+#### Manage Audience（オーディエンス）
+
+| ツール名 | 概要 | Read-only |
+| --- | --- | :---: |
+| `line_audience_list` | オーディエンスグループ一覧（ページング）。 | ✓ |
+| `line_audience_get` | オーディエンスグループとジョブを取得。 | ✓ |
+| `line_audience_create` | 初期ユーザー ID を含めてオーディエンスグループを作成。 | ✗ |
+| `line_audience_add_users` | オーディエンスグループにユーザー ID を追加。 | ✗ |
+| `line_audience_delete` | オーディエンスグループを削除。 | ✗ |
+
+> ファイルアップロード（`upload-file` / `add-file`）は **CLI 専用**です。バイナリ／ファイルは MCP で扱いにくいため。
+
+#### Shop
+
+| ツール名 | 概要 | Read-only |
+| --- | --- | :---: |
+| `line_shop_mission` | ユーザーにミッションスタンプを送る。 | ✗ |
+
+#### LIFF
+
+| ツール名 | 概要 | Read-only |
+| --- | --- | :---: |
+| `line_liff_list` | 登録済みの LIFF アプリ一覧。 | ✓ |
+| `line_liff_add` | LIFF アプリを追加。 | ✗ |
+| `line_liff_update` | LIFF アプリを更新。 | ✗ |
+| `line_liff_update_url` | LIFF アプリのエンドポイント URL のみ更新。 | ✗ |
+| `line_liff_delete` | LIFF アプリを削除。 | ✗ |
+
+#### トークン
+
+| ツール名 | 概要 | Read-only |
+| --- | --- | :---: |
+| `line_token_verify` | トークンの有効性／残存期間を検証（トークンは返さない）。 | ✓ |
+| `line_token_issue` | トークンを発行しプロファイルに保存。 | ✗ |
+| `line_token_revoke` | トークンを失効させる。 | ✗ |
+
+#### Webhook
+
+| ツール名 | 概要 | Read-only |
+| --- | --- | :---: |
+| `line_webhook_verify` | ペイロードの署名を検証しイベントを要約。 | ✓ |
+| `line_webhook_get_endpoint` | 設定済みの Webhook エンドポイント URL を取得。 | ✓ |
+| `line_webhook_test_endpoint` | LINE にテストイベント送信を依頼し到達性を報告。 | ✓ |
+| `line_webhook_replay` | デバッグ用にペイロードをローカル URL へ POST。 | ✗ |
+| `line_webhook_set_endpoint` | チャネルの Webhook エンドポイント URL を設定。 | ✗ |
 
 > **MCP + CLI をまたぐリッチメニュー開発サイクル:** エージェントで組み立て（`line_richmenu_schema` → JSON 生成 → `line_richmenu_create` に `dryRun=true` で検証してから作成）、画像は **CLI** でアップロード（`line richmenu image <id> --file menu.png`。バイナリは MCP で扱いにくいため意図的に CLI 専用）、最後に `line_richmenu_set_default` / `line_richmenu_link` して実機で確認。
 
 各ツールは任意で `profile` 引数を受け取り、資格情報はプロファイルから解決します。
 
+### Flex Message プレビュー（`line_flex_*`）
+
+LINE Flex Message を、LINE アプリに近い見た目でブラウザにライブプレビューしながら構築できます。
+AI が `line_flex_preview` で JSON をレンダリングすると、ループバックの Web ページが開き、反復のたびに
+その場で更新されます。色や余白をブラウザ上で直接調整し、送信前に `line_flex_get_content` で調整結果を
+取得できます。LINE API 呼び出しや認証情報は一切使わないため、`--read-only` でも利用できます。
+
+- `line_flex_preview` — Flex JSON をレンダリングしてプレビューを開く/更新 → `{ ok, url, valid, warnings, opened }`
+- `line_flex_get_content` — ブラウザでの編集を含む現在の JSON を取得 → `{ content }`
+- `line_flex_validate` — Flex JSON を構造的に検証 → `{ valid, warnings }`
+- `line_flex_open` — プレビュータブを開き直す → `{ ok, url }`
+
+環境変数: `LINE_FLEX_MCP_NO_OPEN`（自動で開かず URL のみ返す）、`LINE_FLEX_MCP_STATE_DIR`（状態の保存先）。
+
+同じブラウザレンダラは Copilot App の canvas 拡張としても利用できます（`line` ツールを使わない
+場合の代替として、依存パッケージのない Node MCP サーバも同梱）。詳細は
+`extensions/line-flex-viewer/` を参照してください。
+
 ### AI エージェントによるメッセージ組立（flex / template）
 
-MCP の主要ユースケースの一つが「**組み立てる → 検証する → 送って実機で確認**」のループです。エージェントにリッチメッセージを組ませ、型検証し、自分の端末に push して見た目を確認し、直す——これを確実にする 2 つの補助があります。
+MCP の主要な使い方の一つが「**組み立てる → プレビュー → 調整 → 送信**」のループです。エージェントがリッチメッセージを組み立て、LINE アプリと同じ見た目で確認しながら手直しし、納得できたら送る——この流れを支える 3 つのツールがあります。
 
-- **`line_message_schema(type)`** は LINE メッセージオブジェクトの JSON Schema を返し、エージェントが**形として妥当な** `messagesJson` を組めるようにします。`type` は `all` / `flex` / `template` / `imagemap` / `quickReply` / `action` のいずれか（既定 `flex`）。読み取り系ツール（`--read-only` でも有効）でシークレットは返しません。スキーマは Kiota が生成に使う OpenAPI 仕様と同一物から抽出するためモデルとドリフトせず、`FlexBox` が自己再帰のため参照はインライン展開せず `$ref` + `$defs` で保持します。
-  - 単純メッセージ（text / image / video / audio / location / sticker）は軽量で、送信ツールの説明文に例が載っています。スキーマが必要なのは主に **flex** / **template** です。
-- **送信ツールの `dryRun: true`**（`line_message_push` / `multicast` / `broadcast` / `reply`）は、メッセージをパース・形状チェックして種別を返すだけで**送信しません**（API 呼び出しなし・資格情報不要）。実送信前の安全チェックに使います。
+- **`line_message_schema(type)`** は LINE メッセージオブジェクトの JSON Schema を返し、エージェントが**形として妥当な**メッセージを組めるようにします。`type` は `all` / `flex` / `template` / `imagemap` / `quickReply` / `action` のいずれか（既定 `flex`）。読み取り系でシークレットは返しません。スキーマは Kiota がクライアント生成に使う OpenAPI 仕様と同じものから作るので、生成されるモデルと必ず一致します。各型は定義集（JSON Schema の `$defs`）にまとめ、型どうしは参照ポインタ（`$ref`）で指し合う形にしています（中身をその場に展開しません）。これは Flex の `box` が中に別の `box` を持てる＝自己再帰する型のためで、参照をすべて展開すると入れ子が無限に広がってしまうのを避けるためです。
+  - 単純なメッセージ（text / image / video / audio / location / sticker）は軽量で、送信ツールの説明文に例が載っています。スキーマが要るのは主に **flex** / **template** です。
+- **`line_flex_preview`** は Flex JSON を LINE アプリに近い見た目でブラウザにライブ描画します（前節参照）。JSON から想像するのではなく、bubble / carousel を**実際に見ながら**色や余白をブラウザ上で調整でき、その結果は **`line_flex_get_content`** でエージェントが読み戻せます。資格情報は不要です。
+- **送信ツールの `dryRun: true`**（`line_message_push` / `multicast` / `broadcast` / `reply`）は、メッセージをパース・形状チェックして種別を返すだけで**送信しません**（API 呼び出しなし・資格情報不要）。実送信前の最終チェックに使います。
 
-典型的な流れ: `line_message_schema type=flex` → Flex JSON を組む → `line_message_push ... dryRun=true`（検証）→ `line_message_push ...`（自分の userId へ送信）→ 実機で確認。
+典型的な流れ: `line_message_schema type=flex` → Flex JSON を組む → `line_flex_preview`（見ながらブラウザで調整）→ `line_flex_get_content`（調整結果を取り込む）→ `line_message_push ... dryRun=true`（検証）→ `line_message_push ...`（自分の userId へ送信）。
 
 ### セキュリティ設計（MCP）
 

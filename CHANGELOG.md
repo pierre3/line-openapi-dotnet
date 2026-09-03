@@ -19,6 +19,14 @@ They evolve on separate cadences, so each has its own version history below.
 
 ## Tools — `Line.OpenApi.Tools`
 
+### [1.2.0] - 2026-09-03
+
+Adds a live, LINE-faithful Flex Message preview to the tool.
+
+#### Added
+
+- **Flex Message live preview (`line_flex_*`).** New read-only MCP tools `line_flex_preview` / `line_flex_get_content` / `line_flex_validate` / `line_flex_open` render Flex JSON in a loopback browser view that hot-updates as you iterate, and read back edits made in the browser. No LINE API calls or secrets are involved, so the tools are available under `--read-only`. The same renderer also ships as a Copilot App canvas extension under `extensions/line-flex-viewer/` (with a bundled zero-dependency Node MCP server as an alternative).
+
 ### [1.1.0] - 2026-08-13
 
 Automates repointing a dev tunnel without visiting the LINE Developers console.
@@ -88,6 +96,7 @@ First stable release of the in-process AI tools package: the LINE Messaging use 
 
 ---
 
+[1.2.0]: https://github.com/pierre3/line-openapi-dotnet/compare/tools-v1.1.0...tools-v1.2.0
 [1.1.0]: https://github.com/pierre3/line-openapi-dotnet/compare/tools-v1.0.0...tools-v1.1.0
 [1.0.0]: https://github.com/pierre3/line-openapi-dotnet/compare/tools-v0.2.0-preview...tools-v1.0.0
 [0.2.0-preview]: https://github.com/pierre3/line-openapi-dotnet/compare/tools-v0.1.0-preview...tools-v0.2.0-preview

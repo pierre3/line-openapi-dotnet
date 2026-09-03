@@ -183,16 +183,21 @@ jobs:
         id: ver
         run: echo "value=${GITHUB_REF_NAME#tools-v}" >> "$GITHUB_OUTPUT"
 
+      # Build the test project (which references the tool project) with the resolved version, so the
+      # tool assembly's AssemblyVersion/FileVersion match the package version. Then test and pack
+      # --no-build to package exactly that stamped assembly (mirrors the AI job). Building/testing
+      # the tool project directly would rebuild it without -p:Version during test and desync the
+      # stamp from the .nupkg version.
       - name: Restore
-        run: dotnet restore "$TOOL_PROJECT"
+        run: dotnet restore tests/Line.OpenApi.Tools.Tests/Line.OpenApi.Tools.Tests.csproj
 
       - name: Build
         env:
           VERSION: ${{ steps.ver.outputs.value }}
-        run: dotnet build "$TOOL_PROJECT" --configuration Release --no-restore -p:Version="${VERSION}"
+        run: dotnet build tests/Line.OpenApi.Tools.Tests/Line.OpenApi.Tools.Tests.csproj --configuration Release --no-restore -p:Version="${VERSION}"
 
       - name: Test
-        run: dotnet test tests/Line.OpenApi.Tools.Tests/Line.OpenApi.Tools.Tests.csproj --configuration Release --verbosity normal
+        run: dotnet test tests/Line.OpenApi.Tools.Tests/Line.OpenApi.Tools.Tests.csproj --configuration Release --no-build --verbosity normal
 
       - name: Pack
         env:

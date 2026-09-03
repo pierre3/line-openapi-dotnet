@@ -19,6 +19,14 @@ English version: [`CHANGELOG.md`](CHANGELOG.md)
 
 ## ツール — `Line.OpenApi.Tools`
 
+### [1.2.0] - 2026-09-03
+
+LINE アプリに近い見た目の Flex Message ライブプレビューを追加します。
+
+#### 追加
+
+- **Flex Message ライブプレビュー（`line_flex_*`）。** 読み取り系の MCP ツール `line_flex_preview`・`line_flex_get_content`・`line_flex_validate`・`line_flex_open` を追加。Flex JSON をループバックのブラウザビューに描画し、反復のたびにその場で更新します。ブラウザ上で加えた編集は読み戻せます。LINE API 呼び出しやシークレットは使わないため `--read-only` でも利用できます。同じレンダラは `extensions/line-flex-viewer/` の Copilot App canvas 拡張としても提供します（依存パッケージのない Node MCP サーバも代替として同梱）。
+
 ### [1.1.0] - 2026-08-13
 
 dev トンネルの再起動時に LINE Developers コンソールへ URL を貼り替える手間を自動化します。
@@ -88,6 +96,7 @@ dev トンネルの再起動時に LINE Developers コンソールへ URL を貼
 
 ---
 
+[1.2.0]: https://github.com/pierre3/line-openapi-dotnet/compare/tools-v1.1.0...tools-v1.2.0
 [1.1.0]: https://github.com/pierre3/line-openapi-dotnet/compare/tools-v1.0.0...tools-v1.1.0
 [1.0.0]: https://github.com/pierre3/line-openapi-dotnet/compare/tools-v0.2.0-preview...tools-v1.0.0
 [0.2.0-preview]: https://github.com/pierre3/line-openapi-dotnet/compare/tools-v0.1.0-preview...tools-v0.2.0-preview
