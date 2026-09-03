@@ -1,119 +1,71 @@
-# LINE Flex Message Viewer (Canvas Extension)
+# LINE Flex Message Viewer
 
 *Read this in [日本語](./README.ja.md).*
 
-A Copilot CLI **canvas extension** that previews and lets you tweak
-[LINE Flex Message](https://developers.line.biz/en/docs/messaging-api/using-flex-messages/)
-JSON with a live, LINE-style render in the app's side panel.
+Build [LINE Flex Messages](https://developers.line.biz/en/docs/messaging-api/using-flex-messages/)
+and see exactly how they'll look — a live, LINE-style preview that updates as you (or an
+AI agent) edit the JSON. Flex Message JSON is verbose and hard to picture in your head;
+this tool renders it the way the LINE app would, so you can get the layout and colors right
+before you send anything.
 
-The same renderer is reused three ways:
+There's no LINE account, API key, or network access involved. The preview runs entirely on
+your own machine.
 
-- **Canvas extension** — live preview inside the Copilot App side panel.
-- **Standalone page** — a 100% client-side browser preview, no Copilot App required.
-- **MCP server** — a live browser preview for any MCP client (e.g. Claude Desktop / Claude Code).
+## What you can do
 
-## Intended workflow
+- **See your Flex Message rendered like LINE** — bubbles, carousels, images, buttons, and
+  the usual layout/style properties, on a chat-style background with light/dark toggle.
+- **Edit and watch it update live** — tweak the JSON in the editor and the preview re-renders
+  instantly. Adjust spacing, colors, and text until it looks right.
+- **Work together with an AI agent** — an agent (for example, the
+  [`Line.OpenApi.Tools`](https://github.com/pierre3/line-openapi-dotnet) MCP server) builds the
+  JSON, you fine-tune it by hand, and the agent reads your changes back to keep iterating.
 
-1. An AI/agent builds Flex Message JSON — e.g. via the
-   [`Line.OpenApi.Tools`](https://github.com/pierre3/line-openapi-dotnet) MCP server.
-2. The agent pushes it to the canvas with the **`set_content`** action; the panel
-   renders it instantly.
-3. You tweak the JSON directly in the panel editor (live re-render + auto-save).
-4. The agent reads your edits back with **`get_content`** and continues iterating.
-5. Install/share the extension directly from this repo (see below).
+## Three ways to use it
 
-## Canvas actions (agent-facing)
+| | Best for |
+| --- | --- |
+| **Copilot canvas** | Previewing inside the Copilot App's side panel while an agent builds the message. |
+| **MCP server** | Claude Desktop / Claude Code (or any MCP client) — the preview opens in your browser. |
+| **Standalone page** | A quick look with no app and no setup — just open an HTML file in your browser. |
 
-| Action        | Purpose |
-| ------------- | ------- |
-| `set_content` | Set the Flex JSON shown in the canvas and re-render. Accepts a full flex message (`{type:"flex",altText,contents}`), a bare `bubble`/`carousel` container, or a JSON string. Returns `{ ok, valid, warnings }`. |
-| `get_content` | Return the JSON currently in the canvas, **including the user's panel edits**. |
-| `validate`    | Lightweight structural check of the current (or supplied) JSON. |
+All three share the same renderer, so a message looks the same everywhere.
 
-### Open input
+## Install
 
-```jsonc
-{
-  "docId": "my-doc",        // optional: stable id; reopening restores content
-  "content": { /* ... */ }, // optional: initial Flex JSON
-  "altText": "..."          // optional
-}
+This is a public repository, so the simplest way to add the canvas extension is straight from
+the folder URL:
+
+```
+install_extension https://github.com/pierre3/line-openapi-dotnet/tree/main/extensions/line-flex-viewer
 ```
 
-## Panel UI
+That's all you need for the Copilot canvas. The MCP server and the standalone page are
+described below and need no install step of their own.
 
-- **Left**: JSON editor (live re-render, `Ctrl/Cmd+Enter` to force render, `Tab` inserts spaces).
-- **Right**: LINE-style preview on a chat background (toggle light/dark).
-- Toolbar: **Render** / **Format** / **Copy JSON** / **Load sample** / **Toggle background**.
+## Using it
 
-## Rendering support
+### In the Copilot App (canvas)
 
-Containers `bubble` (nano–giga) and `carousel`; blocks `header`/`hero`/`body`/`footer`
-with `styles`; components `box` (horizontal/vertical/baseline), `text`, `span`,
-`image`, `button`, `icon`, `separator`, `filler`, and `video` (preview). Most
-layout/style properties are honored (`flex`, `spacing`, `margin`, padding, borders,
-`cornerRadius`, `justifyContent`, `alignItems`, `position`/`offset`, `gravity`,
-`align`, `wrap`, `maxLines`, `aspectRatio`/`aspectMode`, etc.).
+Ask your agent to preview a Flex Message. It opens the canvas and pushes the JSON; the side
+panel renders it immediately. From there:
 
-> The preview is a **CSS approximation** of LINE's renderer. Keyword→px sizes follow
-> LINE's documented scale but exact pixel metrics may differ slightly from the LINE app.
+- Edit the JSON on the left — the preview on the right updates as you type (`Ctrl/Cmd+Enter`
+  forces a re-render).
+- Use the toolbar to **Format**, **Copy JSON**, **Load sample**, or **toggle the background**.
+- Your edits are saved automatically and restored when you reopen the same document.
 
-## State / storage
+Behind the scenes the agent uses three actions: `set_content` (show/replace the JSON),
+`get_content` (read back your edits), and `validate` (a quick structural check).
 
-Content persists under `$COPILOT_HOME/extensions/line-flex-viewer/artifacts/<docId>.json`
-(never inside the repo), keyed by `docId` so reopening restores it.
+### In Claude Desktop / Claude Code (MCP)
 
-## Browser preview without the Copilot App (standalone)
+Claude extends through MCP servers rather than canvases, so this extension bundles a small,
+zero-dependency MCP server (`mcp/server.mjs`). When the AI previews a message, the server
+starts a local preview and opens it in your default browser; later changes stream in live.
 
-The canvas preview is really a **local web app** — the extension spins up a
-loopback HTTP server (`127.0.0.1:<random-port>`) per open panel while the Copilot
-App is running. To preview **without the Copilot App**, use the standalone page,
-which runs 100% client-side (no server, no agent) and reuses the same renderer:
-
-- **Open directly**: double-click `web/standalone.html` (works over `file://`).
-- **Or serve statically** (recommended; some browsers restrict `file://`):
-
-  ```bash
-  cd extensions/line-flex-viewer/web
-  python -m http.server 8791          # → http://127.0.0.1:8791/standalone.html
-  # or: npx serve .
-  ```
-
-Standalone features:
-
-- Live editor + LINE-style preview, **Format** / **Copy JSON** / **Load sample** / **Toggle background**.
-- **Open file / Download** — import/export Flex JSON as a `.json` file.
-- **Share link** — encodes the current JSON into the URL (`#json=<base64>`) and
-  copies it to the clipboard, so you can share a preview link with anyone (no app,
-  no server persistence — the content lives in the link itself).
-- Auto-saves to `localStorage`, so your last edit is restored on reload.
-
-Seed priority on load: URL `#json=` hash > `localStorage` > first sample.
-
-While the Copilot App *is* running, the same standalone page is also reachable at
-`http://127.0.0.1:<panel-port>/standalone.html` (the panel URL with `/standalone.html`).
-
-## Use from Claude (Desktop / Code) or any MCP client
-
-Claude Desktop / Claude Code extend via **MCP servers**, not canvases. This repo
-bundles an MCP server (`mcp/server.mjs`, **Node built-ins only — zero dependencies**)
-that reuses the same renderer. When the AI builds Flex JSON and calls
-`preview_flex_message`, the server starts a local preview server and opens a
-**live preview in your default browser** (subsequent updates stream in over SSE).
-
-### MCP tools
-
-| Tool | Description |
-| ---- | ---- |
-| `preview_flex_message` | Preview Flex JSON (flex message / bubble / carousel / JSON string) in the browser. Opens the browser on first use, then live-updates. Returns `{ url, valid, warnings }`. |
-| `get_flex_content` | Return the JSON currently in the preview (**including the user's browser edits**). |
-| `validate_flex_message` | Structurally validate JSON (no browser needed). Returns `{ valid, warnings }`. |
-| `open_preview` | Open/reopen the preview tab and return its URL, without changing content. |
-
-### Setup
-
-You only need Node.js 18+ (`npm install` is not required). Replace `<REPO>` with the
-absolute path where you placed this repository.
+Register it (needs Node.js 18+ — no `npm install`). Replace `<REPO>` with where you cloned
+this repository:
 
 **Claude Desktop** — add to `claude_desktop_config.json` (macOS:
 `~/Library/Application Support/Claude/`, Windows: `%APPDATA%\Claude\`):
@@ -129,41 +81,67 @@ absolute path where you placed this repository.
 }
 ```
 
-**Claude Code** — register via the CLI:
+**Claude Code**:
 
 ```bash
 claude mcp add line-flex-viewer -- node <REPO>/extensions/line-flex-viewer/mcp/server.mjs
 ```
 
-Once registered, ask Claude to "preview this Flex Message" and `preview_flex_message`
-runs, showing the preview in your browser. Tweak the JSON in the browser and Claude
-can read your edits back with `get_flex_content`.
+Then ask Claude to "preview this Flex Message." The tools it can call:
 
-### Environment variables (optional)
+| Tool | What it does |
+| --- | --- |
+| `preview_flex_message` | Render Flex JSON and open/live-update the browser preview. |
+| `get_flex_content` | Read the JSON currently shown, **including your in-browser edits**. |
+| `validate_flex_message` | Check the JSON's structure without opening a browser. |
+| `open_preview` | Reopen the preview tab (e.g. after you closed it). |
+
+Optional settings:
 
 | Variable | Default | Purpose |
-| ---- | ---- | ---- |
-| `LINE_FLEX_MCP_NO_OPEN` | (unset) | Set to disable auto-opening the browser (the URL is still returned). |
-| `LINE_FLEX_MCP_STATE_DIR` | OS temp dir | Where preview content is persisted. |
-| `LINE_FLEX_MCP_HTML` | `viewer.html` | Which page to serve (can be changed to `standalone.html`). |
+| --- | --- | --- |
+| `LINE_FLEX_MCP_NO_OPEN` | (unset) | Don't auto-open the browser; the URL is still returned. |
+| `LINE_FLEX_MCP_STATE_DIR` | OS temp dir | Where the current preview content is saved. |
+| `LINE_FLEX_MCP_HTML` | `viewer.html` | Which page to serve (set to `standalone.html` for the client-side viewer). |
 
-> **Not interested in MCP?** The standalone browser preview above works entirely on
-> its own. The MCP server is for when you want to automate the "AI ↔ preview" loop.
+### On its own (standalone page)
 
-## Install / share
+Want a quick preview with no app at all? Open `web/standalone.html` in your browser. It runs
+100% in the browser — no server, no agent:
 
-This is a public repo, so the primary way to install the extension is **directly from
-the repo folder URL** — no gist required:
+- Double-click the file (works over `file://`), or serve the folder if your browser is strict
+  about local files:
 
-```
-install_extension https://github.com/pierre3/line-openapi-dotnet/tree/main/extensions/line-flex-viewer
-```
+  ```bash
+  cd extensions/line-flex-viewer/web
+  python -m http.server 8791     # → http://127.0.0.1:8791/standalone.html
+  ```
 
-This preserves the subdirectory layout (`mcp/`, `web/`) and picks up
-`copilot-extension.json` automatically. You can also just use the bundled
-`mcp/server.mjs` from Claude Desktop/Code, or open `web/standalone.html` in any browser.
+- Besides live editing and the toolbar, it can **open/download** JSON files and create a
+  **share link** — the whole message is encoded into the URL (`#json=...`), so anyone who
+  opens the link sees the same preview. Your last edit is remembered in the browser.
 
-Alternatively, because the folder includes `copilot-extension.json`, it can still be
-shared as a private gist from the command palette ("Share extension as gist…") or the
-`share_extension` tool, and installed elsewhere with "Install extension from gist…" /
-`install_extension`.
+## What the preview supports
+
+Containers `bubble` (nano–giga) and `carousel`; the `header` / `hero` / `body` / `footer`
+blocks with their `styles`; and components `box` (horizontal / vertical / baseline), `text`,
+`span`, `image`, `button`, `icon`, `separator`, `filler`, and `video`. Most layout and style
+properties are honored — `flex`, `spacing`, `margin`, padding, borders, `cornerRadius`,
+`justifyContent`, `alignItems`, `position` / `offset`, `gravity`, `align`, `wrap`, `maxLines`,
+`aspectRatio` / `aspectMode`, and so on.
+
+> The preview is a **CSS approximation** of LINE's renderer. Sizes follow LINE's documented
+> scale, but exact pixels may differ slightly from the LINE app. Use it to get the design
+> right, then confirm the final look on a real device.
+
+## Related
+
+Prefer to drive the preview from the `line` command-line / MCP tool instead of this extension?
+The same renderer ships in [`Line.OpenApi.Tools`](https://github.com/pierre3/line-openapi-dotnet)
+as the `line_flex_*` tools.
+
+## Sharing as a gist (optional)
+
+Because the folder includes `copilot-extension.json`, you can also share it as a private gist
+("Share extension as gist…" / `share_extension`) and install it elsewhere with `install_extension`.
+For a public repo, though, the folder-URL install above is simpler.
