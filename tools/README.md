@@ -288,8 +288,9 @@ before sending. No LINE API calls or credentials are involved, so these tools ar
 
 Env: `LINE_FLEX_MCP_NO_OPEN` (URL only, no auto-open), `LINE_FLEX_MCP_STATE_DIR` (state location).
 
-The same browser renderer is also available as a Copilot canvas extension, a bundled Node stdio MCP
-(Claude Desktop/Code), and a no-server standalone HTML page — see `extensions/line-flex-viewer/`.
+The same browser renderer is also available as a Copilot App canvas extension (with a bundled
+zero-dependency Node MCP server as an alternative for Claude Desktop/Code) — see
+`extensions/line-flex-viewer/`.
 
 ### Security design (MCP)
 

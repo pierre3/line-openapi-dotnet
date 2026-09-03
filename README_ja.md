@@ -323,8 +323,8 @@ Copilot CLI の canvas 拡張としても提供しており、このリポジト
 install_extension https://github.com/pierre3/line-openapi-dotnet/tree/main/extensions/line-flex-viewer
 ```
 
-あるいは Claude Desktop/Code から同梱の `mcp/server.mjs` を使う、または任意のブラウザで
-`web/standalone.html` を開く方法もあります。詳細は
+`line` ツールを使わない場合の代替として、依存パッケージのない `mcp/server.mjs` を Claude
+Desktop/Code から利用することもできます。詳細は
 [`extensions/line-flex-viewer/`](https://github.com/pierre3/line-openapi-dotnet/tree/main/extensions/line-flex-viewer) を参照してください。
 
 ## AI ツール（`Line.OpenApi.Extensions.AI`）

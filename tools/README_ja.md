@@ -287,8 +287,9 @@ AI が `line_flex_preview` で JSON をレンダリングすると、ループ�
 
 環境変数: `LINE_FLEX_MCP_NO_OPEN`（自動で開かず URL のみ返す）、`LINE_FLEX_MCP_STATE_DIR`（状態の保存先）。
 
-同じブラウザレンダラは、Copilot canvas 拡張・Node stdio MCP（Claude Desktop/Code 用の同梱サーバ）・
-サーバ不要の standalone HTML としても利用できます（`extensions/line-flex-viewer/` を参照）。
+同じブラウザレンダラは Copilot App の canvas 拡張としても利用できます（`line` ツールを使わない
+場合の代替として、依存パッケージのない Node MCP サーバも同梱）。詳細は
+`extensions/line-flex-viewer/` を参照してください。
 
 ### セキュリティ設計（MCP）
 

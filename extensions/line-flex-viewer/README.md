@@ -17,38 +17,24 @@ your own machine.
   the usual layout/style properties, on a chat-style background with light/dark toggle.
 - **Edit and watch it update live** — tweak the JSON in the editor and the preview re-renders
   instantly. Adjust spacing, colors, and text until it looks right.
-- **Work together with an AI agent** — an agent (for example, the
-  [`Line.OpenApi.Tools`](https://github.com/pierre3/line-openapi-dotnet) MCP server) builds the
-  JSON, you fine-tune it by hand, and the agent reads your changes back to keep iterating.
+- **Work together with an AI agent** — an agent builds the JSON, you fine-tune it by hand,
+  and the agent reads your changes back to keep iterating.
 
-## Three ways to use it
+## Two main ways to use it
 
-| | Best for |
-| --- | --- |
-| **Copilot canvas** | Previewing inside the Copilot App's side panel while an agent builds the message. |
-| **MCP server** | Claude Desktop / Claude Code (or any MCP client) — the preview opens in your browser. |
-| **Standalone page** | A quick look with no app and no setup — just open an HTML file in your browser. |
+The preview is used in two main scenarios. Both share the same renderer, so a message looks
+the same in either one.
 
-All three share the same renderer, so a message looks the same everywhere.
+### 1. The Copilot App canvas
 
-## Install
-
-This is a public repository, so the simplest way to add the canvas extension is straight from
-the folder URL:
+Add the canvas extension straight from this repo's folder URL:
 
 ```
 install_extension https://github.com/pierre3/line-openapi-dotnet/tree/main/extensions/line-flex-viewer
 ```
 
-That's all you need for the Copilot canvas. The MCP server and the standalone page are
-described below and need no install step of their own.
-
-## Using it
-
-### In the Copilot App (canvas)
-
-Ask your agent to preview a Flex Message. It opens the canvas and pushes the JSON; the side
-panel renders it immediately. From there:
+Then ask your agent to preview a Flex Message. It opens the canvas and pushes the JSON, and
+the side panel renders it immediately. From there:
 
 - Edit the JSON on the left — the preview on the right updates as you type (`Ctrl/Cmd+Enter`
   forces a re-render).
@@ -58,11 +44,20 @@ panel renders it immediately. From there:
 Behind the scenes the agent uses three actions: `set_content` (show/replace the JSON),
 `get_content` (read back your edits), and `validate` (a quick structural check).
 
-### In Claude Desktop / Claude Code (MCP)
+### 2. The `line` MCP tool (Line.OpenApi.Tools)
 
-Claude extends through MCP servers rather than canvases, so this extension bundles a small,
-zero-dependency MCP server (`mcp/server.mjs`). When the AI previews a message, the server
-starts a local preview and opens it in your default browser; later changes stream in live.
+If you're already using the [`Line.OpenApi.Tools`](https://github.com/pierre3/line-openapi-dotnet)
+`line` command-line / MCP tool, the same renderer is built in as the `line_flex_*` tools —
+no separate install. Your AI agent calls `line_flex_preview` and the preview opens in your
+browser, updating live as you iterate; `line_flex_get_content` reads your in-browser edits
+back. See that tool's README for details. This is the recommended path for Claude Desktop /
+Claude Code and other MCP clients.
+
+## Alternative: the bundled Node MCP server
+
+If you want an MCP preview but aren't using the .NET `line` tool, this folder also ships a
+small, zero-dependency MCP server (`mcp/server.mjs`) that reuses the same renderer. It's a
+self-contained alternative to option 2 above — handy when you'd rather not install the .NET tool.
 
 Register it (needs Node.js 18+ — no `npm install`). Replace `<REPO>` with where you cloned
 this repository:
@@ -96,30 +91,8 @@ Then ask Claude to "preview this Flex Message." The tools it can call:
 | `validate_flex_message` | Check the JSON's structure without opening a browser. |
 | `open_preview` | Reopen the preview tab (e.g. after you closed it). |
 
-Optional settings:
-
-| Variable | Default | Purpose |
-| --- | --- | --- |
-| `LINE_FLEX_MCP_NO_OPEN` | (unset) | Don't auto-open the browser; the URL is still returned. |
-| `LINE_FLEX_MCP_STATE_DIR` | OS temp dir | Where the current preview content is saved. |
-| `LINE_FLEX_MCP_HTML` | `viewer.html` | Which page to serve (set to `standalone.html` for the client-side viewer). |
-
-### On its own (standalone page)
-
-Want a quick preview with no app at all? Open `web/standalone.html` in your browser. It runs
-100% in the browser — no server, no agent:
-
-- Double-click the file (works over `file://`), or serve the folder if your browser is strict
-  about local files:
-
-  ```bash
-  cd extensions/line-flex-viewer/web
-  python -m http.server 8791     # → http://127.0.0.1:8791/standalone.html
-  ```
-
-- Besides live editing and the toolbar, it can **open/download** JSON files and create a
-  **share link** — the whole message is encoded into the URL (`#json=...`), so anyone who
-  opens the link sees the same preview. Your last edit is remembered in the browser.
+Optional settings: `LINE_FLEX_MCP_NO_OPEN` (don't auto-open the browser; the URL is still
+returned) and `LINE_FLEX_MCP_STATE_DIR` (where the current preview content is saved).
 
 ## What the preview supports
 
@@ -133,15 +106,3 @@ properties are honored — `flex`, `spacing`, `margin`, padding, borders, `corne
 > The preview is a **CSS approximation** of LINE's renderer. Sizes follow LINE's documented
 > scale, but exact pixels may differ slightly from the LINE app. Use it to get the design
 > right, then confirm the final look on a real device.
-
-## Related
-
-Prefer to drive the preview from the `line` command-line / MCP tool instead of this extension?
-The same renderer ships in [`Line.OpenApi.Tools`](https://github.com/pierre3/line-openapi-dotnet)
-as the `line_flex_*` tools.
-
-## Sharing as a gist (optional)
-
-Because the folder includes `copilot-extension.json`, you can also share it as a private gist
-("Share extension as gist…" / `share_extension`) and install it elsewhere with `install_extension`.
-For a public repo, though, the folder-URL install above is simpler.

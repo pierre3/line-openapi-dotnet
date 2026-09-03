@@ -323,8 +323,9 @@ Copilot CLI canvas extension — install it from this repo:
 install_extension https://github.com/pierre3/line-openapi-dotnet/tree/main/extensions/line-flex-viewer
 ```
 
-Or use the bundled `mcp/server.mjs` from Claude Desktop/Code, or open `web/standalone.html` in any
-browser. See [`extensions/line-flex-viewer/`](https://github.com/pierre3/line-openapi-dotnet/tree/main/extensions/line-flex-viewer).
+A bundled zero-dependency `mcp/server.mjs` is also available as an alternative for Claude
+Desktop/Code when you aren't using the `line` tool. See
+[`extensions/line-flex-viewer/`](https://github.com/pierre3/line-openapi-dotnet/tree/main/extensions/line-flex-viewer).
 
 ## AI tools (`Line.OpenApi.Extensions.AI`)
 
