@@ -73,3 +73,6 @@ docs/SESSION-HANDOFF.md
 # Conceptual articles (en/, ja/) and config (docfx.json, filterConfig.yml) are tracked.
 docs/manual/api/
 docs/manual/_site/
+
+# Flex preview contribution bundle (staging only; integrated into extensions/ and tools/, not committed)
+dotnet-flex-preview-mcp/

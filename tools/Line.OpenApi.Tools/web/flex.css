@@ -1,0 +1,334 @@
+:root {
+  color-scheme: light dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--background-color-default, #f5f5f5);
+  color: var(--text-color-default, #1f2328);
+  font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI",
+      "Helvetica Neue", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif);
+  font-size: var(--text-body-medium, 14px);
+  line-height: var(--leading-body-medium, 20px);
+}
+
+/* ---- App shell ---------------------------------------------------------- */
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-color-default, rgba(0, 0, 0, 0.12));
+  background: var(--background-color-default, #fff);
+}
+
+.toolbar h1 {
+  font-size: var(--text-title-small, 15px);
+  font-weight: var(--font-weight-semibold, 600);
+  margin: 0 8px 0 0;
+  white-space: nowrap;
+}
+
+.toolbar .spacer {
+  flex: 1;
+}
+
+button.btn {
+  font: inherit;
+  font-size: 13px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color-default, rgba(0, 0, 0, 0.2));
+  background: var(--background-color-default, #fff);
+  color: var(--text-color-default, #1f2328);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+button.btn:hover {
+  border-color: var(--color-focus-outline, #0969da);
+}
+
+button.btn.primary {
+  background: var(--true-color-blue, #0969da);
+  border-color: var(--true-color-blue, #0969da);
+  color: #fff;
+}
+
+.select-wrap {
+  position: relative;
+}
+
+select.btn {
+  font: inherit;
+  font-size: 13px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color-default, rgba(0, 0, 0, 0.2));
+  background: var(--background-color-default, #fff);
+  color: var(--text-color-default, #1f2328);
+  cursor: pointer;
+}
+
+/* ---- Split panes -------------------------------------------------------- */
+
+.panes {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.pane {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.pane-editor {
+  width: 42%;
+  border-right: 1px solid var(--border-color-default, rgba(0, 0, 0, 0.12));
+}
+
+.pane-preview {
+  flex: 1;
+}
+
+.pane-header {
+  padding: 6px 12px;
+  font-size: 12px;
+  color: var(--text-color-muted, #6e7781);
+  border-bottom: 1px solid var(--border-color-default, rgba(0, 0, 0, 0.08));
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#editor {
+  flex: 1;
+  width: 100%;
+  border: 0;
+  outline: none;
+  resize: none;
+  padding: 12px;
+  font-family: var(--font-mono, "SFMono-Regular", Consolas, "Liberation Mono",
+      monospace);
+  font-size: var(--text-code-block, 12.5px);
+  line-height: 1.5;
+  tab-size: 2;
+  background: var(--background-color-default, #fff);
+  color: var(--text-color-default, #1f2328);
+}
+
+.status-bar {
+  padding: 6px 12px;
+  font-size: 12px;
+  border-top: 1px solid var(--border-color-default, rgba(0, 0, 0, 0.08));
+  min-height: 28px;
+  white-space: pre-wrap;
+}
+
+.status-bar.ok {
+  color: var(--true-color-green, #1a7f37);
+}
+
+.status-bar.error {
+  color: var(--true-color-red, #cf222e);
+}
+
+/* ---- Preview surface (LINE-like chat background) ------------------------ */
+
+.preview-scroll {
+  flex: 1;
+  overflow: auto;
+  padding: 24px;
+}
+
+.preview-scroll[data-bg="light"] {
+  background: #8cabd8;
+}
+
+.preview-scroll[data-bg="dark"] {
+  background: #1e2732;
+}
+
+.preview-stage {
+  display: flex;
+  justify-content: center;
+  min-height: 100%;
+}
+
+/* ---- Flex renderer ------------------------------------------------------ */
+
+.flex-bubble {
+  background: #ffffff;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
+  font-size: 16px;
+  line-height: 1.3;
+  color: #111111;
+  align-self: flex-start;
+}
+
+.flex-carousel {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.flex-carousel-item {
+  flex: 0 0 auto;
+}
+
+.flex-block {
+  position: relative;
+}
+
+.flex-hero {
+  overflow: hidden;
+}
+
+.flex-block-separator {
+  height: 1px;
+  width: 100%;
+}
+
+.flex-box {
+  display: flex;
+  align-items: stretch;
+}
+
+.flex-text {
+  font-size: 16px;
+  color: inherit;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.flex-span {
+  white-space: inherit;
+}
+
+.flex-image {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  justify-content: var(--img-justify, center);
+  align-items: center;
+}
+
+.flex-image > img {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.flex-image-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #eceff3;
+  color: #97a0ad;
+  font-size: 13px;
+}
+
+.flex-video {
+  background: #000;
+}
+
+.flex-video > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.flex-video-play {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 28px;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}
+
+.flex-icon {
+  display: inline-block;
+  object-fit: contain;
+  vertical-align: baseline;
+}
+
+.flex-button-wrap {
+  display: flex;
+}
+
+.flex-button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  padding: 0 12px;
+  text-align: center;
+  cursor: default;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.flex-button--link {
+  font-weight: 400;
+}
+
+.flex-separator {
+  flex: 0 0 auto;
+}
+
+.flex-filler {
+  flex: 1;
+}
+
+.flex-unknown {
+  font-size: 12px;
+  color: #cf222e;
+  border: 1px dashed #cf222e;
+  border-radius: 4px;
+  padding: 2px 4px;
+}
+
+.flex-render-error {
+  align-self: center;
+  margin: auto;
+  max-width: 320px;
+  text-align: center;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+}

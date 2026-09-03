@@ -77,4 +77,13 @@
     </EmbeddedResource>
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Browser renderer + viewer served by Services/FlexPreviewService.cs (line_flex_* tools). -->
+    <EmbeddedResource Include="web\viewer.html"><LogicalName>Line.OpenApi.Tools.web.viewer.html</LogicalName></EmbeddedResource>
+    <EmbeddedResource Include="web\viewer.js"><LogicalName>Line.OpenApi.Tools.web.viewer.js</LogicalName></EmbeddedResource>
+    <EmbeddedResource Include="web\renderer.js"><LogicalName>Line.OpenApi.Tools.web.renderer.js</LogicalName></EmbeddedResource>
+    <EmbeddedResource Include="web\flex.css"><LogicalName>Line.OpenApi.Tools.web.flex.css</LogicalName></EmbeddedResource>
+    <EmbeddedResource Include="web\samples.js"><LogicalName>Line.OpenApi.Tools.web.samples.js</LogicalName></EmbeddedResource>
+  </ItemGroup>
+
 </Project>

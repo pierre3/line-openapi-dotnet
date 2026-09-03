@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LINE Flex Message Viewer</title>
+    <link rel="stylesheet" href="./flex.css" />
+  </head>
+  <body>
+    <div class="app">
+      <div class="toolbar">
+        <h1>LINE Flex Message Viewer</h1>
+        <button class="btn primary" id="btn-render" title="Ctrl/Cmd+Enter">▶ Render</button>
+        <button class="btn" id="btn-format">Format</button>
+        <button class="btn" id="btn-copy">Copy JSON</button>
+        <span class="select-wrap">
+          <select class="btn" id="sample-select" title="Load sample">
+            <option value="">Load sample…</option>
+          </select>
+        </span>
+        <span class="spacer"></span>
+        <button class="btn" id="btn-bg">Toggle background</button>
+      </div>
+
+      <div class="panes">
+        <div class="pane pane-editor">
+          <div class="pane-header">Flex JSON <span id="dirty-flag"></span></div>
+          <textarea id="editor" spellcheck="false" autocomplete="off"></textarea>
+          <div class="status-bar" id="status"></div>
+        </div>
+        <div class="pane pane-preview">
+          <div class="pane-header">Preview (approximate)</div>
+          <div class="preview-scroll" id="preview-scroll" data-bg="light">
+            <div class="preview-stage">
+              <div id="preview"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="./samples.js"></script>
+    <script src="./renderer.js"></script>
+    <script src="./viewer.js"></script>
+  </body>
+</html>

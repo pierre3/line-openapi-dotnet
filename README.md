@@ -313,6 +313,19 @@ line mcp                                   # start as an MCP server
 
 See [`tools/README.md`](https://github.com/pierre3/line-openapi-dotnet/blob/main/tools/README.md) ([日本語](https://github.com/pierre3/line-openapi-dotnet/blob/main/tools/README_ja.md)) for details.
 
+### LINE Flex Message viewer (Copilot canvas extension)
+
+Preview a LINE Flex Message in a live, LINE-faithful browser view. The `line` MCP tool exposes this
+as `line_flex_*` (read-only-safe, no LINE API / secrets). The **same** renderer also ships as a
+Copilot CLI canvas extension — install it from this repo:
+
+```
+install_extension https://github.com/pierre3/line-openapi-dotnet/tree/main/extensions/line-flex-viewer
+```
+
+Or use the bundled `mcp/server.mjs` from Claude Desktop/Code, or open `web/standalone.html` in any
+browser. See [`extensions/line-flex-viewer/`](https://github.com/pierre3/line-openapi-dotnet/tree/main/extensions/line-flex-viewer).
+
 ## AI tools (`Line.OpenApi.Extensions.AI`)
 
 `Line.OpenApi.Extensions.AI` wraps the Messaging use case as [Microsoft.Extensions.AI](https://learn.microsoft.com/dotnet/ai/) `AIFunction` tools, so an LLM agent built on Semantic Kernel or any Microsoft.Extensions.AI host can operate LINE **in-process** (this complements the CLI/MCP tool, which runs out-of-process). It depends only on `Line.OpenApi.Messaging` and `Microsoft.Extensions.AI.Abstractions`.

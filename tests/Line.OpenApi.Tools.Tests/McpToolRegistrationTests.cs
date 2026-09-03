@@ -46,9 +46,14 @@ public sealed class McpToolRegistrationTests
             "line_audience_create", "line_audience_add_users", "line_audience_delete",
             // Shop
             "line_shop_mission",
+            // Flex preview (read-only-safe: no LINE API / secrets; registered unconditionally)
+            "line_flex_preview", "line_flex_get_content", "line_flex_validate", "line_flex_open",
         }.OrderBy(n => n).ToArray();
 
-        var actual = ToolNames(typeof(ReadTools)).Concat(ToolNames(typeof(WriteTools))).OrderBy(n => n).ToArray();
+        var actual = ToolNames(typeof(ReadTools))
+            .Concat(ToolNames(typeof(WriteTools)))
+            .Concat(ToolNames(typeof(FlexPreviewTools)))
+            .OrderBy(n => n).ToArray();
         Assert.Equal(expected, actual);
     }
 
@@ -56,7 +61,9 @@ public sealed class McpToolRegistrationTests
     public void Every_tool_has_a_non_empty_description()
     {
         // The [Description] is the LLM-facing contract; it must never be blank.
-        var methods = ToolMethods(typeof(ReadTools)).Concat(ToolMethods(typeof(WriteTools)));
+        var methods = ToolMethods(typeof(ReadTools))
+            .Concat(ToolMethods(typeof(WriteTools)))
+            .Concat(ToolMethods(typeof(FlexPreviewTools)));
         Assert.All(methods, m =>
         {
             var description = m.GetCustomAttribute<DescriptionAttribute>()?.Description;
@@ -67,7 +74,9 @@ public sealed class McpToolRegistrationTests
     [Fact]
     public void All_tool_names_use_line_prefix()
     {
-        var all = ToolNames(typeof(ReadTools)).Concat(ToolNames(typeof(WriteTools)));
+        var all = ToolNames(typeof(ReadTools))
+            .Concat(ToolNames(typeof(WriteTools)))
+            .Concat(ToolNames(typeof(FlexPreviewTools)));
         Assert.All(all, name => Assert.StartsWith("line_", name));
     }
 
@@ -131,6 +140,13 @@ public sealed class McpToolRegistrationTests
         Assert.Contains("line_token_issue", write);
         Assert.Contains("line_webhook_replay", write);
         Assert.Contains("line_webhook_set_endpoint", write);
+
+        // Flex preview tools touch no LINE API / secrets and must stay available under --read-only,
+        // so they must never be classified as mutating.
+        Assert.DoesNotContain("line_flex_preview", write);
+        Assert.DoesNotContain("line_flex_get_content", write);
+        Assert.DoesNotContain("line_flex_validate", write);
+        Assert.DoesNotContain("line_flex_open", write);
     }
 
     [Fact]

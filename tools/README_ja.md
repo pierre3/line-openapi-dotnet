@@ -254,7 +254,7 @@ line mcp --allow-remote-replay # webhook replay の非ループバック宛先�
 
 CLI コマンドを `line_<area>_<verb>` の名前で公開します（`webhook listen` を除く）。
 
-- 読み取り系（`--read-only` でもこれらは有効）: `line_message_schema` / `line_richmenu_schema` / `line_richmenu_list` / `line_richmenu_get` / `line_richmenu_get_default` / `line_richmenu_id_of_user` / `line_insight_demographic` / `line_insight_deliveries` / `line_insight_followers` / `line_insight_events` / `line_insight_per_unit` / `line_insight_richmenu_summary` / `line_insight_richmenu_daily` / `line_audience_list` / `line_audience_get` / `line_bot_info` / `line_bot_quota` / `line_bot_quota_consumption` / `line_bot_profile` / `line_liff_list` / `line_token_verify` / `line_webhook_verify` / `line_webhook_get_endpoint` / `line_webhook_test_endpoint` / `line_ping`
+- 読み取り系（`--read-only` でもこれらは有効）: `line_message_schema` / `line_richmenu_schema` / `line_richmenu_list` / `line_richmenu_get` / `line_richmenu_get_default` / `line_richmenu_id_of_user` / `line_insight_demographic` / `line_insight_deliveries` / `line_insight_followers` / `line_insight_events` / `line_insight_per_unit` / `line_insight_richmenu_summary` / `line_insight_richmenu_daily` / `line_audience_list` / `line_audience_get` / `line_bot_info` / `line_bot_quota` / `line_bot_quota_consumption` / `line_bot_profile` / `line_liff_list` / `line_token_verify` / `line_webhook_verify` / `line_webhook_get_endpoint` / `line_webhook_test_endpoint` / `line_flex_preview` / `line_flex_get_content` / `line_flex_validate` / `line_flex_open` / `line_ping`
 - 変更系（`--read-only` では除外）: `line_message_push` / `line_message_multicast` / `line_message_broadcast` / `line_message_reply` / `line_richmenu_create` / `line_richmenu_delete` / `line_richmenu_set_default` / `line_richmenu_cancel_default` / `line_richmenu_link` / `line_richmenu_unlink` / `line_audience_create` / `line_audience_add_users` / `line_audience_delete` / `line_shop_mission` / `line_liff_add` / `line_liff_update` / `line_liff_update_url` / `line_liff_delete` / `line_token_issue` / `line_token_revoke` / `line_webhook_replay` / `line_webhook_set_endpoint`
 
 > オーディエンスのファイルアップロード（`upload-file` / `add-file`）は **CLI 専用**です（バイナリ/ファイルは MCP で扱いにくいため）。`line_audience_create` の説明からファイルアップロードは CLI へ誘導します。
@@ -272,6 +272,23 @@ MCP の主要ユースケースの一つが「**組み立てる → 検証する
 - **送信ツールの `dryRun: true`**（`line_message_push` / `multicast` / `broadcast` / `reply`）は、メッセージをパース・形状チェックして種別を返すだけで**送信しません**（API 呼び出しなし・資格情報不要）。実送信前の安全チェックに使います。
 
 典型的な流れ: `line_message_schema type=flex` → Flex JSON を組む → `line_message_push ... dryRun=true`（検証）→ `line_message_push ...`（自分の userId へ送信）→ 実機で確認。
+
+### Flex Message プレビュー（`line_flex_*`）
+
+LINE Flex Message を、LINE アプリに近い見た目でブラウザにライブプレビューしながら構築できます。
+AI が `line_flex_preview` で JSON をレンダリングすると、ループバックの Web ページが開き、反復のたびに
+その場で更新されます。色や余白をブラウザ上で直接調整し、送信前に `line_flex_get_content` で調整結果を
+取得できます。LINE API 呼び出しや認証情報は一切使わないため、`--read-only` でも利用できます。
+
+- `line_flex_preview` — Flex JSON をレンダリングしてプレビューを開く/更新 → `{ ok, url, valid, warnings, opened }`
+- `line_flex_get_content` — ブラウザでの編集を含む現在の JSON を取得 → `{ content }`
+- `line_flex_validate` — Flex JSON を構造的に検証 → `{ valid, warnings }`
+- `line_flex_open` — プレビュータブを開き直す → `{ ok, url }`
+
+環境変数: `LINE_FLEX_MCP_NO_OPEN`（自動で開かず URL のみ返す）、`LINE_FLEX_MCP_STATE_DIR`（状態の保存先）。
+
+同じブラウザレンダラは、Copilot canvas 拡張・Node stdio MCP（Claude Desktop/Code 用の同梱サーバ）・
+サーバ不要の standalone HTML としても利用できます（`extensions/line-flex-viewer/` を参照）。
 
 ### セキュリティ設計（MCP）
 

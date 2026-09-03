@@ -254,7 +254,7 @@ line mcp --allow-remote-replay # allow non-loopback destinations for webhook rep
 
 CLI commands are exposed as `line_<area>_<verb>` (except `webhook listen`).
 
-- Read-only (available even under `--read-only`): `line_message_schema` / `line_richmenu_schema` / `line_richmenu_list` / `line_richmenu_get` / `line_richmenu_get_default` / `line_richmenu_id_of_user` / `line_insight_demographic` / `line_insight_deliveries` / `line_insight_followers` / `line_insight_events` / `line_insight_per_unit` / `line_insight_richmenu_summary` / `line_insight_richmenu_daily` / `line_audience_list` / `line_audience_get` / `line_bot_info` / `line_bot_quota` / `line_bot_quota_consumption` / `line_bot_profile` / `line_liff_list` / `line_token_verify` / `line_webhook_verify` / `line_webhook_get_endpoint` / `line_webhook_test_endpoint` / `line_ping`
+- Read-only (available even under `--read-only`): `line_message_schema` / `line_richmenu_schema` / `line_richmenu_list` / `line_richmenu_get` / `line_richmenu_get_default` / `line_richmenu_id_of_user` / `line_insight_demographic` / `line_insight_deliveries` / `line_insight_followers` / `line_insight_events` / `line_insight_per_unit` / `line_insight_richmenu_summary` / `line_insight_richmenu_daily` / `line_audience_list` / `line_audience_get` / `line_bot_info` / `line_bot_quota` / `line_bot_quota_consumption` / `line_bot_profile` / `line_liff_list` / `line_token_verify` / `line_webhook_verify` / `line_webhook_get_endpoint` / `line_webhook_test_endpoint` / `line_flex_preview` / `line_flex_get_content` / `line_flex_validate` / `line_flex_open` / `line_ping`
 - Mutating (excluded under `--read-only`): `line_message_push` / `line_message_multicast` / `line_message_broadcast` / `line_message_reply` / `line_richmenu_create` / `line_richmenu_delete` / `line_richmenu_set_default` / `line_richmenu_cancel_default` / `line_richmenu_link` / `line_richmenu_unlink` / `line_audience_create` / `line_audience_add_users` / `line_audience_delete` / `line_shop_mission` / `line_liff_add` / `line_liff_update` / `line_liff_update_url` / `line_liff_delete` / `line_token_issue` / `line_token_revoke` / `line_webhook_replay` / `line_webhook_set_endpoint`
 
 > Audience by-file uploads (`upload-file` / `add-file`) are **CLI-only** — binary/file input is impractical over MCP, so `line_audience_create` directs you to the CLI for file uploads.
@@ -272,6 +272,24 @@ A primary MCP use case is a **build → validate → send-and-see** loop: have t
 - **`dryRun: true`** on the send tools (`line_message_push` / `multicast` / `broadcast` / `reply`) parses and shape-checks the messages and returns their parsed types **without sending** (no API call, no credentials required). Use it as a safety check before an actual send.
 
 Typical flow: `line_message_schema type=flex` → build the Flex JSON → `line_message_push ... dryRun=true` (validate) → `line_message_push ...` (send to your own userId) → check on your device.
+
+### Flex Message preview (`line_flex_*`)
+
+Preview a LINE Flex Message in a live, LINE-faithful browser view while you build it. The AI renders
+your JSON with `line_flex_preview`; a loopback web page opens and updates in place as you iterate.
+Adjust colors/spacing directly in the browser, then read them back with `line_flex_get_content`
+before sending. No LINE API calls or credentials are involved, so these tools are available under
+`--read-only`.
+
+- `line_flex_preview` — render Flex JSON and open/update the preview → `{ ok, url, valid, warnings, opened }`
+- `line_flex_get_content` — get the JSON currently shown, including your browser edits → `{ content }`
+- `line_flex_validate` — structurally validate Flex JSON → `{ valid, warnings }`
+- `line_flex_open` — reopen the preview tab → `{ ok, url }`
+
+Env: `LINE_FLEX_MCP_NO_OPEN` (URL only, no auto-open), `LINE_FLEX_MCP_STATE_DIR` (state location).
+
+The same browser renderer is also available as a Copilot canvas extension, a bundled Node stdio MCP
+(Claude Desktop/Code), and a no-server standalone HTML page — see `extensions/line-flex-viewer/`.
 
 ### Security design (MCP)
 
