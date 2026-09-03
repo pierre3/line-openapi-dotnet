@@ -392,7 +392,7 @@ AI が `line_flex_preview` で JSON をレンダリングすると、ループ�
 
 MCP の主要な使い方の一つが「**組み立てる → プレビュー → 調整 → 送信**」のループです。エージェントがリッチメッセージを組み立て、LINE アプリと同じ見た目で確認しながら手直しし、納得できたら送る——この流れを支える 3 つのツールがあります。
 
-- **`line_message_schema(type)`** は LINE メッセージオブジェクトの JSON Schema を返し、エージェントが**形として妥当な**メッセージを組めるようにします。`type` は `all` / `flex` / `template` / `imagemap` / `quickReply` / `action` のいずれか（既定 `flex`）。読み取り系でシークレットは返しません。スキーマは Kiota が生成に使う OpenAPI 仕様と同じものから抽出するのでモデルとずれず、`FlexBox` が自己再帰のため参照は展開せず `$ref` + `$defs` のまま保持します。
+- **`line_message_schema(type)`** は LINE メッセージオブジェクトの JSON Schema を返し、エージェントが**形として妥当な**メッセージを組めるようにします。`type` は `all` / `flex` / `template` / `imagemap` / `quickReply` / `action` のいずれか（既定 `flex`）。読み取り系でシークレットは返しません。スキーマは Kiota がクライアント生成に使う OpenAPI 仕様と同じものから作るので、生成されるモデルと必ず一致します。各型は定義集（JSON Schema の `$defs`）にまとめ、型どうしは参照ポインタ（`$ref`）で指し合う形にしています（中身をその場に展開しません）。これは Flex の `box` が中に別の `box` を持てる＝自己再帰する型のためで、参照をすべて展開すると入れ子が無限に広がってしまうのを避けるためです。
   - 単純なメッセージ（text / image / video / audio / location / sticker）は軽量で、送信ツールの説明文に例が載っています。スキーマが要るのは主に **flex** / **template** です。
 - **`line_flex_preview`** は Flex JSON を LINE アプリに近い見た目でブラウザにライブ描画します（前節参照）。JSON から想像するのではなく、bubble / carousel を**実際に見ながら**色や余白をブラウザ上で調整でき、その結果は **`line_flex_get_content`** でエージェントが読み戻せます。資格情報は不要です。
 - **送信ツールの `dryRun: true`**（`line_message_push` / `multicast` / `broadcast` / `reply`）は、メッセージをパース・形状チェックして種別を返すだけで**送信しません**（API 呼び出しなし・資格情報不要）。実送信前の最終チェックに使います。
