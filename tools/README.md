@@ -370,16 +370,6 @@ state and is excluded under `--read-only`.
 
 Each tool accepts an optional `profile` argument; credentials are resolved from the profile.
 
-### Building messages with an AI agent (flex / template)
-
-A primary MCP use case is a **build → validate → send-and-see** loop: have the agent assemble a rich message, type-check it, then push it to your own device to check the appearance, and iterate. Two aids make this reliable:
-
-- **`line_message_schema(type)`** returns the JSON Schema for LINE message objects so the agent can build a *shape-valid* `messagesJson`. `type` is one of `all` / `flex` / `template` / `imagemap` / `quickReply` / `action` (default `flex`). It is a read-only tool (available under `--read-only`) and returns no secrets. The schema is extracted from the same OpenAPI spec Kiota generates from, so it never drifts from the models; references are kept (`$ref` + `$defs`) rather than inlined because `FlexBox` is self-recursive.
-  - Simple messages (text / image / video / audio / location / sticker) are trivial and shown inline in the send-tool descriptions — you usually only need the schema for **flex** or **template**.
-- **`dryRun: true`** on the send tools (`line_message_push` / `multicast` / `broadcast` / `reply`) parses and shape-checks the messages and returns their parsed types **without sending** (no API call, no credentials required). Use it as a safety check before an actual send.
-
-Typical flow: `line_message_schema type=flex` → build the Flex JSON → `line_message_push ... dryRun=true` (validate) → `line_message_push ...` (send to your own userId) → check on your device.
-
 ### Flex Message preview (`line_flex_*`)
 
 Preview a LINE Flex Message in a live, LINE-faithful browser view while you build it. The AI renders
@@ -398,6 +388,17 @@ Env: `LINE_FLEX_MCP_NO_OPEN` (URL only, no auto-open), `LINE_FLEX_MCP_STATE_DIR`
 The same browser renderer is also available as a Copilot App canvas extension (with a bundled
 zero-dependency Node MCP server as an alternative for Claude Desktop/Code) — see
 `extensions/line-flex-viewer/`.
+
+### Building messages with an AI agent (flex / template)
+
+A primary MCP use case is a **build → preview → adjust → send** loop: the agent assembles a rich message, you see it rendered exactly like the LINE app, tweak it, and send once it looks right. Three tools make this reliable:
+
+- **`line_message_schema(type)`** returns the JSON Schema for LINE message objects so the agent builds a *shape-valid* message. `type` is one of `all` / `flex` / `template` / `imagemap` / `quickReply` / `action` (default `flex`); it is read-only and returns no secrets. The schema comes from the same OpenAPI spec Kiota generates from, so it never drifts from the models; references are kept (`$ref` + `$defs`) rather than inlined because `FlexBox` is self-recursive.
+  - Simple messages (text / image / video / audio / location / sticker) are trivial and shown inline in the send-tool descriptions — you usually only need the schema for **flex** or **template**.
+- **`line_flex_preview`** renders the Flex JSON in a live, LINE-faithful browser view (see the section above). Rather than guessing from raw JSON, you *see* the bubble/carousel, adjust colors and spacing right in the browser, and the agent reads your changes back with **`line_flex_get_content`**. No credentials involved.
+- **`dryRun: true`** on the send tools (`line_message_push` / `multicast` / `broadcast` / `reply`) parses and shape-checks the messages and returns their parsed types **without sending** (no API call, no credentials required). A final safety check before the real send.
+
+Typical flow: `line_message_schema type=flex` → build the Flex JSON → `line_flex_preview` (see it, tweak in the browser) → `line_flex_get_content` (pick up your edits) → `line_message_push ... dryRun=true` (validate) → `line_message_push ...` (send to your own userId).
 
 ### Security design (MCP)
 

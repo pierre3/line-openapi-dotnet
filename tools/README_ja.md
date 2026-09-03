@@ -370,16 +370,6 @@ CLI コマンドを `line_<area>_<verb>` の名前で公開します（`webhook 
 
 各ツールは任意で `profile` 引数を受け取り、資格情報はプロファイルから解決します。
 
-### AI エージェントによるメッセージ組立（flex / template）
-
-MCP の主要ユースケースの一つが「**組み立てる → 検証する → 送って実機で確認**」のループです。エージェントにリッチメッセージを組ませ、型検証し、自分の端末に push して見た目を確認し、直す——これを確実にする 2 つの補助があります。
-
-- **`line_message_schema(type)`** は LINE メッセージオブジェクトの JSON Schema を返し、エージェントが**形として妥当な** `messagesJson` を組めるようにします。`type` は `all` / `flex` / `template` / `imagemap` / `quickReply` / `action` のいずれか（既定 `flex`）。読み取り系ツール（`--read-only` でも有効）でシークレットは返しません。スキーマは Kiota が生成に使う OpenAPI 仕様と同一物から抽出するためモデルとドリフトせず、`FlexBox` が自己再帰のため参照はインライン展開せず `$ref` + `$defs` で保持します。
-  - 単純メッセージ（text / image / video / audio / location / sticker）は軽量で、送信ツールの説明文に例が載っています。スキーマが必要なのは主に **flex** / **template** です。
-- **送信ツールの `dryRun: true`**（`line_message_push` / `multicast` / `broadcast` / `reply`）は、メッセージをパース・形状チェックして種別を返すだけで**送信しません**（API 呼び出しなし・資格情報不要）。実送信前の安全チェックに使います。
-
-典型的な流れ: `line_message_schema type=flex` → Flex JSON を組む → `line_message_push ... dryRun=true`（検証）→ `line_message_push ...`（自分の userId へ送信）→ 実機で確認。
-
 ### Flex Message プレビュー（`line_flex_*`）
 
 LINE Flex Message を、LINE アプリに近い見た目でブラウザにライブプレビューしながら構築できます。
@@ -397,6 +387,17 @@ AI が `line_flex_preview` で JSON をレンダリングすると、ループ�
 同じブラウザレンダラは Copilot App の canvas 拡張としても利用できます（`line` ツールを使わない
 場合の代替として、依存パッケージのない Node MCP サーバも同梱）。詳細は
 `extensions/line-flex-viewer/` を参照してください。
+
+### AI エージェントによるメッセージ組立（flex / template）
+
+MCP の主要な使い方の一つが「**組み立てる → プレビュー → 調整 → 送信**」のループです。エージェントがリッチメッセージを組み立て、LINE アプリと同じ見た目で確認しながら手直しし、納得できたら送る——この流れを支える 3 つのツールがあります。
+
+- **`line_message_schema(type)`** は LINE メッセージオブジェクトの JSON Schema を返し、エージェントが**形として妥当な**メッセージを組めるようにします。`type` は `all` / `flex` / `template` / `imagemap` / `quickReply` / `action` のいずれか（既定 `flex`）。読み取り系でシークレットは返しません。スキーマは Kiota が生成に使う OpenAPI 仕様と同じものから抽出するのでモデルとずれず、`FlexBox` が自己再帰のため参照は展開せず `$ref` + `$defs` のまま保持します。
+  - 単純なメッセージ（text / image / video / audio / location / sticker）は軽量で、送信ツールの説明文に例が載っています。スキーマが要るのは主に **flex** / **template** です。
+- **`line_flex_preview`** は Flex JSON を LINE アプリに近い見た目でブラウザにライブ描画します（前節参照）。JSON から想像するのではなく、bubble / carousel を**実際に見ながら**色や余白をブラウザ上で調整でき、その結果は **`line_flex_get_content`** でエージェントが読み戻せます。資格情報は不要です。
+- **送信ツールの `dryRun: true`**（`line_message_push` / `multicast` / `broadcast` / `reply`）は、メッセージをパース・形状チェックして種別を返すだけで**送信しません**（API 呼び出しなし・資格情報不要）。実送信前の最終チェックに使います。
+
+典型的な流れ: `line_message_schema type=flex` → Flex JSON を組む → `line_flex_preview`（見ながらブラウザで調整）→ `line_flex_get_content`（調整結果を取り込む）→ `line_message_push ... dryRun=true`（検証）→ `line_message_push ...`（自分の userId へ送信）。
 
 ### セキュリティ設計（MCP）
 
