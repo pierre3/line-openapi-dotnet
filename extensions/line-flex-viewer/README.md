@@ -94,6 +94,20 @@ Then ask Claude to "preview this Flex Message." The tools it can call:
 Optional settings: `LINE_FLEX_MCP_NO_OPEN` (don't auto-open the browser; the URL is still
 returned) and `LINE_FLEX_MCP_STATE_DIR` (where the current preview content is saved).
 
+### Previewing local images and video
+
+Set `LINE_FLEX_MCP_ASSET_DIR` to a folder of your own media and the preview server will serve
+files under it, so a Flex message can reference local artwork by a **relative** `url` (e.g.
+`"assets/hero.png"`). When you go to production, swap only the origin for your HTTPS CDN and the
+Flex JSON is unchanged. This applies to both the MCP server and the Copilot canvas extension.
+
+- **Opt-in** — serving is off unless `LINE_FLEX_MCP_ASSET_DIR` is set; a missing file just 404s.
+- **Confined** — only files under that directory are served (path traversal, rooted paths, and
+  symlinks that escape the directory are refused), and only over the loopback preview server.
+- **Supported media** — the formats LINE actually renders in a Flex message: `.png`/`.jpg`/`.jpeg`
+  images (APNG is a `.png`) and `.mp4` for the `video` component. Other formats (GIF, WebP) are
+  refused. LINE itself never renders local/`data:` urls, so this is a preview-only convenience.
+
 ## What the preview supports
 
 | Category | Supported |
@@ -106,3 +120,13 @@ returned) and `LINE_FLEX_MCP_STATE_DIR` (where the current preview content is sa
 > The preview is a **CSS approximation** of LINE's renderer. Sizes follow LINE's documented
 > scale, but exact pixels may differ slightly from the LINE app. Use it to get the design
 > right, then confirm the final look on a real device.
+
+## Development
+
+The canvas extension (`extension.mjs`) and the bundled MCP server (`mcp/server.mjs`) share the
+local-media serving logic in `lib/assets.mjs`. Its path-confinement and host-guard behavior is
+covered by a zero-dependency test suite (Node's built-in runner):
+
+```bash
+node --test lib/assets.test.mjs   # or: cd mcp && npm test
+```

@@ -7,6 +7,9 @@
     "line-flex-viewer-mcp": "server.mjs"
   },
   "main": "server.mjs",
+  "scripts": {
+    "test": "node --test ../lib/assets.test.mjs"
+  },
   "engines": {
     "node": ">=18"
   },

@@ -15,6 +15,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join, extname, resolve as resolvePath } from "node:path";
 import { homedir } from "node:os";
 import { joinSession, createCanvas, CanvasError } from "@github/copilot-sdk/extension";
+import { resolveAssetDir, resolveMediaRequest } from "./lib/assets.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const WEB_DIR = join(__dirname, "web");
@@ -22,6 +23,11 @@ const WEB_DIR = join(__dirname, "web");
 // Durable artifact storage lives under COPILOT_HOME, never inside the repo.
 const COPILOT_HOME = process.env.COPILOT_HOME || join(homedir(), ".copilot");
 const ARTIFACT_DIR = join(COPILOT_HOME, "extensions", "line-flex-viewer", "artifacts");
+
+// Opt-in local media serving: when LINE_FLEX_MCP_ASSET_DIR is set, media files under it
+// are served so a Flex message can reference local artwork/video by a relative url.
+// Disabled (null) unless configured. Mirrors the .NET FlexPreviewService.
+const ASSET_DIR = resolveAssetDir(process.env.LINE_FLEX_MCP_ASSET_DIR);
 
 const STATIC_FILES = new Set(["viewer.html", "viewer.js", "renderer.js", "flex.css", "samples.js", "standalone.html", "standalone.js"]);
 const CONTENT_TYPES = {
@@ -198,6 +204,14 @@ function handleRequest(entry, req, res) {
         return;
       }
     }
+    // Local media (opt-in via LINE_FLEX_MCP_ASSET_DIR) so a Flex message can reference
+    // artwork/video by a relative url. The helper applies the loopback-host guard and
+    // path confinement; it returns null (→ 404) when serving is disabled or refused.
+    const media = resolveMediaRequest({ path, host: req.headers.host, boundPort: entry.port, assetDir: ASSET_DIR });
+    if (media) {
+      sendFile(res, media.file, media.contentType);
+      return;
+    }
     res.writeHead(404);
     res.end("not found");
     return;
@@ -260,6 +274,7 @@ async function startServer(entry) {
   const addr = server.address();
   const port = typeof addr === "object" && addr ? addr.port : 0;
   entry.server = server;
+  entry.port = port;
   entry.url = `http://127.0.0.1:${port}/`;
 }
 
