@@ -382,7 +382,31 @@ AI が `line_flex_preview` で JSON をレンダリングすると、ループ�
 - `line_flex_validate` — Flex JSON を構造的に検証 → `{ valid, warnings }`
 - `line_flex_open` — プレビュータブを開き直す → `{ ok, url }`
 
-環境変数: `LINE_FLEX_MCP_NO_OPEN`（自動で開かず URL のみ返す）、`LINE_FLEX_MCP_STATE_DIR`（状態の保存先）。
+環境変数: `LINE_FLEX_MCP_NO_OPEN`（自動で開かず URL のみ返す）、`LINE_FLEX_MCP_STATE_DIR`（状態の保存先）、
+`LINE_FLEX_MCP_ASSET_DIR`（プレビュー用にローカル画像/動画を配信＝下記）。
+
+#### ローカル画像・動画のプレビュー
+
+実機の配信には公開 **HTTPS** URL が必須ですが、デザイン中は自分で用意した画像の見た目だけ確認したい
+ことがよくあります。`LINE_FLEX_MCP_ASSET_DIR` にフォルダ（絶対パス推奨）を指定すると、プレビューサーバが
+そのフォルダ内のメディアファイルを配信するので、Flex メッセージから **相対** `url` で参照できます:
+
+```jsonc
+// LINE_FLEX_MCP_ASSET_DIR=/path/to/flex-assets かつ flex-assets/assets/hero.png がある場合
+{ "type": "image", "url": "assets/hero.png", "size": "full" }
+
+// video コンポーネント: プレビューに映るのはポスター（previewUrl）で、url は mp4 本体
+{ "type": "video", "url": "assets/promo.mp4", "previewUrl": "assets/promo-poster.png",
+  "altContent": { "type": "image", "url": "assets/promo-poster.png" }, "aspectRatio": "20:13" }
+```
+
+配信対象は LINE が Flex メッセージでレンダリングする形式に一致します＝画像は **JPEG/PNG**（APNG は `.png`）、
+動画は **`.mp4`**。それ以外（GIF/WebP 等）は配信しません。ブラウザは `assets/hero.png` をプレビューの
+origin（`http://127.0.0.1:<port>/`）に対して解決します。本番へ移す際は origin だけを CDN/ホストに差し替え
+れば、相対パス部分はそのまま使えます（`https://cdn.example.com/assets/hero.png`）。配信は **opt-in**
+（フォルダ未設定なら無効）、指定フォルダ配下への **封じ込め**（パストラバーサル拒否）、ループバック限定、
+read-only 安全です。あくまでプレビュー用の利便機能で、LINE 本体はローカル URL も `data:` URL もレンダリング
+しません。
 
 同じブラウザレンダラは Copilot App の canvas 拡張としても利用できます（`line` ツールを使わない
 場合の代替として、依存パッケージのない Node MCP サーバも同梱）。詳細は

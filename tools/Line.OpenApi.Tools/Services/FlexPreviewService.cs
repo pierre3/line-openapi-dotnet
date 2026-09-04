@@ -21,15 +21,31 @@ namespace Line.OpenApi.Tools.Services;
 /// It performs no LINE API calls and stores no secrets, so it is safe under
 /// <c>--read-only</c>. State (the current Flex JSON) is persisted to a temp file
 /// so a reopened tab restores the last preview.
+///
+/// When <c>LINE_FLEX_MCP_ASSET_DIR</c> is set, media files under that directory are
+/// also served, so a Flex message can reference local artwork by a relative <c>url</c>
+/// (e.g. <c>"assets/hero.png"</c>) during preview and swap only the origin for the
+/// production HTTPS URL later. Serving is opt-in (disabled unless the directory is
+/// configured) and confined to that directory (path traversal is rejected). The served
+/// set matches what LINE actually renders in a Flex message: images are JPEG/PNG (APNG
+/// is <c>.png</c>) and videos are <c>.mp4</c> (the <c>video</c> component). LINE itself
+/// does not render <c>data:</c>/local URLs, so this is a preview-only convenience.
 /// </summary>
 internal sealed class FlexPreviewService : IDisposable
 {
     private static readonly string[] StaticFiles =
         { "viewer.html", "viewer.js", "renderer.js", "flex.css", "samples.js" };
 
+    // Only these extensions are served from the asset directory. The set mirrors the
+    // formats LINE renders in a Flex message: JPEG/PNG (incl. APNG) for the image
+    // component and MP4 for the video component. Other formats are intentionally excluded.
+    private static readonly HashSet<string> AssetExtensions =
+        new(StringComparer.OrdinalIgnoreCase) { ".png", ".jpg", ".jpeg", ".mp4" };
+
     private readonly object _gate = new();
     private readonly ConcurrentDictionary<Guid, HttpListenerResponse> _clients = new();
     private readonly string _stateFile;
+    private readonly string? _assetDir;
     private readonly bool _autoOpen;
 
     private HttpListener? _listener;
@@ -43,6 +59,14 @@ internal sealed class FlexPreviewService : IDisposable
             ?? Path.Combine(Path.GetTempPath(), "line-flex-mcp");
         _stateFile = Path.Combine(stateDir, "content.json");
         _autoOpen = string.IsNullOrEmpty(Environment.GetEnvironmentVariable("LINE_FLEX_MCP_NO_OPEN"));
+
+        // Opt-in local asset serving. Normalize to a full path once so request-time
+        // confinement compares against a stable base. A relative value is resolved
+        // against the current directory at construction time, so an absolute path is
+        // recommended. The directory need not exist yet (files may be added later);
+        // a missing file simply 404s.
+        var assetDir = Environment.GetEnvironmentVariable("LINE_FLEX_MCP_ASSET_DIR");
+        _assetDir = string.IsNullOrWhiteSpace(assetDir) ? null : SafeFullPath(assetDir);
     }
 
     // --- public API (called by the MCP tools) --------------------------------
@@ -308,6 +332,18 @@ internal sealed class FlexPreviewService : IDisposable
                     WriteText(res, 200, ReadResource(name), ContentType(name));
                     return;
                 }
+                // Serve local media (opt-in via LINE_FLEX_MCP_ASSET_DIR) so a Flex
+                // message can reference artwork/video by a relative url. Apply the same
+                // loopback-host guard as /api to blunt DNS-rebinding reads.
+                if (_assetDir is not null && IsLoopbackHost(req.UserHostName))
+                {
+                    var file = ResolveAssetPath(_assetDir, path);
+                    if (file is not null)
+                    {
+                        WriteBytes(res, 200, File.ReadAllBytes(file), AssetContentType(Path.GetExtension(file)));
+                        return;
+                    }
+                }
                 WriteText(res, 404, "not found", "text/plain");
                 return;
             }
@@ -423,8 +459,10 @@ internal sealed class FlexPreviewService : IDisposable
     }
 
     private static void WriteText(HttpListenerResponse res, int status, string text, string contentType)
+        => WriteBytes(res, status, Encoding.UTF8.GetBytes(text), contentType);
+
+    private static void WriteBytes(HttpListenerResponse res, int status, byte[] bytes, string contentType)
     {
-        var bytes = Encoding.UTF8.GetBytes(text);
         res.StatusCode = status;
         res.ContentType = contentType;
         res.ContentLength64 = bytes.Length;
@@ -448,6 +486,87 @@ internal sealed class FlexPreviewService : IDisposable
         ".json" => "application/json; charset=utf-8",
         _ => "application/octet-stream",
     };
+
+    // --- local asset serving -------------------------------------------------
+
+    // Internal for unit testing the extension → content-type mapping.
+    internal static string AssetContentType(string ext) => ext.ToLowerInvariant() switch
+    {
+        ".png" => "image/png",
+        ".jpg" or ".jpeg" => "image/jpeg",
+        ".mp4" => "video/mp4",
+        _ => "application/octet-stream",
+    };
+
+    private static string? SafeFullPath(string path)
+    {
+        try { return Path.GetFullPath(path); }
+        catch { return null; }
+    }
+
+    /// <summary>
+    /// Resolve an HTTP request path (e.g. <c>"/assets/hero.png"</c>) to a file under the
+    /// configured asset directory, or <c>null</c> when serving is disabled, the extension is
+    /// not an allowed media type, the resolved path escapes the directory, or the file does
+    /// not exist. Confinement is enforced by normalizing both the base and the combined path
+    /// to full paths and requiring the candidate to stay under the base — this rejects
+    /// <c>../</c> traversal, rooted/absolute segments, and backslash tricks regardless of the
+    /// encoded form. Internal for unit testing.
+    /// </summary>
+    internal static string? ResolveAssetPath(string? assetDir, string requestPath)
+    {
+        if (string.IsNullOrEmpty(assetDir) || string.IsNullOrEmpty(requestPath)) return null;
+
+        var decoded = Uri.UnescapeDataString(requestPath);
+        // Reject NUL / control characters defensively before touching the filesystem.
+        foreach (var c in decoded)
+            if (char.IsControl(c)) return null;
+
+        var relative = decoded.TrimStart('/');
+        if (relative.Length == 0) return null;
+
+        if (!AssetExtensions.Contains(Path.GetExtension(relative))) return null;
+
+        string fullBase, candidate;
+        try
+        {
+            fullBase = Path.GetFullPath(assetDir);
+            candidate = Path.GetFullPath(Path.Combine(fullBase, relative));
+        }
+        catch
+        {
+            return null;
+        }
+
+        // candidate is built from fullBase, so the base portion shares its casing;
+        // an Ordinal prefix check is both correct and case-safe here.
+        var baseWithSep = fullBase.EndsWith(Path.DirectorySeparatorChar)
+            ? fullBase
+            : fullBase + Path.DirectorySeparatorChar;
+        if (!candidate.StartsWith(baseWithSep, StringComparison.Ordinal)) return null;
+
+        if (!File.Exists(candidate)) return null;
+
+        // The prefix check above is lexical (Path.GetFullPath does not resolve links).
+        // Defense in depth: if the entry is a symlink/junction, resolve its final target
+        // and require that to stay under the base too, so a link inside the directory
+        // cannot escape it. Non-links resolve to null and are served as-is.
+        try
+        {
+            var target = File.ResolveLinkTarget(candidate, returnFinalTarget: true);
+            if (target is not null)
+            {
+                var real = Path.GetFullPath(target.FullName);
+                if (!real.StartsWith(baseWithSep, StringComparison.Ordinal)) return null;
+            }
+        }
+        catch
+        {
+            return null; // if the link target cannot be verified, refuse to serve.
+        }
+
+        return candidate;
+    }
 
     // --- embedded web assets -------------------------------------------------
 

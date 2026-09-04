@@ -19,6 +19,14 @@ They evolve on separate cadences, so each has its own version history below.
 
 ## Tools — `Line.OpenApi.Tools`
 
+### [1.3.0] - 2026-09-04
+
+Lets the Flex preview show your own local artwork and video without hosting.
+
+#### Added
+
+- **Local media serving for the Flex preview (`LINE_FLEX_MCP_ASSET_DIR`).** Set this environment variable to a folder and the loopback preview server serves media files from it, so a Flex message can reference them by a **relative** `url` (e.g. `assets/hero.png`) while designing — then swap only the origin for the production HTTPS URL later (the relative path stays the same). The served set matches what LINE renders in a Flex message: **JPEG/PNG** (APNG is `.png`) images and **`.mp4`** for the `video` component (other formats such as GIF/WebP are intentionally not served). Serving is **opt-in** (disabled unless the folder is set), confined to that folder (path traversal and out-of-directory symlinks are rejected), loopback-only, and read-only-safe. LINE itself renders neither local nor `data:` URLs, so this is a preview convenience.
+
 ### [1.2.0] - 2026-09-03
 
 Adds a live, LINE-faithful Flex Message preview to the tool.
