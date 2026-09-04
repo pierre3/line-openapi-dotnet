@@ -92,6 +92,21 @@ claude mcp add line-flex-viewer -- node <REPO>/extensions/line-flex-viewer/mcp/s
 任意の設定として、`LINE_FLEX_MCP_NO_OPEN`（ブラウザを自動で開かず URL だけ返す）と
 `LINE_FLEX_MCP_STATE_DIR`（現在のプレビュー内容の保存先）があります。
 
+### ローカルの画像・動画をプレビューする
+
+`LINE_FLEX_MCP_ASSET_DIR` に自分で用意したメディアのフォルダを指定すると、プレビューサーバが
+その配下のファイルを配信します。Flex メッセージからは **相対** `url`（例 `"assets/hero.png"`）で
+参照でき、本番移行時は origin だけ HTTPS の CDN に差し替えれば Flex JSON はそのまま使えます。
+これは MCP サーバと Copilot キャンバス拡張の両方で有効です。
+
+- **オプトイン** — `LINE_FLEX_MCP_ASSET_DIR` を設定したときだけ配信します（未設定なら無効、ファイルが
+  無ければ 404）。
+- **封じ込め** — 配信されるのはそのディレクトリ配下のファイルだけ（パストラバーサル・絶対パス・
+  ディレクトリ外へ抜けるシンボリックリンクは拒否）で、ループバックのプレビューサーバ経由に限られます。
+- **対応メディア** — LINE が Flex メッセージで実際に描画する形式に一致します。画像は
+  `.png`/`.jpg`/`.jpeg`（APNG は `.png`）、`video` コンポーネント用に `.mp4`。その他（GIF・WebP）は
+  拒否します。LINE 自身はローカル/`data:` の url を描画しないため、これはプレビュー専用の利便機能です。
+
 ## プレビューの対応範囲
 
 | 分類 | 対応するもの |
@@ -104,3 +119,13 @@ claude mcp add line-flex-viewer -- node <REPO>/extensions/line-flex-viewer/mcp/s
 > プレビューは LINE のレンダラを **CSS で近似**したものです。サイズは LINE の資料に沿っていますが、
 > 厳密なピクセル値は LINE アプリと多少ずれることがあります。まずここで見た目を固め、最終確認は
 > 実機で行うのがおすすめです。
+
+## 開発
+
+キャンバス拡張（`extension.mjs`）と同梱の MCP サーバ（`mcp/server.mjs`）は、ローカルメディア配信の
+ロジックを `lib/assets.mjs` で共有しています。パス封じ込めとホストガードの挙動は、依存ゼロの
+テストスイート（Node 標準のテストランナー）で検証しています。
+
+```bash
+node --test lib/assets.test.mjs   # または: cd mcp && npm test
+```

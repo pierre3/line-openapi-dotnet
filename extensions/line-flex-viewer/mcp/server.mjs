@@ -18,6 +18,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join, extname, resolve as resolvePath } from "node:path";
 import { tmpdir } from "node:os";
 import { spawn } from "node:child_process";
+import { resolveAssetDir, resolveMediaRequest } from "../lib/assets.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const WEB_DIR = join(__dirname, "..", "web");
@@ -26,6 +27,11 @@ const STATE_DIR = process.env.LINE_FLEX_MCP_STATE_DIR || join(tmpdir(), "line-fl
 const STATE_FILE = join(STATE_DIR, "content.json");
 const HTML_ENTRY = process.env.LINE_FLEX_MCP_HTML || "viewer.html"; // viewer.html = live push
 const AUTO_OPEN = process.env.LINE_FLEX_MCP_NO_OPEN ? false : true;
+
+// Opt-in local media serving: when LINE_FLEX_MCP_ASSET_DIR is set, media files under it
+// are served so a Flex message can reference local artwork/video by a relative url.
+// Disabled (null) unless configured. Mirrors the .NET FlexPreviewService.
+const ASSET_DIR = resolveAssetDir(process.env.LINE_FLEX_MCP_ASSET_DIR);
 
 const STATIC_FILES = new Set([
   "viewer.html", "viewer.js", "renderer.js", "flex.css", "samples.js",
@@ -41,6 +47,7 @@ const CONTENT_TYPES = {
 const state = {
   server: null,
   url: null,
+  port: null,
   content: null,
   clients: new Set(),
   opened: false,
@@ -200,6 +207,14 @@ function handleRequest(req, res) {
         return;
       }
     }
+    // Local media (opt-in via LINE_FLEX_MCP_ASSET_DIR) so a Flex message can reference
+    // artwork/video by a relative url. The helper applies the loopback-host guard and
+    // path confinement; it returns null (→ 404) when serving is disabled or refused.
+    const media = resolveMediaRequest({ path, host: req.headers.host, boundPort: state.port, assetDir: ASSET_DIR });
+    if (media) {
+      sendFile(res, media.file, media.contentType);
+      return;
+    }
     res.writeHead(404);
     res.end("not found");
     return;
@@ -261,6 +276,7 @@ async function ensureServer() {
   const addr = server.address();
   const port = typeof addr === "object" && addr ? addr.port : 0;
   state.server = server;
+  state.port = port;
   state.url = `http://127.0.0.1:${port}/`;
   log("preview server listening at", state.url);
   return state.url;

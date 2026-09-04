@@ -48,6 +48,25 @@ jobs:
       - name: Test
         run: dotnet test LineOpenApi.slnx --configuration Release --no-build --verbosity normal
 
+  # Node tests for the Flex viewer extension's shared local-media serving (lib/assets.mjs).
+  # This logic is a JS port of the .NET FlexPreviewService confinement; its implementation
+  # details (percent-decoding, string host:port parsing, path confinement) are distinct
+  # from the .NET code, so the .NET suite does not guard against JS regressions. Zero
+  # runtime deps — Node's built-in test runner only. Runs on Linux so the symlink-escape
+  # test (skipped on Windows without dev mode) is actually exercised.
+  extension-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '20'
+
+      - name: Test Flex viewer extension
+        run: node --test extensions/line-flex-viewer/lib/assets.test.mjs
+
   # Pack smoke test: guards the produced package layout (5 code packages with lib+snupkg,
   # 1 Bot meta-package with no lib/no snupkg/3 deps) against silent packaging regressions
   # that build+test cannot catch. See scripts/verify-packages.ps1.
