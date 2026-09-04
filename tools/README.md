@@ -383,7 +383,31 @@ before sending. No LINE API calls or credentials are involved, so these tools ar
 - `line_flex_validate` — structurally validate Flex JSON → `{ valid, warnings }`
 - `line_flex_open` — reopen the preview tab → `{ ok, url }`
 
-Env: `LINE_FLEX_MCP_NO_OPEN` (URL only, no auto-open), `LINE_FLEX_MCP_STATE_DIR` (state location).
+Env: `LINE_FLEX_MCP_NO_OPEN` (URL only, no auto-open), `LINE_FLEX_MCP_STATE_DIR` (state location),
+`LINE_FLEX_MCP_ASSET_DIR` (serve local images/video for preview — see below).
+
+#### Previewing local images and video
+
+LINE requires a public **HTTPS** URL for real media delivery, but while designing you often just want
+to see your own artwork. Set `LINE_FLEX_MCP_ASSET_DIR` to a folder (use an absolute path) and the
+preview server serves media files from it, so a Flex message can reference them by a **relative** `url`:
+
+```jsonc
+// with LINE_FLEX_MCP_ASSET_DIR=/path/to/flex-assets and flex-assets/assets/hero.png present
+{ "type": "image", "url": "assets/hero.png", "size": "full" }
+
+// a video component: the poster (previewUrl) is what renders in the preview; url is the mp4
+{ "type": "video", "url": "assets/promo.mp4", "previewUrl": "assets/promo-poster.png",
+  "altContent": { "type": "image", "url": "assets/promo-poster.png" }, "aspectRatio": "20:13" }
+```
+
+The served set matches what LINE renders in a Flex message: images are **JPEG/PNG** (APNG is `.png`)
+and video is **`.mp4`** — other formats (GIF/WebP, etc.) are intentionally not served. The browser
+resolves `assets/hero.png` against the preview origin (`http://127.0.0.1:<port>/`). When you move the
+message to production, swap only the origin for your CDN/host — the relative path stays the same
+(`https://cdn.example.com/assets/hero.png`). Serving is **opt-in** (disabled unless the folder is set),
+**confined** to that folder (path traversal is rejected), loopback-only, and read-only-safe. This is a
+preview convenience: LINE itself renders neither local nor `data:` URLs.
 
 The same browser renderer is also available as a Copilot App canvas extension (with a bundled
 zero-dependency Node MCP server as an alternative for Claude Desktop/Code) — see
