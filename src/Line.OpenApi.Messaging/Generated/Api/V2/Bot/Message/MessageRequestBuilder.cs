@@ -6,6 +6,7 @@ using Line.OpenApi.Messaging.Generated.Api.V2.Bot.Message.Delivery;
 using Line.OpenApi.Messaging.Generated.Api.V2.Bot.Message.MarkAsRead;
 using Line.OpenApi.Messaging.Generated.Api.V2.Bot.Message.Multicast;
 using Line.OpenApi.Messaging.Generated.Api.V2.Bot.Message.Narrowcast;
+using Line.OpenApi.Messaging.Generated.Api.V2.Bot.Message.Pnp;
 using Line.OpenApi.Messaging.Generated.Api.V2.Bot.Message.Progress;
 using Line.OpenApi.Messaging.Generated.Api.V2.Bot.Message.Push;
 using Line.OpenApi.Messaging.Generated.Api.V2.Bot.Message.Quota;
@@ -54,6 +55,11 @@ namespace Line.OpenApi.Messaging.Generated.Api.V2.Bot.Message
         public global::Line.OpenApi.Messaging.Generated.Api.V2.Bot.Message.Narrowcast.NarrowcastRequestBuilder Narrowcast
         {
             get => new global::Line.OpenApi.Messaging.Generated.Api.V2.Bot.Message.Narrowcast.NarrowcastRequestBuilder(PathParameters, RequestAdapter);
+        }
+        /// <summary>The pnp property</summary>
+        public global::Line.OpenApi.Messaging.Generated.Api.V2.Bot.Message.Pnp.PnpRequestBuilder Pnp
+        {
+            get => new global::Line.OpenApi.Messaging.Generated.Api.V2.Bot.Message.Pnp.PnpRequestBuilder(PathParameters, RequestAdapter);
         }
         /// <summary>The progress property</summary>
         public global::Line.OpenApi.Messaging.Generated.Api.V2.Bot.Message.Progress.ProgressRequestBuilder Progress

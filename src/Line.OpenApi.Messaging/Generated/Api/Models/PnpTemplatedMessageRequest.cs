@@ -9,12 +9,20 @@ namespace Line.OpenApi.Messaging.Generated.Api.Models
 {
     [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.0.0")]
     #pragma warning disable CS1591
-    public partial class PnpMessagesRequest : IAdditionalDataHolder, IParsable
+    public partial class PnpTemplatedMessageRequest : IAdditionalDataHolder, IParsable
     #pragma warning restore CS1591
     {
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
-        /// <summary>Name of aggregation unit. Case-sensitive.</summary>
+        /// <summary>The body object of the template you want to send. You can&apos;t specify the same item more than once in a single message.</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public global::Line.OpenApi.Messaging.Generated.Api.Models.PnpTemplatedMessageBody? Body { get; set; }
+#nullable restore
+#else
+        public global::Line.OpenApi.Messaging.Generated.Api.Models.PnpTemplatedMessageBody Body { get; set; }
+#endif
+        /// <summary>Name of aggregation unit. Case-sensitive.For more information about assigning a unit name, see https://developers.line.biz/en/docs/messaging-api/unit-based-statistics-aggregation/#assign-names-to-units-when-sending-messages</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
         public List<string>? CustomAggregationUnits { get; set; }
@@ -22,16 +30,14 @@ namespace Line.OpenApi.Messaging.Generated.Api.Models
 #else
         public List<string> CustomAggregationUnits { get; set; }
 #endif
-        /// <summary>Message to be sent.</summary>
+        /// <summary>Specify the key of the template you want to send.For available keys, see https://developers.line.biz/en/docs/partner-docs/line-notification-messages/template/#templates</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public List<global::Line.OpenApi.Messaging.Generated.Api.Models.Message>? Messages { get; set; }
+        public string? TemplateKey { get; set; }
 #nullable restore
 #else
-        public List<global::Line.OpenApi.Messaging.Generated.Api.Models.Message> Messages { get; set; }
+        public string TemplateKey { get; set; }
 #endif
-        /// <summary>`true`: The user doesn’t receive a push notification when a message is sent.`false`: The user receives a push notification when the message is sent (unless they have disabled push notifications in LINE and/or their device).The default value is false.</summary>
-        public bool? NotificationDisabled { get; set; }
         /// <summary>Message destination. Specify a phone number that has been normalized to E.164 format and hashed with SHA256.</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
@@ -41,22 +47,21 @@ namespace Line.OpenApi.Messaging.Generated.Api.Models
         public string To { get; set; }
 #endif
         /// <summary>
-        /// Instantiates a new <see cref="global::Line.OpenApi.Messaging.Generated.Api.Models.PnpMessagesRequest"/> and sets the default values.
+        /// Instantiates a new <see cref="global::Line.OpenApi.Messaging.Generated.Api.Models.PnpTemplatedMessageRequest"/> and sets the default values.
         /// </summary>
-        public PnpMessagesRequest()
+        public PnpTemplatedMessageRequest()
         {
             AdditionalData = new Dictionary<string, object>();
-            NotificationDisabled = false;
         }
         /// <summary>
         /// Creates a new instance of the appropriate class based on discriminator value
         /// </summary>
-        /// <returns>A <see cref="global::Line.OpenApi.Messaging.Generated.Api.Models.PnpMessagesRequest"/></returns>
+        /// <returns>A <see cref="global::Line.OpenApi.Messaging.Generated.Api.Models.PnpTemplatedMessageRequest"/></returns>
         /// <param name="parseNode">The parse node to use to read the discriminator value and create the object</param>
-        public static global::Line.OpenApi.Messaging.Generated.Api.Models.PnpMessagesRequest CreateFromDiscriminatorValue(IParseNode parseNode)
+        public static global::Line.OpenApi.Messaging.Generated.Api.Models.PnpTemplatedMessageRequest CreateFromDiscriminatorValue(IParseNode parseNode)
         {
             if(ReferenceEquals(parseNode, null)) throw new ArgumentNullException(nameof(parseNode));
-            return new global::Line.OpenApi.Messaging.Generated.Api.Models.PnpMessagesRequest();
+            return new global::Line.OpenApi.Messaging.Generated.Api.Models.PnpTemplatedMessageRequest();
         }
         /// <summary>
         /// The deserialization information for the current model
@@ -66,9 +71,9 @@ namespace Line.OpenApi.Messaging.Generated.Api.Models
         {
             return new Dictionary<string, Action<IParseNode>>
             {
+                { "body", n => { Body = n.GetObjectValue<global::Line.OpenApi.Messaging.Generated.Api.Models.PnpTemplatedMessageBody>(global::Line.OpenApi.Messaging.Generated.Api.Models.PnpTemplatedMessageBody.CreateFromDiscriminatorValue); } },
                 { "customAggregationUnits", n => { CustomAggregationUnits = n.GetCollectionOfPrimitiveValues<string>()?.AsList(); } },
-                { "messages", n => { Messages = n.GetCollectionOfObjectValues<global::Line.OpenApi.Messaging.Generated.Api.Models.Message>(global::Line.OpenApi.Messaging.Generated.Api.Models.Message.CreateFromDiscriminatorValue)?.AsList(); } },
-                { "notificationDisabled", n => { NotificationDisabled = n.GetBoolValue(); } },
+                { "templateKey", n => { TemplateKey = n.GetStringValue(); } },
                 { "to", n => { To = n.GetStringValue(); } },
             };
         }
@@ -79,9 +84,9 @@ namespace Line.OpenApi.Messaging.Generated.Api.Models
         public virtual void Serialize(ISerializationWriter writer)
         {
             if(ReferenceEquals(writer, null)) throw new ArgumentNullException(nameof(writer));
+            writer.WriteObjectValue<global::Line.OpenApi.Messaging.Generated.Api.Models.PnpTemplatedMessageBody>("body", Body);
             writer.WriteCollectionOfPrimitiveValues<string>("customAggregationUnits", CustomAggregationUnits);
-            writer.WriteCollectionOfObjectValues<global::Line.OpenApi.Messaging.Generated.Api.Models.Message>("messages", Messages);
-            writer.WriteBoolValue("notificationDisabled", NotificationDisabled);
+            writer.WriteStringValue("templateKey", TemplateKey);
             writer.WriteStringValue("to", To);
             writer.WriteAdditionalData(AdditionalData);
         }
