@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "repository": "line/line-openapi",
   "ref": "fa5577c9ea874d2dbd8fadc85a4cb3a1b29d8cbe",
-  "refDate": "2026-07-28",
+  "refDate": "2026-09-29",
   "retrievedAt": "2026-10-05",
   "hashAlgorithm": "sha256",
   "hashNormalization": "line endings normalized to LF before hashing",

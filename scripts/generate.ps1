@@ -109,7 +109,10 @@ if ($Update) {
     $ghRaw = Invoke-GhApiRaw "repos/$repo/commits/$targetRef"
     $c = if ($ghRaw) { $ghRaw | ConvertFrom-Json }
          else { Invoke-RestMethod -Uri "https://api.github.com/repos/$repo/commits/$targetRef" -Headers @{ "User-Agent" = "line-openapi-dotnet" } }
-    $manifest.refDate = ($c.commit.committer.date).Substring(0, 10)
+    # pwsh 7 の ConvertFrom-Json / Invoke-RestMethod は ISO 日付を DateTime へ自動変換する（文字列前提の
+    # Substring は例外→catch で握り潰され refDate が黙って据え置かれていた）。両形を UTC 日付へ正規化する。
+    $d = $c.commit.committer.date
+    $manifest.refDate = if ($d -is [datetime]) { $d.ToUniversalTime().ToString('yyyy-MM-dd') } else { ([string]$d).Substring(0, 10) }
   } catch { Write-Warning "could not resolve commit date for $targetRef" }
   # LF 固定で書く（.gitattributes と併せ Windows/CI 間の改行 churn を防ぐ）。
   $manifestJson = (($manifest | ConvertTo-Json -Depth 10) -replace "`r`n", "`n") + "`n"
