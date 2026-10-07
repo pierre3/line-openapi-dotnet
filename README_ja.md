@@ -48,7 +48,7 @@ dotnet tool install -g Line.OpenApi.Tools
 
 ## インストール
 
-> 全パッケージ NuGet.org 公開済み（現在 `1.0.0`）。[`Line.OpenApi.*` パッケージ一覧](https://www.nuget.org/packages?q=tags%3A%22LINE-API%22)。
+> 全パッケージ NuGet.org 公開済み（クライアントライブラリは現在 `1.1.0`）。[`Line.OpenApi.*` パッケージ一覧](https://www.nuget.org/packages?q=tags%3A%22LINE-API%22)。
 
 ```sh
 # Bot 一式（送信＋受信＋トークン発行）をまとめて導入

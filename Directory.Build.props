@@ -27,10 +27,10 @@
 
   <!-- NuGet パッケージ共通メタデータ（設計 §8）。公開 ID / ルート名前空間は Line.OpenApi.*。
        PackageId はプロジェクト名（=AssemblyName）から既定継承するため個別指定は不要。
-       個別の Description は各 .csproj で設定。バージョンは当面パッケージ横断で統一（0.1.0-preview）。
+       個別の Description は各 .csproj で設定。ライブラリ 12 パッケージのバージョンは横断で統一（タグ v* で採番）。
        個別 SemVer が必要になれば各 .csproj の <Version> で上書きする。 -->
   <PropertyGroup>
-    <Version>1.0.0</Version>
+    <Version>1.1.0</Version>
     <Authors>pierre3</Authors>
     <Company>pierre3</Company>
     <Product>Line.OpenApi</Product>

@@ -48,7 +48,7 @@ dotnet tool install -g Line.OpenApi.Tools
 
 ## Installation
 
-> All packages are published on NuGet.org (currently `1.0.0`). See [all `Line.OpenApi.*` packages](https://www.nuget.org/packages?q=tags%3A%22LINE-API%22).
+> All packages are published on NuGet.org (client libraries currently `1.1.0`). See [all `Line.OpenApi.*` packages](https://www.nuget.org/packages?q=tags%3A%22LINE-API%22).
 
 ```sh
 # Install the full Bot set (send + receive + token issuance) at once

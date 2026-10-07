@@ -22,7 +22,7 @@ LINE 公開 OpenAPI 仕様（https://github.com/line/line-openapi）から **Kio
 
 | 系統 | 対象 | タグ | 現行 |
 |---|---|---|---|
-| ライブラリ | `Line.OpenApi.*`（12 パッケージ = 11 code + 1 meta） | `v*` | 1.0.0 |
+| ライブラリ | `Line.OpenApi.*`（12 パッケージ = 11 code + 1 meta） | `v*` | 1.1.0 |
 | ツール | `Line.OpenApi.Tools`（`dotnet tool`・コマンド `line`） | `tools-v*` | 1.3.0 |
 | AI ツール | `Line.OpenApi.Extensions.AI` | `ai-v*` | 1.0.0 |
 
