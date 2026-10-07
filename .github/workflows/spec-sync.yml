@@ -52,6 +52,8 @@ jobs:
           $r.specs | ForEach-Object { "  $($_.status.PadRight(12)) $($_.spec)" } | Write-Host
           "drifted=$($r.drifted.ToString().ToLower())"           >> $env:GITHUB_OUTPUT
           "awareness=$($r.awarenessDrift.ToString().ToLower())"  >> $env:GITHUB_OUTPUT
+          # latestSha は後段でブランチ名・スクリプトへ展開されるため、git SHA 形式であることを確認する（多層防御）。
+          if ($r.latestSha -notmatch '^[0-9a-f]{40}$') { throw "unexpected upstream SHA format: '$($r.latestSha)'" }
           "latestSha=$($r.latestSha)"                            >> $env:GITHUB_OUTPUT
           "manifestRef=$($r.manifestRef)"                        >> $env:GITHUB_OUTPUT
           "compareUrl=$($r.compareUrl)"                          >> $env:GITHUB_OUTPUT
@@ -133,6 +135,7 @@ jobs:
         if: steps.decide.outputs.notify == 'false'
         shell: pwsh
         run: |
+          $PSNativeCommandUseErrorActionPreference = $true
           $open = gh issue list --repo $env:REPO --label spec-sync --state open --json number --jq '.[].number'
           foreach ($n in $open) {
             if ($n) { gh issue close $n --repo $env:REPO --comment "Upstream specs are back in sync with the committed snapshot (no drift). Closed automatically by spec-sync." }
@@ -145,6 +148,7 @@ jobs:
         run: dotnet tool install --global Microsoft.OpenApi.Kiota --version 1.34.1
 
       - name: Regenerate at pinned upstream SHA
+        id: regen
         if: steps.decide.outputs.regenerate == 'true'
         shell: pwsh
         run: ./scripts/generate.ps1 -Update -Ref ${{ steps.drift.outputs.latestSha }}
@@ -168,7 +172,7 @@ jobs:
         shell: pwsh
         run: |
           # git/gh の非 0 終了でステップを失敗させる。既定（false）だと push 拒否等を握り潰したまま
-          # 後続へ進み、run が緑のまま無言で失敗する（2026-10 の fa5577c9 で顕在化）。
+          # 後続へ進み、run が緑のまま無言で失敗する（2026-10 に上流 fa5577c9 の取り込みで顕在化）。
           $PSNativeCommandUseErrorActionPreference = $true
           $sha = "${{ steps.drift.outputs.latestSha }}"
           $short = $sha.Substring(0,8)
@@ -201,7 +205,7 @@ jobs:
           # レビュアーが積んだ fixup を消す）。main 側の生成器変更は既存ブランチに反映されない点を本文に明記する。
           $pushNote = $null
           if ($branchExists) {
-            $pushNote = "Branch ``$branch`` already existed, so this run did **not** re-push it (reviewer fixups are preserved). If ``scripts/generate.ps1`` or the Kiota version changed on ``main`` since, regenerate on the branch manually."
+            $pushNote = "Branch ``$branch`` already existed, so this run did **not** re-push it (reviewer fixups are preserved). If ``scripts/generate.ps1`` or the Kiota version changed on ``main`` since, regenerate on the branch manually. The build/test results below are from this run's regeneration on ``main``, not from the branch contents."
             Write-Host "::notice::branch $branch already exists on origin; skipping push"
           } else {
             git commit -m "chore(spec-sync): update LINE OpenAPI specs to $short and regenerate"
@@ -232,6 +236,13 @@ jobs:
           ($pb -join "`n") | Set-Content "$env:RUNNER_TEMP/pr-body.md"
 
           $existingPr = gh pr list --repo $env:REPO --head $branch --state open --json number --jq '.[0].number'
+          # 人が却下（未マージで close）した PR は作り直さない（上流 SHA が変わらない限り毎週再作成されるのを防ぐ）。
+          $closedPr = gh pr list --repo $env:REPO --head $branch --state closed --json number,mergedAt --jq '[.[] | select(.mergedAt == null)][0].number'
+          if (-not $existingPr -and $closedPr) {
+            Write-Host "::notice::PR #$closedPr for $branch was closed without merging; not reopening"
+            "closedPr=$closedPr" >> $env:GITHUB_OUTPUT
+            exit 0
+          }
           if ($existingPr) {
             gh pr edit $existingPr --repo $env:REPO --body-file "$env:RUNNER_TEMP/pr-body.md"
             Write-Host "updated PR #$existingPr"
@@ -248,29 +259,47 @@ jobs:
 
       # --- 5) 結果を追跡 Issue へ記録（PR 作成失敗時も残す）---
       - name: Report to tracking issue
-        if: always() && steps.decide.outputs.regenerate == 'true' && steps.issue.outputs.number != ''
+        if: ${{ !cancelled() && steps.decide.outputs.regenerate == 'true' && steps.issue.outputs.number != '' }}
         shell: pwsh
+        # ステップ出力は式でスクリプト本文へ直接展開せず env 経由で渡す（式インジェクション対策の定石）。
+        env:
+          ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
+          REGEN_OUTCOME: ${{ steps.regen.outcome }}
+          BUILD_OUTCOME: ${{ steps.build.outcome }}
+          TEST_OUTCOME: ${{ steps.test.outcome }}
+          PR_OUTCOME: ${{ steps.pr.outcome }}
+          PR_URL: ${{ steps.pr.outputs.url }}
+          PR_PUSHED: ${{ steps.pr.outputs.pushed }}
+          CLOSED_PR: ${{ steps.pr.outputs.closedPr }}
         run: |
           $PSNativeCommandUseErrorActionPreference = $true
           $c = @()
           $c += "spec-sync run: $env:GITHUB_SERVER_URL/$env:REPO/actions/runs/$env:GITHUB_RUN_ID"
           $c += ""
-          $c += "- build: ``${{ steps.build.outcome }}``"
-          $c += "- test: ``${{ steps.test.outcome }}``"
-          $c += "- draft PR step: ``${{ steps.pr.outcome }}``"
-          if ("${{ steps.pr.outputs.url }}") {
-            $c += "- PR: ${{ steps.pr.outputs.url }}"
-            if ("${{ steps.pr.outputs.pushed }}" -eq "false") { $c += "- branch already existed; not re-pushed" }
+          $c += "- regenerate: ``$env:REGEN_OUTCOME``"
+          $c += "- build: ``$env:BUILD_OUTCOME``"
+          $c += "- test: ``$env:TEST_OUTCOME``"
+          $c += "- draft PR step: ``$env:PR_OUTCOME``"
+          if ($env:PR_URL) {
+            $c += "- PR: $env:PR_URL"
+            if ($env:PR_PUSHED -eq "false") { $c += "- branch already existed; not re-pushed" }
+          } elseif ($env:CLOSED_PR) {
+            $c += "- PR #$env:CLOSED_PR for this upstream SHA was closed without merging, so no new PR was opened. Reopen it (or delete the branch) to retry."
+          } elseif ($env:REGEN_OUTCOME -ne "success") {
+            $c += "- **Regeneration failed**, so no PR was opened. See the run log."
           } else {
             $c += "- **No PR was opened/updated.** Check the run log (no file changes after regeneration, the repository setting *Allow GitHub Actions to create and approve pull requests*, or a git/gh failure)."
           }
           ($c -join "`n") | Set-Content "$env:RUNNER_TEMP/issue-comment.md"
-          gh issue comment ${{ steps.issue.outputs.number }} --repo $env:REPO --body-file "$env:RUNNER_TEMP/issue-comment.md"
+          gh issue comment $env:ISSUE_NUMBER --repo $env:REPO --body-file "$env:RUNNER_TEMP/issue-comment.md"
 
       # Build/Test は PR 本文へ結果を載せるため continue-on-error だが、失敗を run の結果（通知）にも出す。
       - name: Fail run when regenerated client does not build or pass tests
         if: steps.decide.outputs.regenerate == 'true' && (steps.build.outcome != 'success' || steps.test.outcome != 'success')
         shell: pwsh
+        env:
+          BUILD_OUTCOME: ${{ steps.build.outcome }}
+          TEST_OUTCOME: ${{ steps.test.outcome }}
         run: |
-          Write-Host "::error::regenerated client: build=${{ steps.build.outcome }} test=${{ steps.test.outcome }} (see the draft PR / tracking issue)"
+          Write-Host "::error::regenerated client: build=$env:BUILD_OUTCOME test=$env:TEST_OUTCOME (see the draft PR / tracking issue)"
           exit 1

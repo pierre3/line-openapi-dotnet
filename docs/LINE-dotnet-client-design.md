@@ -248,6 +248,7 @@ Webhook（モデルのみ）／LIFF も同様に個別生成。
 4. **下書き PR** — 再生成コード＋正規化 spec＋manifest を含む draft PR を自動作成。**マージは常に人＋4役ゲート**（自動マージしない）。
    - 前提: リポジトリ設定 *Allow GitHub Actions to create and approve pull requests* がオン（オフだと PR 作成が失敗する）。
    - bot ブランチ `spec-sync/update-<sha8>` が既にリモートにあれば **push しない**（同一 SHA の再生成は決定的・レビュアーの fixup を保護。checkout は追跡 ref を持たないため lease 付き上書きは成立しない）。PR の作成/本文更新のみ行い、スキップした旨を本文に明記する。
+   - 同じブランチの PR が**未マージで close**（人が却下）されていれば作り直さない（同一上流 SHA の間、毎週再作成されるのを防ぐ）。再試行は PR を reopen するかブランチを削除する。
    - git/gh の非 0 終了はステップを失敗させる（`$PSNativeCommandUseErrorActionPreference`）。無言失敗させない。
 5. **結果の記録** — run URL・build/test 結果・PR リンク（または PR 未作成の旨）を追跡 Issue にコメント（PR 作成失敗時も残す）。再生成クライアントの build/test 失敗は最終ステップで run 自体を失敗扱いにする（通知が届く）。
    - `GITHUB_TOKEN` で作成した PR では `ci.yml` が起動しない（GitHub 仕様）。マージ前に close/reopen 等でフル CI を走らせる。
