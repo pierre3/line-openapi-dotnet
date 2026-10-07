@@ -70,11 +70,17 @@ dev トンネルの再起動時に LINE Developers コンソールへ URL を貼
 
 ## ライブラリ — `Line.OpenApi.*`
 
-### Unreleased
+### 1.1.0 - 2026-10-07
+
+上流の LINE OpenAPI 仕様 [`line/line-openapi@fa5577c9`](https://github.com/line/line-openapi/commit/fa5577c9ea874d2dbd8fadc85a4cb3a1b29d8cbe) に追従。追加のみで破壊的変更はなく、手書きの公開 API も変わらない。12 パッケージすべてを 1.1.0 にそろえて更新する。
 
 #### 追加
 
 - **LINE 通知メッセージ（テンプレート）** — 上流仕様 [`line/line-openapi@fa5577c9`](https://github.com/line/line-openapi/commit/fa5577c9ea874d2dbd8fadc85a4cb3a1b29d8cbe) への追従。生成クライアント `Line.OpenApi.Messaging` に `POST /v2/bot/message/pnp/templated/push`（`client.Api.V2.Bot.Message.Pnp.Templated.Push`）と `GET /v2/bot/message/delivery/pnp/templated`（`client.Api.V2.Bot.Message.Delivery.Pnp.Templated`）、モデル `PnpTemplatedMessageRequest`・`PnpTemplatedMessageBody`・`PnpTemplatedEmphasizedItem`・`PnpTemplatedItem`・`PnpTemplatedButton` を追加。`PnpMessagesRequest` に任意プロパティ `customAggregationUnits` を追加。追加のみで手書き API の変更なし。
+
+#### 変更
+
+- `Line.OpenApi.ChannelAccessToken`: 生成されたモデルとリクエストビルダーの XML ドキュメントを上流仕様に合わせて更新（ドキュメントのみ。シグネチャと挙動は変わらない）。
 
 ### 1.0.0 - 2026-08-12
 

@@ -70,11 +70,17 @@ First stable (GA) release.
 
 ## Libraries — `Line.OpenApi.*`
 
-### Unreleased
+### 1.1.0 - 2026-10-07
+
+Follows the upstream LINE OpenAPI specs to [`line/line-openapi@fa5577c9`](https://github.com/line/line-openapi/commit/fa5577c9ea874d2dbd8fadc85a4cb3a1b29d8cbe). Additive only — no breaking changes, and the hand-written public API is unchanged. All 12 packages move to 1.1.0 together.
 
 #### Added
 
 - **LINE notification messages (template)** — upstream spec sync to [`line/line-openapi@fa5577c9`](https://github.com/line/line-openapi/commit/fa5577c9ea874d2dbd8fadc85a4cb3a1b29d8cbe). Generated `Line.OpenApi.Messaging` client gains `POST /v2/bot/message/pnp/templated/push` (`client.Api.V2.Bot.Message.Pnp.Templated.Push`) and `GET /v2/bot/message/delivery/pnp/templated` (`client.Api.V2.Bot.Message.Delivery.Pnp.Templated`), with the models `PnpTemplatedMessageRequest`, `PnpTemplatedMessageBody`, `PnpTemplatedEmphasizedItem`, `PnpTemplatedItem` and `PnpTemplatedButton`. `PnpMessagesRequest` gains the optional `customAggregationUnits`. Additive only; no hand-written API changes.
+
+#### Changed
+
+- `Line.OpenApi.ChannelAccessToken`: XML documentation on the generated models and request builders is refreshed from the upstream spec (documentation only; no signature or behavior changes).
 
 ### 1.0.0 - 2026-08-12
 
