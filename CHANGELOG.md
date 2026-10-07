@@ -70,6 +70,12 @@ First stable (GA) release.
 
 ## Libraries — `Line.OpenApi.*`
 
+### Unreleased
+
+#### Added
+
+- **LINE notification messages (template)** — upstream spec sync to [`line/line-openapi@fa5577c9`](https://github.com/line/line-openapi/commit/fa5577c9ea874d2dbd8fadc85a4cb3a1b29d8cbe). Generated `Line.OpenApi.Messaging` client gains `POST /v2/bot/message/pnp/templated/push` (`client.Api.V2.Bot.Message.Pnp.Templated.Push`) and `GET /v2/bot/message/delivery/pnp/templated` (`client.Api.V2.Bot.Message.Delivery.Pnp.Templated`), with the models `PnpTemplatedMessageRequest`, `PnpTemplatedMessageBody`, `PnpTemplatedEmphasizedItem`, `PnpTemplatedItem` and `PnpTemplatedButton`. `PnpMessagesRequest` gains the optional `customAggregationUnits`. Additive only; no hand-written API changes.
+
 ### 1.0.0 - 2026-08-12
 
 First stable (GA) release of the client libraries.

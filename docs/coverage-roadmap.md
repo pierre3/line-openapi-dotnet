@@ -30,6 +30,10 @@ line-openapi リポジトリの OpenAPI spec は **9 本**。うち **8 本を�
 1. 画像アップロード `setRichMenuImage` は spec 上 `*/*`（binary）だが LINE は `Content-Type: image/png`/`image/jpeg` を必須とする。生成コードは content-type を明示せず落とし穴になる（form-urlencoded の `StatelessJwtAssertionTokenSource` と同種）→ 手書きヘルパが要る。
 2. 利用シーン用の便利ファサード（`LiffClient` 相当）が無く、生の生成ビルダーは辿りにくい。
 
+### LINE 通知メッセージ（PNP）は生成物のみで公開（2026-10-07 追記）
+
+電話番号宛ての LINE 通知メッセージ（パートナー契約前提）は、従来の push／送信数取得に加え、上流 `fa5577c9`（spec-sync・PR #11）で**テンプレート版**（`/v2/bot/message/pnp/templated/push`・`/v2/bot/message/delivery/pnp/templated`）が追加された。いずれも `MessagingClient.Api` の生成ビルダー経由で利用可能で、手書きファサード・CLI/MCP・AI ツールへの露出は**未着手（候補）**。露出する場合の注意: `to` はソルト無し SHA256 ハッシュで元の電話番号に戻せる（ログ・例外に出さない）、`X-Line-Delivery-Tag` は型付き引数にならず `requestConfiguration.Headers` で付ける。
+
 ## 第1部: 未取り込みの OpenAPI spec（残 1 本＝module-attach のみ）
 
 > **更新（2026-07-15）:** カバレッジ拡充で **insight / manage-audience / module / shop の 4 本を取り込み完了**（`Line.OpenApi.Insight` / `.ManageAudience` / `.Module` / `.Shop`。ラウンド 1＝易 3 本、ラウンド 2＝manage-audience。記録は `docs/reviews/2026-07-15-coverage-round{1,2}-review.md`）。**module-attach のみ見送り**（下表・パートナー限定 1 op でコスト対効果最低）。
