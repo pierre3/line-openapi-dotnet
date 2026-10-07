@@ -120,6 +120,8 @@ dotnet docfx docs/manual/docfx.json        # metadata + build → docs/manual/_s
 - **検知**: `pwsh scripts/check-spec-drift.ps1`（manifest 基準・純検知・ドリフト時 exit 1・`-Json`/`-FailOnAwareness` あり）。gh 優先・無ければ REST。
 - **再取得＋再生成**: `pwsh scripts/generate.ps1 -Update [-Ref <sha>]`（SHA ピン再取得→正規化→manifest 更新→Kiota 生成）。既定（`-Update` 無し）は同梱 spec を使う再現生成で挙動不変。
 - **週次自動化**: `.github/workflows/spec-sync.yml`（cron＋手動）が 検知→`spec-sync` ラベルの Issue upsert（回復時 close）→再生成→**draft PR** 自動作成。**マージは常に人＋4 役ゲート**（自動マージしない）。破壊的変更は公開 API snapshot が捕捉、生成コードのみの追加は PR チェックリストで人手確認。
+  - **前提:** リポジトリ設定 *Allow GitHub Actions to create and approve pull requests* がオン（オフだと PR 作成だけ失敗する）。既存の bot ブランチ（`spec-sync/update-<sha8>`）には push しない（同一 SHA は決定的・fixup 保護）。git/gh の失敗と再生成の build/test 失敗は run を失敗させ、結果は追跡 Issue にコメントされる。`GITHUB_TOKEN` 製の PR では `ci.yml` が走らないので、マージ前に close/reopen でフル CI を回す。
+  - **⚠️ pwsh 7 の `ConvertFrom-Json`/`Invoke-RestMethod` は ISO 日付を `DateTime` に自動変換する**（文字列前提の処理は例外になる。`generate.ps1` の `refDate` で踏んだ）。
 
 ## 規約
 
