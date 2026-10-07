@@ -246,6 +246,11 @@ Webhook（モデルのみ）／LIFF も同様に個別生成。
 2. **追跡 Issue upsert** — drift 時、`spec-sync` ラベルの Issue を作成/更新（compare リンク・spec 別状態・上流コミット一覧）。同期回復時は自動クローズ。
 3. **再生成** `scripts/generate.ps1 -Update -Ref <latestSha>` — SHA ピンで再取得 → 正規化 → manifest 更新 → Kiota 再生成 → build + test。**Kiota CLI 版は 1.34.1 にピン**（R3・生成物との整合）。
 4. **下書き PR** — 再生成コード＋正規化 spec＋manifest を含む draft PR を自動作成。**マージは常に人＋4役ゲート**（自動マージしない）。
+   - 前提: リポジトリ設定 *Allow GitHub Actions to create and approve pull requests* がオン（オフだと PR 作成が失敗する）。
+   - bot ブランチ `spec-sync/update-<sha8>` が既にリモートにあれば **push しない**（同一 SHA の再生成は決定的・レビュアーの fixup を保護。checkout は追跡 ref を持たないため lease 付き上書きは成立しない）。PR の作成/本文更新のみ行い、スキップした旨を本文に明記する。
+   - git/gh の非 0 終了はステップを失敗させる（`$PSNativeCommandUseErrorActionPreference`）。無言失敗させない。
+5. **結果の記録** — run URL・build/test 結果・PR リンク（または PR 未作成の旨）を追跡 Issue にコメント（PR 作成失敗時も残す）。再生成クライアントの build/test 失敗は最終ステップで run 自体を失敗扱いにする（通知が届く）。
+   - `GITHUB_TOKEN` で作成した PR では `ci.yml` が起動しない（GitHub 仕様）。マージ前に close/reopen 等でフル CI を走らせる。
 
 破壊的変更は公開 API snapshot テストが捕捉。**生成コードだけの追加（新オペレーション/モデル）は snapshot に出ない**ため、PR 本文のレビュアーチェックリストで人手確認する（手書きファサードの要否判断）。全パッケージは `Line.Core` + Kiota ランタイム版にロックステップ連動。
 
