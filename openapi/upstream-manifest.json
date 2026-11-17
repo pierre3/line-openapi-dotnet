@@ -2,9 +2,9 @@
   "$comment": "Provenance anchor for the vendored LINE OpenAPI spec snapshots under openapi/. Records which upstream commit the committed specs correspond to and their LF-normalized content hashes. Consumed by scripts/check-spec-drift.ps1 (drift detection) and scripts/generate.ps1 -Update (pinned re-fetch). Upstream (github.com/line/line-openapi) publishes no tags/releases and its spec info.version fields are static, so the upstream commit SHA is the only reliable version anchor. See docs/LINE-dotnet-client-design.md §9.",
   "schemaVersion": 1,
   "repository": "line/line-openapi",
-  "ref": "fa5577c9ea874d2dbd8fadc85a4cb3a1b29d8cbe",
-  "refDate": "2026-09-29",
-  "retrievedAt": "2026-10-05",
+  "ref": "967498a4e192914679ad0571d5845b29aa9755de",
+  "refDate": "2026-10-27",
+  "retrievedAt": "2026-11-02",
   "hashAlgorithm": "sha256",
   "hashNormalization": "line endings normalized to LF before hashing",
   "ignoredUpstreamFiles": [
@@ -12,7 +12,7 @@
   ],
   "specs": {
     "messaging-api.yml": {
-      "sha256": "41033aa8491fc67ab09c4ec322f2aab072ae7b9402297e8c4f042eda0c2dd1fc",
+      "sha256": "0cb0d8f89372a3e85ed960df6d3b2f343da2f00c149edfd2730cdab6e3415b1b",
       "package": "Line.OpenApi.Messaging",
       "imported": true
     },
